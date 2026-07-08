@@ -30,7 +30,7 @@ import type { AcademicPeriod, Career, CourseSection, ScheduleConflict } from '@/
 import type { ScheduleViewFilters } from '@/types/scheduleFilters'
 
 const SHIFT_ORDER = ['Mañana', 'Tarde', 'Noche'] as const
-const GROUP_COLLAPSE_THRESHOLD = 3
+const GROUP_COLLAPSE_THRESHOLD = 2
 
 interface SectionSearchPanelProps {
   careers: Career[]
@@ -136,40 +136,25 @@ export function SectionSearchPanel({
     [filteredSections, coursesById, hasSearch],
   )
 
+  const hasCollapsibleGroups = useMemo(
+    () => !hasSearch && courseGroups.some((group) => group.sections.length >= GROUP_COLLAPSE_THRESHOLD),
+    [courseGroups, hasSearch],
+  )
+
   const browseContextKey = `${selectedCareerId ?? ''}:${semesterFilter ?? 'all'}:${shiftFilter ?? 'all'}`
 
   useEffect(() => {
     if (hasSearch) return
 
+    const selectedIds = new Set(selectedSectionIds)
     const next = new Set<string>()
     for (const group of courseGroups) {
-      if (group.sections.length <= 2) {
+      if (group.sections.some((section) => selectedIds.has(section.id))) {
         next.add(group.groupKey)
       }
     }
     setExpandedGroups(next)
-  }, [browseContextKey, hasSearch, courseGroups])
-
-  useEffect(() => {
-    if (hasSearch) return
-
-    const selectedIds = new Set(selectedSectionIds)
-    setExpandedGroups((current) => {
-      const next = new Set(current)
-      let changed = false
-
-      for (const group of courseGroups) {
-        if (group.sections.some((section) => selectedIds.has(section.id))) {
-          if (!next.has(group.groupKey)) {
-            next.add(group.groupKey)
-            changed = true
-          }
-        }
-      }
-
-      return changed ? next : current
-    })
-  }, [courseGroups, hasSearch, selectedSectionIds])
+  }, [browseContextKey, courseGroups, hasSearch, selectedSectionIds])
 
   const toggleGroupExpanded = (courseId: string) => {
     setExpandedGroups((current) => {
@@ -312,7 +297,13 @@ export function SectionSearchPanel({
                 </p>
               </div>
             ) : (
-              courseGroups.map((group) => {
+              <>
+                {hasCollapsibleGroups && (
+                  <p className="px-1 pb-1 text-[11px] leading-relaxed text-muted">
+                    Las materias con varias secciones están cerradas. Tocá una para ver opciones.
+                  </p>
+                )}
+                {courseGroups.map((group) => {
                 const collapsible = !hasSearch && group.sections.length >= GROUP_COLLAPSE_THRESHOLD
                 const expanded = expandedGroups.has(group.groupKey)
                 const showSections = hasSearch || !collapsible || expanded
@@ -333,7 +324,8 @@ export function SectionSearchPanel({
                     previewSectionId={previewSectionId}
                   />
                 )
-              })
+              })}
+              </>
             )}
           </div>
         </>
@@ -452,8 +444,9 @@ function CourseGroupCard({
       </div>
 
       {collapsible && !expanded && (
-        <p className="mt-1.5 text-[11px] font-medium text-primary-light/90">
-          Tocá para elegir sección
+        <p className="mt-2 inline-flex items-center gap-1 rounded-md bg-primary/5 px-2 py-1 text-[11px] font-medium text-primary">
+          Hacé clic para ver las secciones
+          <ChevronDown className="h-3 w-3" aria-hidden="true" />
         </p>
       )}
     </div>
@@ -464,7 +457,9 @@ function CourseGroupCard({
       className={`overflow-hidden rounded-xl ring-1 shadow-[0_1px_3px_rgba(15,23,42,0.06)] ${
         expanded
           ? 'bg-slate-100/75 ring-slate-200/80'
-          : 'bg-white ring-slate-100/90'
+          : collapsible
+            ? 'bg-white ring-slate-200/80'
+            : 'bg-white ring-slate-100/90'
       }`}
     >
       {collapsible ? (

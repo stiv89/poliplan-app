@@ -17,4 +17,4 @@ Disallow: /offline
 Disallow: /horario
 Disallow: /app/
 
-Sitemap: https://poliplan.app/sitemap.xml
+Sitemap: https://www.poliplan.app/sitemap.xml

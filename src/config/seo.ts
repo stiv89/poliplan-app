@@ -2,7 +2,7 @@ export const SITE_NAME = 'PoliPlan'
 export const SITE_TAGLINE = 'Horarios y herramientas para la Facultad Politécnica UNA'
 export const CANONICAL_ORIGIN =
   (import.meta.env.VITE_SITE_URL as string | undefined)?.replace(/\/$/, '') ??
-  'https://poliplan.app'
+  'https://www.poliplan.app'
 
 export const LEGAL_DISCLAIMER =
   'PoliPlan es un proyecto independiente y no representa oficialmente a la FP-UNA ni a la UNA.'

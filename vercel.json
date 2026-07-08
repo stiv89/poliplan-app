@@ -1,11 +1,5 @@
 {
   "redirects": [
-    {
-      "source": "/:path*",
-      "has": [{ "type": "host", "value": "www.poliplan.app" }],
-      "destination": "https://poliplan.app/:path*",
-      "permanent": true
-    },
     { "source": "/app", "destination": "/", "permanent": true },
     { "source": "/app/:path*", "destination": "/:path*", "permanent": true }
   ],
