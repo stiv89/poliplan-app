@@ -44,16 +44,16 @@ export const COLORS = {
   success: '#16A34A',
 } as const
 
-/** Paleta de colores pastel para distinguir materias en el horario */
+/** Paleta suave para distinguir materias en el horario */
 export const COURSE_COLORS = [
-  { bg: '#DBEAFE', border: '#93C5FD', text: '#1E40AF' }, // azul
-  { bg: '#D1FAE5', border: '#6EE7B7', text: '#065F46' }, // verde
-  { bg: '#FEF3C7', border: '#FCD34D', text: '#92400E' }, // ámbar
-  { bg: '#EDE9FE', border: '#C4B5FD', text: '#4C1D95' }, // violeta
-  { bg: '#FCE7F3', border: '#F9A8D4', text: '#9D174D' }, // rosa
-  { bg: '#FFEDD5', border: '#FDC8A0', text: '#9A3412' }, // naranja
-  { bg: '#CFFAFE', border: '#67E8F9', text: '#155E75' }, // cyan
-  { bg: '#F0FDF4', border: '#86EFAC', text: '#14532D' }, // esmeralda
+  { bg: '#F4F7FF', border: '#D9E2F5', text: '#475569' },
+  { bg: '#F2FBF6', border: '#CFE8DC', text: '#475569' },
+  { bg: '#FFFBF2', border: '#F5E6C8', text: '#475569' },
+  { bg: '#F7F4FF', border: '#E4DCF7', text: '#475569' },
+  { bg: '#FDF4F9', border: '#F3D9E8', text: '#475569' },
+  { bg: '#FFF8F3', border: '#F7DEC8', text: '#475569' },
+  { bg: '#F2FCFD', border: '#CFEEF2', text: '#475569' },
+  { bg: '#F8FAFC', border: '#E2E8F0', text: '#475569' },
 ] as const
 
 export type CourseColor = (typeof COURSE_COLORS)[number]

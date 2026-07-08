@@ -147,26 +147,26 @@ function RailNavItem({
       end={end}
       ref={itemRef}
       className={({ isActive }) =>
-        `group relative z-10 flex w-full flex-col items-center gap-1 rounded-xl px-1 py-2.5 transition-[color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.92] ${
+        `group relative z-10 flex w-full flex-col items-center gap-1 rounded-xl px-1 py-2.5 transition-[color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] ${
           isActive
-            ? 'text-primary'
-            : 'text-slate-400 hover:text-slate-600'
+            ? 'text-slate-600'
+            : 'text-slate-400/90 hover:text-slate-500'
         }`
       }
       aria-label={badge > 0 ? `${label} (${badge} sin ver)` : label}
     >
       <span className="relative">
-        <Icon className="h-[22px] w-[22px] stroke-[1.75]" aria-hidden="true" />
+        <Icon className="h-[21px] w-[21px] stroke-[1.5]" aria-hidden="true" />
         {badge > 0 && (
           <span
-            className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[8px] font-bold text-white ring-2 ring-surface"
+            className="absolute -right-1 -top-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-red-500 text-[8px] font-bold text-white ring-2 ring-slate-50"
             aria-hidden="true"
           >
             {badge > 9 ? '9+' : badge}
           </span>
         )}
       </span>
-      <span className="max-w-full truncate text-[10px] font-medium leading-none">{label}</span>
+      <span className="max-w-full truncate text-[10px] font-normal leading-none opacity-90">{label}</span>
     </NavLink>
   )
 }
@@ -251,7 +251,7 @@ export function SidebarNav() {
   }))
 
   return (
-    <aside className="hidden h-full w-[72px] shrink-0 flex-col rounded-2xl bg-surface py-4 shadow-sm ring-1 ring-slate-100/80 md:flex">
+    <aside className="hidden h-full w-[76px] shrink-0 flex-col border-r border-slate-200/50 bg-slate-50/60 py-4 lg:w-20 md:flex">
       <NavLink
         to={ROUTES.home}
         end
@@ -261,7 +261,7 @@ export function SidebarNav() {
         <img
           src={logoMark}
           alt=""
-          className="h-10 w-10 select-none rounded-xl object-contain"
+          className="h-9 w-9 select-none rounded-lg object-contain opacity-90"
           draggable={false}
         />
       </NavLink>

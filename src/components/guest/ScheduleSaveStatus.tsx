@@ -30,17 +30,17 @@ export function ScheduleSaveStatus({
 
   return (
     <div
-      className={`flex items-center gap-2 ${compact ? 'text-[11px]' : 'text-xs'} text-muted`}
+      className={`flex items-center gap-2 ${compact ? 'text-[10px]' : 'text-[11px]'} text-slate-400`}
     >
       {status.showSyncedCheck && (
-        <Check className="h-3.5 w-3.5 text-emerald-600" aria-hidden="true" />
+        <Check className="h-3 w-3 text-emerald-500/80" aria-hidden="true" />
       )}
       <span className="truncate">{status.label}</span>
       {status.showSyncAction && onSync && isOnline && (
         <button
           type="button"
           onClick={onSync}
-          className="inline-flex shrink-0 items-center gap-1 font-medium text-primary hover:underline"
+          className="inline-flex shrink-0 items-center gap-1 text-slate-500 transition hover:text-primary/80"
         >
           <Cloud className="h-3 w-3" aria-hidden="true" />
           Sincronizar

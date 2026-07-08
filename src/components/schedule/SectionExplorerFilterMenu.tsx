@@ -128,10 +128,10 @@ export function SectionExplorerFilterMenu({
         ref={buttonRef}
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className={`flex h-9 shrink-0 items-center gap-1 rounded-lg border px-2.5 text-xs font-medium transition ${
+        className={`flex h-9 shrink-0 items-center gap-1 rounded-lg border px-2.5 text-xs font-normal transition ${
           open || activeCount > 0
-            ? 'border-primary/20 bg-primary/5 text-primary'
-            : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'
+            ? 'border-slate-300 bg-slate-50 text-slate-700'
+            : 'border-slate-200/80 bg-white text-slate-500 hover:border-slate-300 hover:bg-slate-50/80'
         }`}
         aria-label={
           activeCount > 0 ? `Filtros, ${activeCount} activos` : 'Filtros del explorador de materias'
@@ -140,30 +140,30 @@ export function SectionExplorerFilterMenu({
         aria-haspopup="dialog"
       >
         <SlidersHorizontal className="h-3.5 w-3.5" aria-hidden="true" />
-        <span>Filtros{activeCount > 0 ? ` ${activeCount}` : ''}</span>
+        <span>Filtros{activeCount > 0 ? ` · ${activeCount}` : ''}</span>
       </button>
 
       {open && isMobile && (
         <>
           <div
-            className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm"
+            className="fixed inset-0 z-50 bg-black/20 backdrop-blur-[2px]"
             onClick={() => setOpen(false)}
             aria-hidden="true"
           />
           <div
-            className="fixed inset-x-0 bottom-0 z-50 flex max-h-[85dvh] flex-col rounded-t-2xl border-t border-slate-200 bg-white shadow-2xl"
+            className="fixed inset-x-0 bottom-0 z-50 flex max-h-[85dvh] flex-col rounded-t-2xl border-t border-slate-200/80 bg-white"
             role="dialog"
             aria-label="Filtros"
           >
             <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-4 py-3">
-              <p className="text-sm font-semibold text-text">Filtros</p>
+              <p className="text-sm font-medium text-slate-800">Filtros</p>
               <button
                 type="button"
                 onClick={() => setOpen(false)}
-                className="flex h-11 w-11 items-center justify-center rounded-lg hover:bg-slate-100"
+                className="flex h-10 w-10 items-center justify-center rounded-lg hover:bg-slate-100/80"
                 aria-label="Cerrar filtros"
               >
-                <X className="h-4 w-4 text-muted" />
+                <X className="h-4 w-4 text-slate-400" />
               </button>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4">{content}</div>
@@ -177,7 +177,7 @@ export function SectionExplorerFilterMenu({
           anchorRef={buttonRef}
           popoverRef={popoverRef}
           align={align}
-          className="w-[min(20rem,calc(100vw-2rem))] rounded-2xl border border-slate-200 bg-white p-4 shadow-lg"
+          className="w-[min(20rem,calc(100vw-2rem))] rounded-xl border border-slate-200/80 bg-white p-4 shadow-sm"
         >
           {content}
         </AnimatedPopover>
@@ -225,7 +225,7 @@ function ExplorerFilterPanelContent({
   const availableSemesterSet = new Set(availableSemesters)
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {sortedPeriods.length > 0 && (
         <PeriodNavigator
           periods={sortedPeriods}
@@ -284,6 +284,7 @@ function ExplorerFilterPanelContent({
               <FilterChipButton
                 key={day}
                 selected={active}
+                subtleSelected
                 onClick={() => {
                   const days = active
                     ? viewFilters.days.filter((value) => value !== day)
@@ -299,7 +300,7 @@ function ExplorerFilterPanelContent({
       </FilterSection>
 
       <FilterSection title="Horario visible">
-        <div className="mb-2 flex items-center justify-between text-xs font-medium text-text">
+        <div className="mb-2 flex items-center justify-between text-[11px] font-normal text-slate-500">
           <span>{formatFilterTimeLabel(viewFilters.timeStartMinutes)}</span>
           <span>{formatFilterTimeLabel(viewFilters.timeEndMinutes)}</span>
         </div>
@@ -315,11 +316,15 @@ function ExplorerFilterPanelContent({
         />
       </FilterSection>
 
-      <div className="flex gap-2 border-t border-slate-100 pt-3">
-        <Button variant="secondary" className="min-h-11 flex-1 justify-center" onClick={onClear}>
+      <div className="flex items-center gap-2 border-t border-slate-100 pt-4">
+        <button
+          type="button"
+          onClick={onClear}
+          className="min-h-10 flex-1 rounded-lg text-sm font-normal text-slate-500 transition hover:bg-slate-50 hover:text-slate-700"
+        >
           Limpiar
-        </Button>
-        <Button className="min-h-11 flex-[1.4] justify-center" onClick={onApply}>
+        </button>
+        <Button className="min-h-10 flex-[1.35] justify-center text-sm" onClick={onApply}>
           Ver {resultCount} sección{resultCount !== 1 ? 'es' : ''}
         </Button>
       </div>
@@ -330,7 +335,7 @@ function ExplorerFilterPanelContent({
 function FilterSection({ title, children }: { title: string; children: ReactNode }) {
   return (
     <div>
-      <p className="mb-2 text-[11px] font-medium uppercase tracking-wide text-muted">{title}</p>
+      <p className="mb-2 text-[10px] font-medium uppercase tracking-wide text-slate-400">{title}</p>
       {children}
     </div>
   )
@@ -338,25 +343,31 @@ function FilterSection({ title, children }: { title: string; children: ReactNode
 
 function FilterChipButton({
   selected,
+  subtleSelected = false,
   onClick,
   disabled = false,
   children,
 }: {
   selected: boolean
+  subtleSelected?: boolean
   onClick: () => void
   disabled?: boolean
   children: ReactNode
 }) {
+  const selectedClass = subtleSelected
+    ? 'border-slate-300 bg-slate-50 text-slate-700'
+    : 'border-slate-400/70 bg-white text-slate-800'
+
   return (
     <button
       type="button"
       aria-pressed={selected}
       disabled={disabled}
       onClick={onClick}
-      className={`inline-flex min-h-9 items-center rounded-lg px-2.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-35 ${
+      className={`inline-flex min-h-8 items-center rounded-full border px-2.5 text-xs font-normal transition disabled:cursor-not-allowed disabled:opacity-35 ${
         selected
-          ? 'bg-primary text-white'
-          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+          ? selectedClass
+          : 'border-transparent bg-slate-100/70 text-slate-500 hover:bg-slate-100'
       }`}
     >
       {children}
@@ -381,8 +392,8 @@ function PeriodNavigator({
   )
 
   return (
-    <div className="rounded-xl bg-slate-50 px-2 py-1.5">
-      <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted">
+    <div className="rounded-lg border border-slate-200/70 bg-slate-50/40 px-2 py-1.5">
+      <p className="mb-1 text-[10px] font-medium uppercase tracking-wide text-slate-400">
         Periodo académico
       </p>
       <div className="flex items-center gap-1">
@@ -394,12 +405,12 @@ function PeriodNavigator({
             const prevId = getAdjacentPeriodId(periods, selectedPeriod.id, -1)
             if (prevId) onPeriodChange(prevId)
           }}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted transition hover:bg-white disabled:opacity-30"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/80 disabled:opacity-30"
           aria-label="Período anterior"
         >
           ‹
         </button>
-        <p className="min-w-0 flex-1 truncate text-center text-sm font-medium text-text">
+        <p className="min-w-0 flex-1 truncate text-center text-sm font-normal text-slate-700">
           {selectedPeriod ? formatAcademicPeriodLabel(selectedPeriod) : 'Sin períodos'}
         </p>
         <button
@@ -410,7 +421,7 @@ function PeriodNavigator({
             const nextId = getAdjacentPeriodId(periods, selectedPeriod.id, 1)
             if (nextId) onPeriodChange(nextId)
           }}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted transition hover:bg-white disabled:opacity-30"
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md text-slate-400 transition hover:bg-white/80 disabled:opacity-30"
           aria-label="Período siguiente"
         >
           ›
@@ -441,9 +452,9 @@ function DualRangeSlider({
 
   return (
     <div className="relative h-8">
-      <div className="absolute left-0 right-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-slate-200" />
+      <div className="absolute left-0 right-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-slate-200/80" />
       <div
-        className="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-primary"
+        className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-slate-400/70"
         style={{ left: `${startPct}%`, right: `${100 - endPct}%` }}
       />
       <input
@@ -477,13 +488,13 @@ function DualRangeSlider({
         .range-thumb::-webkit-slider-runnable-track { appearance: none; background: transparent; }
         .range-thumb::-moz-range-track { background: transparent; }
         .range-thumb::-webkit-slider-thumb {
-          appearance: none; height: 18px; width: 18px; margin-top: -7px;
-          border-radius: 9999px; background: white; border: 2px solid #0B3B8F;
-          box-shadow: 0 1px 2px rgb(0 0 0 / 0.12); cursor: pointer;
+          appearance: none; height: 16px; width: 16px; margin-top: -6px;
+          border-radius: 9999px; background: white; border: 1.5px solid #94A3B8;
+          box-shadow: none; cursor: pointer;
         }
         .range-thumb::-moz-range-thumb {
-          height: 18px; width: 18px; border-radius: 9999px; background: white;
-          border: 2px solid #0B3B8F; box-shadow: 0 1px 2px rgb(0 0 0 / 0.12); cursor: pointer;
+          height: 16px; width: 16px; border-radius: 9999px; background: white;
+          border: 1.5px solid #94A3B8; box-shadow: none; cursor: pointer;
         }
       `}</style>
     </div>

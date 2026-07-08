@@ -391,7 +391,20 @@ interface SchedulePickerMenuProps extends Omit<SchedulePickerPanelProps, 'onClos
   scheduleName: string
   titleClassName?: string
   embedded?: boolean
+  /** @deprecated Usar pill */
   embeddedCapsule?: boolean
+  pill?: boolean
+}
+
+const SELECTABLE_PILL_BASE =
+  'inline-flex max-w-full min-w-0 items-center gap-1 rounded-full border bg-white px-3 py-1.5 text-left transition hover:border-slate-300 hover:bg-slate-50/90 active:bg-slate-100/70'
+
+function selectablePillClass(open: boolean): string {
+  return `${SELECTABLE_PILL_BASE} ${
+    open
+      ? 'border-slate-300 bg-slate-50 ring-1 ring-slate-200/70'
+      : 'border-slate-200/90'
+  }`
 }
 
 export function SchedulePickerMenu({
@@ -400,6 +413,7 @@ export function SchedulePickerMenu({
   titleClassName = 'text-xl',
   embedded = false,
   embeddedCapsule = false,
+  pill = false,
   ...panelProps
 }: SchedulePickerMenuProps) {
   const [open, setOpen] = useState(false)
@@ -436,17 +450,19 @@ export function SchedulePickerMenu({
         type="button"
         onClick={() => setOpen((value) => !value)}
         className={`group flex max-w-full items-center gap-1 text-left ${
-          embeddedCapsule
-            ? 'rounded-md bg-slate-100 px-2 py-1 transition hover:bg-slate-200/70'
-            : ''
+          pill
+            ? selectablePillClass(open)
+            : embeddedCapsule
+              ? 'rounded-md px-0.5 py-0.5'
+              : ''
         }`}
         aria-label="Cambiar horario"
         aria-expanded={open}
         aria-haspopup="dialog"
       >
         <h1
-          className={`truncate font-semibold tracking-tight ${
-            embedded ? 'text-slate-900' : 'text-text'
+          className={`truncate tracking-tight ${
+            pill || embedded ? 'text-sm font-semibold text-slate-800' : 'font-semibold text-text'
           } ${titleClassName}`}
         >
           {scheduleName}

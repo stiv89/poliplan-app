@@ -15,12 +15,12 @@ export function AppShell() {
           <OnlineStatusBanner />
         </div>
 
-        {/* Área de trabajo: sidebar + contenido */}
-        <div className="flex min-h-0 flex-1 overflow-hidden">
-          <div className="mx-auto flex h-full w-full max-w-[1600px] min-h-0 gap-3 px-3 md:gap-4 md:px-4 md:py-3 lg:gap-5 lg:px-5">
+        {/* Área de trabajo: contenedor unificado sidebar + contenido */}
+        <div className="flex min-h-0 flex-1 overflow-hidden md:px-4 md:py-3 lg:px-5 lg:py-4">
+          <div className="mx-auto flex h-full w-full max-w-[1600px] min-h-0 overflow-hidden md:rounded-[24px] md:border md:border-slate-200/60 md:bg-white">
             <SidebarNav />
 
-            <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))] md:rounded-2xl md:bg-surface md:pb-0 md:shadow-sm md:ring-1 md:ring-slate-100/80">
+            <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))] md:min-h-0 md:pb-0">
               <Outlet />
             </main>
           </div>

@@ -40,7 +40,7 @@ export function TeacherNameButton({
         event.stopPropagation()
         open()
       }}
-      className={`truncate text-left text-primary hover:underline ${className}`}
+      className={`truncate text-left font-normal text-slate-600 hover:text-primary hover:underline ${className}`}
       aria-label={`Ver reseñas de ${label}`}
     >
       {label}

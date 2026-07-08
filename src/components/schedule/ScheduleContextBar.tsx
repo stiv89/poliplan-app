@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
-import { Check, ChevronDown, GraduationCap, Search } from 'lucide-react'
+import { Check, ChevronDown, Search } from 'lucide-react'
 import type { AcademicPeriod, Career } from '@/types/academic'
 import {
   SchedulePickerMenu,
@@ -23,7 +23,16 @@ interface ScheduleContextBarProps {
   titleClassName?: string
 }
 
-type OpenMenu = 'career' | 'period' | null
+const SELECTABLE_PILL_BASE =
+  'inline-flex max-w-full min-w-0 items-center gap-1 rounded-full border bg-white px-3 py-1.5 text-left transition hover:border-slate-300 hover:bg-slate-50/90 active:bg-slate-100/70'
+
+function selectablePillClass(open: boolean): string {
+  return `${SELECTABLE_PILL_BASE} ${
+    open
+      ? 'border-slate-300 bg-slate-50 ring-1 ring-slate-200/70'
+      : 'border-slate-200/90'
+  }`
+}
 
 export function ScheduleContextBar({
   scheduleName,
@@ -38,28 +47,27 @@ export function ScheduleContextBar({
   schedulePicker,
   titleClassName,
 }: ScheduleContextBarProps) {
-  const [openMenu, setOpenMenu] = useState<OpenMenu>(null)
+  const [contextOpen, setContextOpen] = useState(false)
   const [careerSearch, setCareerSearch] = useState('')
-  const careerButtonRef = useRef<HTMLButtonElement>(null)
-  const periodButtonRef = useRef<HTMLButtonElement>(null)
-  const careerPopoverRef = useRef<HTMLDivElement>(null)
-  const periodPopoverRef = useRef<HTMLDivElement>(null)
+  const contextButtonRef = useRef<HTMLButtonElement>(null)
+  const contextPopoverRef = useRef<HTMLDivElement>(null)
   const careerSearchRef = useRef<HTMLInputElement>(null)
 
-  usePopoverDismiss(openMenu, [careerButtonRef, periodButtonRef], [careerPopoverRef, periodPopoverRef], () =>
-    setOpenMenu(null),
+  usePopoverDismiss(contextOpen, [contextButtonRef], [contextPopoverRef], () =>
+    setContextOpen(false),
   )
 
   useEffect(() => {
-    if (openMenu === 'career') {
-      const frame = requestAnimationFrame(() => {
-        careerSearchRef.current?.focus()
-      })
-      return () => cancelAnimationFrame(frame)
+    if (!contextOpen) {
+      setCareerSearch('')
+      return
     }
 
-    setCareerSearch('')
-  }, [openMenu])
+    const frame = requestAnimationFrame(() => {
+      careerSearchRef.current?.focus()
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [contextOpen])
 
   const selectedCareer = careers.find((career) => career.id === selectedCareerId)
   const sortedPeriods = sortAcademicPeriods(academicPeriods)
@@ -71,80 +79,54 @@ export function ScheduleContextBar({
     [careers, careerSearch],
   )
 
+  const careerLabel = selectedCareer?.code ?? selectedCareer?.name
+  const contextPillLabel = buildContextPillLabel(careerLabel, periodName)
+
   return (
     <div className="min-w-0 flex-1" data-tour="career-picker">
       <div className="flex min-w-0 flex-wrap items-center gap-2">
-        <div className="flex min-h-10 min-w-0 max-w-full items-center gap-1.5 overflow-hidden rounded-lg border border-slate-200 bg-white px-2 py-1 shadow-sm">
-          <SchedulePickerMenu
-            scheduleName={scheduleName}
-            embedded
-            embeddedCapsule
-            titleClassName={titleClassName ?? 'text-[15px]'}
-            {...schedulePicker}
-            periodName={null}
-          />
+        <SchedulePickerMenu
+          scheduleName={scheduleName}
+          embedded
+          pill
+          titleClassName={titleClassName ?? 'text-sm'}
+          {...schedulePicker}
+          periodName={null}
+        />
 
+        <button
+          ref={contextButtonRef}
+          type="button"
+          onClick={() => setContextOpen((value) => !value)}
+          aria-label="Elegir carrera y periodo académico"
+          aria-expanded={contextOpen}
+          aria-haspopup="dialog"
+          className={`group ${selectablePillClass(contextOpen)}`}
+        >
           <span
-            className="shrink-0 select-none text-sm font-normal leading-none text-slate-300"
-            aria-hidden="true"
+            className={`truncate text-sm leading-tight ${
+              selectedCareerId ? 'font-normal text-slate-600' : 'font-medium text-primary'
+            }`}
           >
-            ›
+            {contextPillLabel}
           </span>
-
-          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-1 gap-y-0">
-            <ContextInlineSelect
-              buttonRef={careerButtonRef}
-              label="Carrera"
-              value={selectedCareer?.code ?? selectedCareer?.name ?? 'Elegir'}
-              open={openMenu === 'career'}
-              onClick={() => setOpenMenu((value) => (value === 'career' ? null : 'career'))}
-              ariaLabel="Elegir carrera del horario activo"
-              highlight={!selectedCareerId}
-            />
-
-            {periodName && (
-              <>
-                <span className="select-none px-0.5 text-xs leading-none text-slate-300" aria-hidden="true">
-                  ·
-                </span>
-                <ContextInlineSelect
-                  buttonRef={periodButtonRef}
-                  label="Periodo"
-                  value={periodName}
-                  open={openMenu === 'period'}
-                  onClick={() => setOpenMenu((value) => (value === 'period' ? null : 'period'))}
-                  ariaLabel="Elegir periodo del horario activo"
-                  className="min-w-0 max-w-full sm:max-w-[10.5rem]"
-                />
-              </>
-            )}
-          </div>
-        </div>
-
-        {!selectedCareerId && (
-          <button
-            type="button"
-            onClick={() => setOpenMenu('career')}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90 active:scale-[0.98]"
-          >
-            <GraduationCap className="h-4 w-4" aria-hidden="true" />
-            Elegir carrera
-          </button>
-        )}
+          <ChevronDown
+            className={`h-3 w-3 shrink-0 text-slate-400 transition-transform group-hover:text-slate-500 ${contextOpen ? 'rotate-180' : ''}`}
+            aria-hidden="true"
+          />
+        </button>
       </div>
 
       <AnimatedPopover
-        open={openMenu === 'career'}
-        anchorRef={careerButtonRef}
-        popoverRef={careerPopoverRef}
+        open={contextOpen}
+        anchorRef={contextButtonRef}
+        popoverRef={contextPopoverRef}
         align="left"
-        className="flex max-h-[min(20rem,55vh)] w-[min(18rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-lg"
+        className="flex max-h-[min(26rem,62vh)] w-[min(19rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-slate-200/90 bg-white shadow-lg"
       >
-        <div className="shrink-0 border-b border-slate-100 px-2.5 py-2">
-          <p className="px-1 pb-1.5 text-[10px] font-medium uppercase tracking-wide text-muted">
-            Carrera
-          </p>
-          <div className="relative">
+        <div className="shrink-0 border-b border-slate-100 px-3 py-2">
+          <p className="text-[10px] font-medium uppercase tracking-wide text-muted">Carrera</p>
+          <div className="relative mt-1.5">
             <Search
               className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted"
               aria-hidden="true"
@@ -160,7 +142,7 @@ export function ScheduleContextBar({
               onKeyDown={(event) => {
                 if (event.key === 'Escape') {
                   event.stopPropagation()
-                  setOpenMenu(null)
+                  setContextOpen(false)
                 }
               }}
             />
@@ -169,7 +151,7 @@ export function ScheduleContextBar({
 
         <div className="min-h-0 flex-1 overflow-y-auto py-1">
           {filteredCareers.length === 0 ? (
-            <p className="px-3 py-4 text-center text-sm text-muted">
+            <p className="px-3 py-3 text-center text-sm text-muted">
               {careerSearch.trim()
                 ? `Sin resultados para "${careerSearch.trim()}"`
                 : 'No hay carreras disponibles'}
@@ -184,20 +166,19 @@ export function ScheduleContextBar({
                       type="button"
                       role="option"
                       aria-selected={selected}
-                      onClick={() => {
-                        onCareerChange(career.id)
-                        setOpenMenu(null)
-                      }}
+                      onClick={() => onCareerChange(career.id)}
                       className={`flex w-full items-start gap-2 px-3 py-2 text-left transition hover:bg-slate-50 ${
                         selected ? 'bg-primary/5' : ''
                       }`}
                     >
                       <span className="min-w-0 flex-1">
-                        <span className="block text-sm font-semibold text-text">
+                        <span className="block text-sm font-medium text-text">
                           {career.code ?? career.name}
                         </span>
                         {career.code && (
-                          <span className="mt-0.5 block truncate text-xs text-muted">{career.name}</span>
+                          <span className="mt-0.5 block truncate text-xs text-muted">
+                            {career.name}
+                          </span>
                         )}
                       </span>
                       {selected && (
@@ -210,56 +191,50 @@ export function ScheduleContextBar({
             </ul>
           )}
         </div>
-      </AnimatedPopover>
 
-      <AnimatedPopover
-        open={openMenu === 'period'}
-        anchorRef={periodButtonRef}
-        popoverRef={periodPopoverRef}
-        align="left"
-        className="w-[min(17rem,calc(100vw-2rem))] rounded-xl border border-slate-200/90 bg-white py-1 shadow-lg"
-      >
-        <p className="px-3 py-1.5 text-[10px] font-medium uppercase tracking-wide text-muted">
-          Periodo académico
-        </p>
-        <ul role="listbox" aria-label="Periodos académicos">
-          {sortedPeriods.map((period) => {
-            const selected = period.id === selectedPeriodId
-            return (
-              <li key={period.id}>
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={selected}
-                  onClick={() => {
-                    onPeriodChange(period.id)
-                    setOpenMenu(null)
-                  }}
-                  className={`flex w-full items-center gap-2 px-3 py-2 text-left transition hover:bg-slate-50 ${
-                    selected ? 'bg-primary/5' : ''
-                  }`}
-                >
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-medium text-text">
-                      {formatAcademicPeriodLabel(period)}
+        <div className="shrink-0 border-t border-slate-100 py-1">
+          <p className="px-3 py-1.5 text-[10px] font-medium uppercase tracking-wide text-muted">
+            Periodo académico
+          </p>
+          <ul role="listbox" aria-label="Periodos académicos" className="max-h-40 overflow-y-auto">
+            {sortedPeriods.map((period) => {
+              const selected = period.id === selectedPeriodId
+              return (
+                <li key={period.id}>
+                  <button
+                    type="button"
+                    role="option"
+                    aria-selected={selected}
+                    onClick={() => {
+                      onPeriodChange(period.id)
+                      setContextOpen(false)
+                    }}
+                    className={`flex w-full items-center gap-2 px-3 py-2 text-left transition hover:bg-slate-50 ${
+                      selected ? 'bg-primary/5' : ''
+                    }`}
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium text-text">
+                        {formatAcademicPeriodLabel(period)}
+                      </span>
+                      {period.isActive && (
+                        <span className="mt-0.5 block text-[11px] text-muted">Activo</span>
+                      )}
                     </span>
-                    {period.isActive && (
-                      <span className="mt-0.5 block text-[11px] text-muted">Activo</span>
+                    {selected && (
+                      <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
                     )}
-                  </span>
-                  {selected && <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />}
-                </button>
-              </li>
-            )
-          })}
-        </ul>
+                  </button>
+                </li>
+              )
+            })}
+          </ul>
+        </div>
       </AnimatedPopover>
 
       {scheduleCareers.length > 1 && (
         <div className="mt-1.5 flex flex-wrap items-center gap-1">
-          <span className="text-[10px] font-medium uppercase tracking-wide text-muted/80">
-            En tu horario
-          </span>
+          <span className="text-[10px] text-muted/70">En tu horario</span>
           {scheduleCareers.map((career) => {
             const active = career.id === selectedCareerId
             return (
@@ -268,10 +243,10 @@ export function ScheduleContextBar({
                 type="button"
                 onClick={() => onCareerChange(career.id)}
                 aria-pressed={active}
-                className={`rounded-full px-2.5 py-0.5 text-[11px] font-semibold transition ${
+                className={`rounded-full border px-2 py-0.5 text-[11px] font-medium transition ${
                   active
-                    ? 'bg-primary-light text-white'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                    ? 'border-slate-300 bg-slate-100 text-slate-700'
+                    : 'border-transparent bg-slate-100/80 text-slate-500 hover:border-slate-200 hover:bg-slate-100'
                 }`}
               >
                 {career.code ?? career.name}
@@ -284,53 +259,14 @@ export function ScheduleContextBar({
   )
 }
 
-function ContextInlineSelect({
-  buttonRef,
-  label,
-  value,
-  open,
-  onClick,
-  ariaLabel,
-  className = '',
-  highlight = false,
-}: {
-  buttonRef: RefObject<HTMLButtonElement | null>
-  label: string
-  value: string
-  open: boolean
-  onClick: () => void
-  ariaLabel: string
-  className?: string
-  highlight?: boolean
-}) {
-  return (
-    <button
-      ref={buttonRef}
-      type="button"
-      onClick={onClick}
-      aria-label={ariaLabel}
-      aria-expanded={open}
-      aria-haspopup="listbox"
-      className={`group inline-flex min-w-0 max-w-full items-center gap-0.5 rounded-sm px-0.5 py-0.5 text-left transition ${className}`}
-    >
-      <span className="shrink-0 text-[10px] font-medium leading-none text-slate-400">
-        {label}:
-      </span>
-      <span
-        className={`inline-flex min-w-0 items-center gap-0.5 text-[13px] font-medium leading-tight transition ${
-          highlight
-            ? 'text-primary group-hover:text-primary/90'
-            : 'text-slate-600 group-hover:text-slate-800'
-        }`}
-      >
-        <span className={`truncate ${highlight ? 'font-semibold' : ''}`}>{value}</span>
-        <ChevronDown
-          className={`h-3 w-3 shrink-0 text-slate-400 transition-transform group-hover:text-slate-500 ${open ? 'rotate-180' : ''}`}
-          aria-hidden="true"
-        />
-      </span>
-    </button>
-  )
+function buildContextPillLabel(
+  careerLabel: string | undefined,
+  periodName: string | null,
+): string {
+  if (careerLabel && periodName) return `${careerLabel} · ${periodName}`
+  if (careerLabel) return `${careerLabel} · Elegir periodo`
+  if (periodName) return `Elegir carrera · ${periodName}`
+  return 'Carrera y periodo'
 }
 
 function usePopoverDismiss(

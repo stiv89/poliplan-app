@@ -7,12 +7,13 @@ import {
   AlertTriangle,
   Check,
   X,
+  Plus,
   GraduationCap,
   Clock,
   ChevronDown,
 } from 'lucide-react'
 import { TeacherNameButton } from '@/components/teachers/TeacherNameButton'
-import { CourseFootnoteNotice } from '@/components/schedule/CourseFootnoteNotice'
+import { CourseFootnoteCardNote } from '@/components/schedule/CourseFootnoteNotice'
 import { SectionExplorerFilterMenu } from '@/components/schedule/SectionExplorerFilterMenu'
 import { SectionListSkeleton } from '@/components/schedule/SectionListSkeleton'
 import { resolveSectionShift } from '@/utils/sectionCode'
@@ -136,15 +137,13 @@ export function SectionSearchPanel({
     [filteredSections, coursesById, hasSearch],
   )
 
-  const hasCollapsibleGroups = useMemo(
-    () => !hasSearch && courseGroups.some((group) => group.sections.length >= GROUP_COLLAPSE_THRESHOLD),
-    [courseGroups, hasSearch],
-  )
-
   const browseContextKey = `${selectedCareerId ?? ''}:${semesterFilter ?? 'all'}:${shiftFilter ?? 'all'}`
 
   useEffect(() => {
-    if (hasSearch) return
+    if (hasSearch) {
+      setExpandedGroups(new Set())
+      return
+    }
 
     const selectedIds = new Set(selectedSectionIds)
     const next = new Set<string>()
@@ -154,7 +153,29 @@ export function SectionSearchPanel({
       }
     }
     setExpandedGroups(next)
-  }, [browseContextKey, courseGroups, hasSearch, selectedSectionIds])
+  }, [browseContextKey, hasSearch])
+
+  useEffect(() => {
+    if (hasSearch) return
+
+    setExpandedGroups((current) => {
+      const selectedIds = new Set(selectedSectionIds)
+      const next = new Set(current)
+      let changed = false
+
+      for (const group of courseGroups) {
+        if (
+          group.sections.some((section) => selectedIds.has(section.id)) &&
+          !next.has(group.groupKey)
+        ) {
+          next.add(group.groupKey)
+          changed = true
+        }
+      }
+
+      return changed ? next : current
+    })
+  }, [selectedSectionIds, hasSearch])
 
   const toggleGroupExpanded = (courseId: string) => {
     setExpandedGroups((current) => {
@@ -205,9 +226,9 @@ export function SectionSearchPanel({
   }
 
   return (
-    <div className="flex h-full flex-col bg-slate-50/60">
+    <div className="flex h-full flex-col bg-white">
       {hasCareer && (
-        <div className="shrink-0 border-b border-slate-100 px-3 py-2">
+        <div className="shrink-0 border-b border-slate-200/50 px-3 py-2.5">
           <div className="flex items-center gap-2">
             {onClose && (
               <button
@@ -228,7 +249,7 @@ export function SectionSearchPanel({
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Buscar materia…"
-                className="h-9 w-full rounded-lg border border-slate-200 bg-white py-0 pl-9 pr-3 text-sm placeholder-muted focus:border-primary-light focus:outline-none"
+                className="h-9 w-full rounded-lg border border-slate-200/80 bg-white py-0 pl-9 pr-3 text-sm text-slate-800 placeholder:text-slate-400 focus:border-slate-300 focus:outline-none focus:ring-1 focus:ring-slate-200/80"
                 aria-label="Buscar materias o secciones"
               />
             </div>
@@ -250,12 +271,12 @@ export function SectionSearchPanel({
             )}
           </div>
 
-          <div className="mt-1.5 flex min-h-6 items-center gap-2">
+          <div className="mt-2 flex min-h-5 items-center gap-2">
             {activeFilterCount === 0 ? (
-              <p className="text-xs text-muted">{sectionCountLabel}</p>
+              <p className="text-[11px] text-slate-400">{sectionCountLabel}</p>
             ) : (
               <>
-                <div className="-mx-1 flex min-w-0 flex-1 items-center gap-1.5 overflow-x-auto px-1 pb-0.5">
+                <div className="-mx-1 flex min-w-0 flex-1 items-center gap-1 overflow-x-auto px-1 pb-0.5">
                   {activeFilterChips.map((chip) => (
                     <ActiveFilterChip key={chip.id} label={chip.label} onRemove={chip.onRemove} />
                   ))}
@@ -263,7 +284,7 @@ export function SectionSearchPanel({
                 <button
                   type="button"
                   onClick={handleClearFilters}
-                  className="shrink-0 text-xs font-medium text-muted transition hover:text-text"
+                  className="shrink-0 text-[11px] text-slate-400 transition hover:text-slate-600"
                 >
                   Limpiar
                 </button>
@@ -285,7 +306,7 @@ export function SectionSearchPanel({
         </div>
       ) : (
         <>
-          <div className="flex-1 space-y-2 overflow-y-auto px-2.5 py-2.5">
+          <div className="flex-1 space-y-2.5 overflow-y-auto px-3 py-3">
             {catalogLoading ? (
               <SectionListSkeleton />
             ) : filteredSections.length === 0 ? (
@@ -298,11 +319,6 @@ export function SectionSearchPanel({
               </div>
             ) : (
               <>
-                {hasCollapsibleGroups && (
-                  <p className="px-1 pb-1 text-[11px] leading-relaxed text-muted">
-                    Las materias con varias secciones están cerradas. Tocá una para ver opciones.
-                  </p>
-                )}
                 {courseGroups.map((group) => {
                 const collapsible = !hasSearch && group.sections.length >= GROUP_COLLAPSE_THRESHOLD
                 const expanded = expandedGroups.has(group.groupKey)
@@ -336,12 +352,12 @@ export function SectionSearchPanel({
 
 function ActiveFilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
-    <span className="inline-flex shrink-0 items-center gap-0.5 rounded-md bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700">
+    <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-slate-200/80 bg-white px-2 py-0.5 text-[10px] font-normal text-slate-500">
       {label}
       <button
         type="button"
         onClick={onRemove}
-        className="flex h-4 w-4 items-center justify-center rounded text-slate-500 transition hover:text-slate-800"
+        className="flex h-3.5 w-3.5 items-center justify-center rounded-full text-slate-400 transition hover:text-slate-600"
         aria-label={`Quitar filtro ${label}`}
       >
         ×
@@ -386,125 +402,123 @@ function CourseGroupCard({
 }) {
   const shifts = getGroupShifts(group.sections)
   const selectedCount = group.sections.filter((section) => isSectionSelected(section.id)).length
-  const chipClass = expanded
-    ? 'inline-flex rounded-md bg-white/95 px-2 py-0.5 text-[11px] font-medium text-slate-600 ring-1 ring-slate-200/70'
-    : 'inline-flex rounded-md bg-slate-100/90 px-2 py-0.5 text-[11px] font-medium text-slate-600'
+  const semesterLabel = group.courseSemester ? `${group.courseSemester}º semestre` : null
+  const sectionCountLabel = `${group.sections.length} sección${group.sections.length !== 1 ? 'es' : ''}`
+  const collapsedMeta = [
+    semesterLabel,
+    sectionCountLabel,
+    selectedCount > 0 ? `${selectedCount} en horario` : null,
+    !expanded ? shifts.join(' · ') || null : null,
+  ]
+    .filter(Boolean)
+    .join(' · ')
 
   const headerContent = (
     <div className="min-w-0 flex-1">
-      <div className="flex items-start justify-between gap-2">
-        <h3 className="text-[15px] font-semibold leading-snug tracking-tight text-slate-900">
+      <div className="flex items-start justify-between gap-3">
+        <h3 className="min-w-0 text-[15px] font-semibold leading-snug tracking-tight text-slate-900">
           {group.courseDisplayName}
           {group.courseFootnote === 'final_exam_only' && (
-            <span className="ml-1 text-sm font-bold text-amber-700" aria-hidden="true">
+            <span className="ml-1 text-sm font-semibold text-amber-700/90" aria-hidden="true">
               *
             </span>
           )}
         </h3>
-        {collapsible && (
-          <ChevronDown
-            className={`mt-0.5 h-4 w-4 shrink-0 text-slate-400 transition-transform ${
-              expanded ? 'rotate-180' : ''
-            }`}
-            aria-hidden="true"
-          />
-        )}
+        <div className="flex shrink-0 items-center gap-1.5">
+          {group.courseFootnote ? (
+            semesterLabel && (
+              <span className="text-[11px] font-normal text-slate-400">{semesterLabel}</span>
+            )
+          ) : (
+            collapsedMeta && (
+              <span className="max-w-[9rem] truncate text-right text-[11px] font-normal text-slate-400">
+                {collapsedMeta}
+              </span>
+            )
+          )}
+          {collapsible && (
+            <ChevronDown
+              className="course-card-chevron h-4 w-4 shrink-0 text-slate-400"
+              aria-hidden="true"
+            />
+          )}
+        </div>
       </div>
 
       {group.courseCode && (
-        <p className="mt-0.5 text-xs font-medium text-slate-400">{group.courseCode}</p>
+        <p className="mt-0.5 text-[11px] font-normal text-slate-400">{group.courseCode}</p>
       )}
 
-      {group.courseFootnote && (
-        <div className="mt-2">
-          <CourseFootnoteNotice kind={group.courseFootnote} compact />
+      {group.courseFootnote ? (
+        <div className="mt-1.5 flex items-start justify-between gap-3">
+          <CourseFootnoteCardNote kind={group.courseFootnote} />
+          <span className="shrink-0 pt-0.5 text-[11px] font-normal text-slate-400">
+            {sectionCountLabel}
+            {selectedCount > 0 ? ` · ${selectedCount} en horario` : ''}
+          </span>
         </div>
-      )}
-
-      <div className="mt-2 flex flex-wrap items-center gap-1.5">
-        {group.courseSemester && (
-          <span className={chipClass}>
-            {group.courseSemester}º semestre
-          </span>
-        )}
-        <span className={chipClass}>
-          {group.sections.length} sección{group.sections.length !== 1 ? 'es' : ''}
-        </span>
-        {selectedCount > 0 && (
-          <span className="inline-flex rounded-md bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700 ring-1 ring-emerald-100">
-            {selectedCount} en tu horario
-          </span>
-        )}
-        {!expanded &&
-          shifts.map((shift) => (
-            <span key={shift} className={chipClass}>
-              {shift}
-            </span>
-          ))}
-      </div>
+      ) : null}
 
       {collapsible && !expanded && (
-        <p className="mt-2 inline-flex items-center gap-1 rounded-md bg-primary/5 px-2 py-1 text-[11px] font-medium text-primary">
-          Hacé clic para ver las secciones
-          <ChevronDown className="h-3 w-3" aria-hidden="true" />
+        <p className="mt-2 text-[11px] font-normal text-slate-500">
+          {expandGroupHint(group.sections.length)}
         </p>
       )}
     </div>
   )
 
+  const sectionsList = (
+    <ul className="course-card-sections space-y-2 px-3 pb-3">
+      {group.sections.map((section) => (
+        <SectionGroupRow
+          key={section.id}
+          section={section}
+          course={coursesById.get(section.courseId)}
+          isFinalExamOnly={group.courseFootnote === 'final_exam_only'}
+          selected={isSectionSelected(section.id)}
+          conflicts={conflicts}
+          toggleLoading={toggleLoading}
+          onToggle={() => onToggle(section)}
+          onPreview={onPreview}
+          previewSectionId={previewSectionId}
+        />
+      ))}
+    </ul>
+  )
+
   return (
     <article
-      className={`overflow-hidden rounded-xl ring-1 shadow-[0_1px_3px_rgba(15,23,42,0.06)] ${
-        expanded
-          ? 'bg-slate-100/75 ring-slate-200/80'
-          : collapsible
-            ? 'bg-white ring-slate-200/80'
-            : 'bg-white ring-slate-100/90'
-      }`}
+      className="course-card-surface overflow-hidden"
+      data-open={collapsible && expanded ? 'true' : 'false'}
+      data-collapsible={collapsible ? 'true' : 'false'}
     >
       {collapsible ? (
         <button
           type="button"
           onClick={onToggleExpanded}
           aria-expanded={expanded}
-          className={`flex w-full items-start gap-2 px-3.5 py-3 text-left transition ${
-            expanded
-              ? 'border-b border-slate-200/70 bg-slate-100/90'
-              : 'hover:bg-slate-50/80'
-          }`}
+          className="course-card-header-btn flex items-start gap-2"
         >
           {headerContent}
         </button>
       ) : (
-        <div
-          className={`flex w-full items-start gap-2 px-3.5 py-3 ${
-            expanded ? 'border-b border-slate-200/70 bg-slate-100/90' : ''
-          }`}
-        >
-          {headerContent}
-        </div>
+        <div className="px-3.5 pb-2 pt-3.5">{headerContent}</div>
       )}
 
-      {expanded && (
-        <ul className="space-y-1.5 px-2 py-2">
-          {group.sections.map((section) => (
-            <SectionGroupRow
-              key={section.id}
-              section={section}
-              course={coursesById.get(section.courseId)}
-              isFinalExamOnly={group.courseFootnote === 'final_exam_only'}
-              selected={isSectionSelected(section.id)}
-              conflicts={conflicts}
-              toggleLoading={toggleLoading}
-              onToggle={() => onToggle(section)}
-              onPreview={onPreview}
-              previewSectionId={previewSectionId}
-            />
-          ))}
-        </ul>
+      {collapsible ? (
+        <div className="course-card-details" aria-hidden={!expanded}>
+          <div className="course-card-details-inner">{sectionsList}</div>
+        </div>
+      ) : (
+        sectionsList
       )}
     </article>
   )
+}
+
+function expandGroupHint(sectionCount: number): string {
+  if (sectionCount <= 1) return 'Ver sección'
+  return `Ver ${sectionCount} secciones`
 }
 
 function SectionGroupRow({
@@ -535,82 +549,82 @@ function SectionGroupRow({
   const specificName = resolveSectionElectiveName(section, course)
   const sectionLabel = specificName ?? section.sectionCode
 
+  const scheduleLabel = formatScheduleCompact(section.meetings, { isFinalExamOnly })
+  const sectionTitle = [sectionLabel, shift].filter(Boolean).join(' · ')
+
+  const toggleButton = (
+    <button
+      type="button"
+      onClick={(event) => {
+        event.stopPropagation()
+        onToggle()
+      }}
+      disabled={toggleLoading}
+      aria-pressed={selected}
+      aria-label={
+        selected
+          ? `Quitar sección ${section.sectionCode}`
+          : `Agregar sección ${section.sectionCode}`
+      }
+      title={selected ? 'Quitar del horario' : 'Agregar al horario'}
+      className={`add-section-btn ${selected ? 'is-added' : ''}`}
+    >
+      {selected ? (
+        <Check className="check-pop h-4 w-4" strokeWidth={2.5} aria-hidden="true" />
+      ) : (
+        <Plus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+      )}
+    </button>
+  )
+
+  const rowClassName = [
+    'section-row-surface',
+    selected ? 'is-selected' : '',
+    isPreviewTarget && !selected ? 'is-preview' : '',
+    hasConflict && !selected ? 'is-conflict' : '',
+  ]
+    .filter(Boolean)
+    .join(' ')
+
   return (
     <li
-      className={`rounded-lg border px-2.5 py-2 shadow-[0_1px_2px_rgba(15,23,42,0.04)] transition-all duration-200 ${
-        isPreviewTarget
-          ? 'border-primary-light/35 bg-white ring-1 ring-primary-light/25'
-          : selected
-            ? 'border-emerald-200/90 bg-white'
-            : hasConflict
-              ? 'border-amber-200/80 bg-white'
-              : 'border-slate-200/80 bg-white hover:border-slate-300/80'
-      } ${hasConflict ? 'border-l-[3px] border-l-amber-400 pl-2' : ''}`}
+      className={rowClassName}
       onMouseEnter={() => {
         if (!selected) onPreview?.(section)
       }}
       onMouseLeave={() => onPreview?.(null)}
     >
       <div className="flex items-start justify-between gap-2">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-            <span className="text-sm font-semibold text-slate-900">{sectionLabel}</span>
-            {specificName && (
-              <span className="text-[11px] font-medium text-slate-500">Sec. {section.sectionCode}</span>
-            )}
-            {shift && (
-              <span className="text-[11px] font-medium text-slate-500">{shift}</span>
-            )}
-          </div>
-
-          <p className="mt-1 flex items-center gap-1.5 text-xs text-slate-600">
-            <Clock className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden="true" />
-            <span className="truncate">{formatScheduleCompact(section.meetings, { isFinalExamOnly })}</span>
-          </p>
-
-          <div className="mt-1 min-w-0">
-            {section.teacherName ? (
-              <TeacherNameButton
-                teacherId={section.teacherId}
-                teacherName={section.teacherName}
-                teacherEmail={section.teacherEmail}
-                courseId={section.courseId}
-                academicPeriodId={section.academicPeriodId}
-                className="block max-w-full truncate text-left text-xs font-normal text-primary-light hover:text-primary"
-              />
-            ) : (
-              <span className="text-xs text-slate-400">Sin docente</span>
-            )}
-          </div>
-
-          {hasConflict && (
-            <p className="mt-1 flex items-center gap-1 text-[11px] font-normal text-amber-700/90">
-              <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden="true" />
-              Conflicto de horario
-            </p>
-          )}
-        </div>
-
-        <button
-          type="button"
-          onClick={onToggle}
-          disabled={toggleLoading}
-          aria-pressed={selected}
-          aria-label={
-            selected
-              ? `Quitar sección ${section.sectionCode}`
-              : `Agregar sección ${section.sectionCode}`
-          }
-          className={`mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1.5 text-xs font-medium transition disabled:opacity-50 ${
-            selected
-              ? 'bg-emerald-500 text-white shadow-sm hover:bg-emerald-600'
-              : 'bg-primary-light text-white shadow-sm hover:bg-primary-light/90'
-          }`}
-        >
-          {selected && <Check className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />}
-          {selected ? 'Agregada' : 'Agregar'}
-        </button>
+        <p className="min-w-0 text-sm font-medium text-slate-800">{sectionTitle}</p>
+        {toggleButton}
       </div>
+
+      <p className="mt-1 flex items-center gap-1.5 text-xs font-normal text-slate-500">
+        <Clock className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden="true" />
+        <span className="truncate">{scheduleLabel}</span>
+      </p>
+
+      <div className="mt-1 min-w-0">
+        {section.teacherName ? (
+          <TeacherNameButton
+            teacherId={section.teacherId}
+            teacherName={section.teacherName}
+            teacherEmail={section.teacherEmail}
+            courseId={section.courseId}
+            academicPeriodId={section.academicPeriodId}
+            className="block max-w-full truncate text-left text-xs"
+          />
+        ) : (
+          <span className="text-xs text-slate-400">Sin docente</span>
+        )}
+      </div>
+
+      {hasConflict && (
+        <p className="mt-1.5 flex items-center gap-1 text-[11px] font-normal text-amber-700/85">
+          <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden="true" />
+          Conflicto de horario
+        </p>
+      )}
     </li>
   )
 }

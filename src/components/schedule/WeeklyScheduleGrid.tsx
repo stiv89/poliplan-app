@@ -188,7 +188,7 @@ export function WeeklyScheduleGrid({
   }, [previewSection, previewBlocks, startHour])
 
   return (
-    <div className="relative flex h-full flex-col overflow-hidden bg-background">
+    <div className="relative flex h-full flex-col overflow-hidden bg-slate-50/45">
       <ClassBlockPopoverLayer
         activeBlock={activeBlock}
         anchorRef={anchorRef}
@@ -214,7 +214,7 @@ export function WeeklyScheduleGrid({
       />
 
       <div
-        className={`grid shrink-0 bg-surface/80 transition-opacity duration-300 ${
+        className={`grid shrink-0 border-b border-slate-200/50 bg-slate-50/30 transition-opacity duration-300 ${
           isPreviewActive ? 'opacity-60' : 'opacity-100'
         }`}
         style={{ gridTemplateColumns: columnTemplate }}
@@ -223,7 +223,7 @@ export function WeeklyScheduleGrid({
         {visibleDays.map((day) => (
           <div
             key={day.value}
-            className="px-1 py-2.5 text-center text-[11px] font-medium text-muted"
+            className="border-l border-slate-100/50 px-1 py-2 text-center text-[10px] font-normal tracking-wide text-slate-400 first:border-l-0"
           >
             {day.label.slice(0, 3)}
           </div>
@@ -250,7 +250,7 @@ export function WeeklyScheduleGrid({
                   className="absolute left-0 right-0 flex items-start justify-end pr-1.5"
                   style={{ top: (hour - startHour) * HOUR_HEIGHT - 7, height: HOUR_HEIGHT }}
                 >
-                  <span className="text-[10px] text-muted/50">{hour}:00</span>
+                  <span className="text-[10px] font-normal tabular-nums text-slate-400/80">{hour}:00</span>
                 </div>
               ))}
             </div>
@@ -259,11 +259,11 @@ export function WeeklyScheduleGrid({
               const dayBlocks = blocks.filter((block) => block.dayOfWeek === day.value)
 
               return (
-                <div key={day.value} className="relative">
+                <div key={day.value} className="relative border-l border-slate-100/50">
                   {hourSlots.map((hour) => (
                     <div
                       key={hour}
-                      className="absolute inset-x-0 border-t border-slate-100/80"
+                      className="absolute inset-x-0 border-t border-slate-100/45"
                       style={{ top: (hour - startHour) * HOUR_HEIGHT }}
                     />
                   ))}
@@ -298,41 +298,50 @@ export function WeeklyScheduleGrid({
                       }
                     }
 
+                    const isConflict = block.hasConflict || isPreviewOverlap
+                    const isPreviewOnly = isPreviewOverlap && !block.hasConflict
+
                     return (
                       <button
                         key={block.id}
-                        className={`absolute inset-x-1 z-10 overflow-hidden rounded-lg px-2 py-1.5 text-left text-xs transition-all duration-300 ease-out hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary ${blockOpacity} ${
-                          block.hasConflict || isPreviewOverlap
-                            ? 'border-2 border-red-400 bg-red-50/90 ring-2 ring-red-200/50'
-                            : 'border border-transparent'
+                        className={`absolute inset-x-1 z-10 overflow-hidden rounded-md px-2 py-1 text-left transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40 ${blockOpacity} ${
+                          isConflict
+                            ? 'border border-red-100/90 border-l-[3px] border-l-red-400 bg-red-50/25 hover:bg-red-50/40'
+                            : 'border border-black/[0.04] hover:brightness-[0.98]'
                         }`}
                         style={{
                           top,
                           height,
-                          backgroundColor:
-                            block.hasConflict || isPreviewOverlap ? undefined : color.bg,
-                          color: block.hasConflict || isPreviewOverlap ? '#B91C1C' : color.text,
+                          backgroundColor: isConflict ? undefined : color.bg,
                         }}
                         onClick={(event) => handleBlockClick(block, event)}
                         onMouseEnter={(event) => handleBlockMouseEnter(block, event)}
                         onMouseLeave={handleBlockMouseLeave}
-                        aria-label={`${block.title} — ${formatTimeRange(block.startTime, block.endTime)}${block.hasConflict || isPreviewOverlap ? ' — conflicto' : ''}`}
+                        aria-label={`${block.title} — ${formatTimeRange(block.startTime, block.endTime)}${isConflict ? ' — conflicto' : ''}`}
                       >
-                        {(block.hasConflict || isPreviewOverlap) && height >= 40 && (
-                          <span className="mb-0.5 flex items-center gap-0.5 text-[10px] font-semibold uppercase tracking-wide">
-                            <AlertTriangle className="h-3 w-3" aria-hidden="true" />
-                            {isPreviewOverlap && !block.hasConflict ? 'Solapa' : 'Conflicto'}
+                        {isConflict && height >= 36 && (
+                          <span className="mb-0.5 inline-flex items-center gap-0.5 text-[9px] font-medium text-red-600">
+                            <AlertTriangle className="h-2.5 w-2.5" aria-hidden="true" />
+                            {isPreviewOnly ? 'Solapa' : 'Conflicto'}
                           </span>
                         )}
-                        <p className="truncate font-semibold leading-tight">{label}</p>
+                        <p className="truncate text-[11px] font-medium leading-tight text-slate-800">
+                          {label}
+                        </p>
                         {height >= 44 && (
-                          <p className="truncate text-[10px] opacity-80 leading-tight">
+                          <p className="truncate text-[10px] font-normal leading-tight text-slate-500">
                             Sec. {block.sectionCode}
                           </p>
                         )}
-                        {height >= 56 && block.classroom && (
-                          <p className="truncate text-[10px] opacity-70 leading-tight">
-                            {block.classroom}
+                        {height >= 52 && (
+                          <p
+                            className={`truncate text-[10px] leading-tight ${
+                              isConflict ? 'font-normal text-red-600/85' : 'font-normal text-slate-400'
+                            }`}
+                          >
+                            {isConflict
+                              ? formatTimeRange(block.startTime, block.endTime)
+                              : block.classroom ?? ''}
                           </p>
                         )}
                       </button>
@@ -353,24 +362,24 @@ export function WeeklyScheduleGrid({
                         return (
                           <div
                             key={`preview-${meeting.id}`}
-                            className={`schedule-preview-in pointer-events-none absolute inset-x-1 z-20 overflow-hidden rounded-lg border-2 px-2 py-1.5 text-left text-xs shadow-md transition-colors duration-300 ${
+                            className={`schedule-preview-in pointer-events-none absolute inset-x-1 z-20 overflow-hidden rounded-md border border-dashed px-2 py-1 text-left transition-colors duration-300 ${
                               hasPreviewConflict
-                                ? 'border-red-400/90 bg-red-100/95 text-red-950'
-                                : 'border-rose-300/80 bg-rose-100/95 text-rose-950'
+                                ? 'border-red-300/70 border-l-[3px] border-l-red-400 bg-red-50/30'
+                                : 'border-rose-300/60 bg-rose-50/40'
                             }`}
                             style={{ top, height }}
                             aria-hidden="true"
                           >
-                            <p className="truncate font-semibold leading-tight">
+                            <p className="truncate text-[11px] font-medium leading-tight text-slate-800">
                               {code}-{previewSection.sectionCode}
                             </p>
                             {height >= 40 && (
-                              <p className="truncate text-[10px] leading-tight opacity-90">
+                              <p className="truncate text-[10px] font-normal leading-tight text-slate-500">
                                 {formatTimeRange(meeting.startTime, meeting.endTime)}
                               </p>
                             )}
                             {height >= 52 && meeting.classroom && (
-                              <p className="truncate text-[10px] leading-tight opacity-80">
+                              <p className="truncate text-[10px] font-normal leading-tight text-slate-400">
                                 {meeting.classroom}
                               </p>
                             )}

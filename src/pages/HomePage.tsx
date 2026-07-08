@@ -276,17 +276,17 @@ export function HomePage() {
       )}
 
       {/* ── DESKTOP ─────────────────────────────────────────────────── */}
-      <div className="hidden flex-1 overflow-hidden md:flex">
-        {/* Panel de materias — permanente, al lado del sidebar */}
+      <div className="hidden min-h-0 flex-1 overflow-hidden md:flex">
+        {/* Explorador de materias — columna central del shell */}
         <aside
-          className="flex h-full min-h-0 w-[min(360px,30vw)] max-w-[400px] shrink-0 flex-col overflow-hidden border-r border-slate-100/80 bg-surface"
+          className="flex h-full min-h-0 w-[min(400px,32vw)] max-w-[420px] shrink-0 flex-col overflow-hidden border-r border-slate-200/60 bg-white"
           data-tour="course-panel"
         >
           <SectionSearchPanel key={searchPrefill} {...searchPanelProps} />
         </aside>
 
-        {/* Horario */}
-        <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
+        {/* Horario — área principal */}
+        <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-slate-50/45">
           <ScheduleHeader
             scheduleName={activeSchedule?.name ?? 'Mi horario'}
             periodName={activePeriod?.name ?? null}
@@ -382,7 +382,7 @@ export function HomePage() {
         />
 
         {/* Selector de días */}
-        <div className="shrink-0 border-b border-slate-100 bg-surface" data-tour="day-selector">
+        <div className="shrink-0 border-b border-slate-100/50 bg-slate-50/30" data-tour="day-selector">
           <div className="flex gap-1 overflow-x-auto px-3 py-2">
             {DAYS_OF_WEEK.map((day) => {
               const hasMeetings = selectedSections.some((s) =>
@@ -393,15 +393,15 @@ export function HomePage() {
                 <button
                   key={day.value}
                   onClick={() => setMobileDay(day.value)}
-                  className={`flex min-h-11 min-w-[52px] shrink-0 flex-col items-center justify-center rounded-xl px-2 py-1.5 text-xs font-medium transition ${
-                    isActive ? 'bg-primary text-white' : 'text-muted hover:bg-slate-100'
+                  className={`flex min-h-10 min-w-[50px] shrink-0 flex-col items-center justify-center rounded-lg px-2 py-1.5 text-xs font-normal transition ${
+                    isActive ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-100/80'
                   }`}
                   aria-pressed={isActive}
                 >
                   <span>{day.label.slice(0, 3)}</span>
                   {hasMeetings && (
                     <span
-                      className={`mt-0.5 h-1.5 w-1.5 rounded-full ${isActive ? 'bg-white/80' : 'bg-primary'}`}
+                      className={`mt-0.5 h-1.5 w-1.5 rounded-full ${isActive ? 'bg-white/70' : 'bg-slate-400/70'}`}
                       aria-hidden="true"
                     />
                   )}
@@ -551,7 +551,7 @@ function ScheduleHeader({
   onSync: () => void
 }) {
   return (
-    <header className="shrink-0 border-b border-slate-100/70 px-6 py-2.5">
+    <header className="shrink-0 border-b border-slate-200/50 bg-slate-50/45 px-6 py-2">
       <div className="flex items-start justify-between gap-4">
         <ScheduleContextBar
           scheduleName={scheduleName}
@@ -567,7 +567,7 @@ function ScheduleHeader({
         />
         <SummaryInfoButton onClick={onSummary} hasConflict={conflictCount > 0} />
       </div>
-      <div className="mt-1.5">
+      <div className="mt-1">
         <ScheduleSaveStatus
           isOnline={isOnline}
           isAuthenticated={isAuthenticated}
@@ -621,7 +621,7 @@ function MobileHeader({
   onSync: () => void
 }) {
   return (
-    <header className="shrink-0 border-b border-slate-100/70 px-4 py-2">
+    <header className="shrink-0 border-b border-slate-100/50 px-4 py-2">
       <div className="flex items-start justify-between gap-3">
         <ScheduleContextBar
           scheduleName={scheduleName}
@@ -637,7 +637,7 @@ function MobileHeader({
         />
         <SummaryInfoButton onClick={onSummary} hasConflict={conflictCount > 0} />
       </div>
-      <div className="mt-1.5">
+      <div className="mt-1">
         <ScheduleSaveStatus
           isOnline={isOnline}
           isAuthenticated={isAuthenticated}
@@ -670,7 +670,7 @@ function SummaryDrawer({
 }) {
   return (
     <div
-      className={`absolute right-0 top-0 z-30 flex h-full flex-col border-l border-slate-200/80 bg-surface shadow-xl transition-all duration-200 ${
+      className={`absolute right-0 top-0 z-30 flex h-full flex-col border-l border-slate-200/60 bg-white shadow-lg transition-all duration-200 ${
         open ? 'w-[320px]' : 'w-0 overflow-hidden'
       }`}
       aria-hidden={!open}

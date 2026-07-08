@@ -2,7 +2,7 @@ import type { ReactNode } from 'react'
 import { AlertTriangle, Check, X } from 'lucide-react'
 import { TeacherNameButton } from '@/components/teachers/TeacherNameButton'
 import { Button } from '@/components/ui/Button'
-import { CourseFootnoteNotice } from '@/components/schedule/CourseFootnoteNotice'
+import { CourseFootnoteCardNote } from '@/components/schedule/CourseFootnoteNotice'
 import type { CourseSection, ScheduleConflict } from '@/types/academic'
 import { getCourseFootnote } from '@/utils/courseFootnotes'
 import { formatDate } from '@/utils/dates'
@@ -81,7 +81,7 @@ export function SectionDetailPanel({
           </p>
           {footnote.kind && (
             <div className="mt-2">
-              <CourseFootnoteNotice kind={footnote.kind} compact />
+              <CourseFootnoteCardNote kind={footnote.kind} showDetail />
             </div>
           )}
           {progressLabel && (

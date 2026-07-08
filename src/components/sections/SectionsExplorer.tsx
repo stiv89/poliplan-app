@@ -4,7 +4,7 @@
 import { useMemo, useState } from 'react'
 import { AlertTriangle, Check, GraduationCap, Search } from 'lucide-react'
 import { CompactCareerSelect } from '@/components/schedule/CompactCareerSelect'
-import { CourseFootnoteNotice } from '@/components/schedule/CourseFootnoteNotice'
+import { CourseFootnoteCardNote } from '@/components/schedule/CourseFootnoteNotice'
 import { SectionListSkeleton } from '@/components/schedule/SectionListSkeleton'
 import { SectionDetailPanel } from '@/components/sections/SectionDetailPanel'
 import {
@@ -367,7 +367,7 @@ function CourseGroupBlock({
             </p>
             {group.courseFootnote && (
               <div className="mt-1">
-                <CourseFootnoteNotice kind={group.courseFootnote} compact />
+                <CourseFootnoteCardNote kind={group.courseFootnote} />
               </div>
             )}
             {group.courseCode && (
@@ -481,7 +481,7 @@ function SectionCompactRow({
                 </span>
                 {courseFootnote && (
                   <span className="mt-1 block">
-                    <CourseFootnoteNotice kind={courseFootnote} compact />
+                    <CourseFootnoteCardNote kind={courseFootnote} />
                   </span>
                 )}
               </>

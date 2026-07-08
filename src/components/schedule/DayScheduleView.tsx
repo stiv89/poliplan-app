@@ -117,9 +117,9 @@ export function DayScheduleView({
         onPopoverMouseLeave={handlePopoverMouseLeave}
       />
       {dayConflicts.length > 0 && (
-        <div className="rounded-xl border border-danger/30 bg-danger/5 px-3 py-2.5">
-          <p className="flex items-center gap-1.5 text-xs font-medium text-danger">
-            <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+        <div className="rounded-lg border border-red-100/90 border-l-[3px] border-l-red-400 bg-red-50/20 px-3 py-2">
+          <p className="flex items-center gap-1.5 text-xs font-normal text-red-600">
+            <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden="true" />
             {dayConflicts.length} conflicto{dayConflicts.length !== 1 ? 's' : ''} hoy
           </p>
         </div>
@@ -134,43 +134,44 @@ export function DayScheduleView({
           <button
             key={block.id}
             type="button"
-            className={`flex min-h-11 w-full items-start gap-3 rounded-2xl p-3 text-left transition active:scale-[0.99] ${
+            className={`flex min-h-11 w-full items-start gap-3 rounded-xl p-3 text-left transition active:scale-[0.995] ${
               block.hasConflict
-                ? 'border-2 border-danger/40 bg-danger/5'
-                : 'border border-slate-100'
+                ? 'border border-red-100/90 border-l-[3px] border-l-red-400 bg-red-50/20'
+                : 'border border-slate-100/80'
             }`}
             style={
               block.hasConflict
                 ? undefined
-                : { backgroundColor: color.bg, borderColor: `${color.border}80` }
+                : { backgroundColor: color.bg, borderColor: `${color.border}66` }
             }
             onClick={(event) => handleBlockClick(block, event)}
             onMouseEnter={(event) => handleBlockMouseEnter(block, event)}
             onMouseLeave={handleBlockMouseLeave}
           >
             <div className="min-w-[52px] pt-0.5 text-right">
-              <p
-                className="text-xs font-semibold"
-                style={{ color: block.hasConflict ? '#DC2626' : color.text }}
-              >
+              <p className="text-xs font-medium tabular-nums text-slate-600">
                 {block.startTime.slice(0, 5)}
               </p>
-              <p
-                className="text-[10px] opacity-60"
-                style={{ color: block.hasConflict ? '#DC2626' : color.text }}
-              >
+              <p className="text-[10px] font-normal tabular-nums text-slate-400">
                 {block.endTime.slice(0, 5)}
               </p>
             </div>
 
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-text">{label}</p>
-              <p className="text-xs text-muted">Sec. {block.sectionCode}</p>
-              {block.classroom && <p className="text-xs text-muted">{block.classroom}</p>}
               {block.hasConflict && (
-                <p className="mt-1 flex items-center gap-1 text-xs font-medium text-danger">
-                  <AlertTriangle className="h-3 w-3" aria-hidden="true" />
-                  Conflicto · {formatTimeRange(block.startTime, block.endTime)}
+                <p className="mb-0.5 inline-flex items-center gap-1 text-[10px] font-medium text-red-600">
+                  <AlertTriangle className="h-2.5 w-2.5" aria-hidden="true" />
+                  Conflicto
+                </p>
+              )}
+              <p className="truncate text-sm font-medium text-slate-800">{label}</p>
+              <p className="text-xs font-normal text-slate-500">Sec. {block.sectionCode}</p>
+              {block.classroom && !block.hasConflict && (
+                <p className="text-xs font-normal text-slate-400">{block.classroom}</p>
+              )}
+              {block.hasConflict && (
+                <p className="text-xs font-normal text-red-600/85">
+                  {formatTimeRange(block.startTime, block.endTime)}
                 </p>
               )}
             </div>

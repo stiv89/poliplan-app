@@ -101,9 +101,7 @@ export function formatScheduleCompact(
   options?: { isFinalExamOnly?: boolean },
 ): string {
   if (meetings.length === 0) {
-    return options?.isFinalExamOnly
-      ? 'Sin clases · solo examen final'
-      : 'Horario por confirmar'
+    return options?.isFinalExamOnly ? 'Sin clases' : 'Horario por confirmar'
   }
 
   const groups = new Map<string, number[]>()

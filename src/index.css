@@ -84,7 +84,8 @@ select {
   z-index: 0;
   pointer-events: none;
   border-radius: 0.75rem;
-  background: color-mix(in srgb, var(--color-primary-light) 14%, transparent);
+  background: color-mix(in srgb, var(--color-text) 5%, white);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-text) 6%, transparent);
   transition:
     top 320ms cubic-bezier(0.32, 0.72, 0, 1),
     left 320ms cubic-bezier(0.32, 0.72, 0, 1),
@@ -96,5 +97,288 @@ select {
 @media (prefers-reduced-motion: reduce) {
   .nav-rail-indicator {
     transition: none;
+  }
+}
+
+/* ── Tarjetas de materia (explorador) ───────────────────────────────────── */
+
+.course-card-surface {
+  background: rgba(248, 250, 253, 0.88);
+  border: 1px solid rgba(20, 40, 80, 0.08);
+  border-radius: 24px;
+  box-shadow:
+    0 1px 2px rgba(20, 40, 80, 0.04),
+    0 10px 30px rgba(20, 40, 80, 0.05);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition:
+    box-shadow 300ms ease,
+    background-color 300ms ease;
+}
+
+.course-card-surface[data-open='true'] {
+  box-shadow: 0 12px 34px rgba(20, 40, 80, 0.08);
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.course-card-details {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition:
+    grid-template-rows 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 220ms ease,
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.course-card-surface[data-open='true'] .course-card-details {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.course-card-surface:not([data-open='true']) .course-card-details {
+  pointer-events: none;
+  transition-duration: 280ms, 160ms, 220ms;
+}
+
+.course-card-details-inner {
+  overflow: hidden;
+}
+
+.course-card-chevron {
+  display: inline-block;
+  transition: transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.course-card-surface[data-open='true'] .course-card-chevron {
+  transform: rotate(180deg);
+}
+
+.course-card-surface[data-collapsible='true'] .section-row-surface {
+  opacity: 0;
+  transform: translateY(-6px);
+  transition:
+    opacity 220ms ease 60ms,
+    transform 280ms cubic-bezier(0.22, 1, 0.36, 1) 60ms,
+    box-shadow 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease;
+}
+
+.course-card-surface[data-open='true'] .section-row-surface {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.course-card-surface[data-open='true'] .section-row-surface:hover {
+  transform: translateY(-2px);
+}
+
+.expandable-details {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition:
+    grid-template-rows 360ms cubic-bezier(0.22, 1, 0.36, 1),
+    opacity 220ms ease,
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.expandable-details[data-open='true'] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.expandable-details:not([data-open='true']) {
+  transition-duration: 280ms, 160ms, 220ms;
+}
+
+.expandable-details-inner {
+  overflow: hidden;
+}
+
+.section-row-surface {
+  border-radius: 16px;
+  border: 1px solid rgba(20, 40, 80, 0.1);
+  background: #fff;
+  padding: 0.75rem 0.875rem;
+  box-shadow:
+    0 1px 2px rgba(20, 40, 80, 0.04),
+    0 4px 14px rgba(20, 40, 80, 0.04);
+  cursor: default;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease;
+}
+
+.section-row-surface:hover {
+  transform: translateY(-2px);
+  border-color: rgba(20, 40, 80, 0.16);
+  box-shadow: 0 8px 24px rgba(20, 40, 80, 0.07);
+}
+
+.section-row-surface:active {
+  transform: scale(0.995);
+}
+
+.section-row-surface.is-selected {
+  border-color: color-mix(in srgb, var(--color-primary) 22%, transparent);
+  background: color-mix(in srgb, var(--color-primary) 4%, white);
+  box-shadow:
+    0 1px 2px rgba(20, 40, 80, 0.04),
+    0 6px 18px rgba(11, 59, 143, 0.08);
+}
+
+.section-row-surface.is-selected:hover {
+  transform: none;
+}
+
+.section-row-surface.is-selected:active {
+  transform: none;
+}
+
+.section-row-surface.is-preview {
+  transform: translateY(-1px);
+  border-color: rgba(20, 40, 80, 0.14);
+  box-shadow: 0 6px 20px rgba(20, 40, 80, 0.06);
+}
+
+.section-row-surface.is-conflict {
+  border-color: color-mix(in srgb, #d97706 28%, transparent);
+  background: color-mix(in srgb, #d97706 3%, white);
+}
+
+.add-section-btn {
+  cursor: pointer;
+  display: inline-flex;
+  shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(20, 40, 80, 0.12);
+  background: #fff;
+  color: #64748b;
+  transition:
+    transform 140ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease,
+    color 180ms ease,
+    border-color 180ms ease;
+}
+
+.add-section-btn:hover:not(:disabled) {
+  background: #f3f6fb;
+  color: #475569;
+  box-shadow: 0 4px 12px rgba(20, 40, 80, 0.08);
+}
+
+.add-section-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.add-section-btn.is-added {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+  box-shadow: 0 4px 14px rgba(11, 59, 143, 0.22);
+}
+
+.add-section-btn.is-added:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--color-primary) 92%, black);
+  border-color: color-mix(in srgb, var(--color-primary) 92%, black);
+  color: #fff;
+}
+
+.footnote-pill {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border-radius: 9999px;
+  border: none;
+  background: color-mix(in srgb, #d97706 10%, white);
+  padding: 0.125rem 0.5rem;
+  font-size: 11px;
+  font-weight: 500;
+  color: rgba(146, 64, 14, 0.92);
+  transition: background-color 180ms ease;
+}
+
+.footnote-pill:hover {
+  background: color-mix(in srgb, #d97706 14%, white);
+}
+
+.course-card-header-btn {
+  cursor: pointer;
+  width: 100%;
+  border: none;
+  background: transparent;
+  padding: 0.875rem 0.875rem 0.625rem;
+  text-align: left;
+  transition:
+    opacity 180ms ease,
+    transform 180ms ease;
+}
+
+.course-card-header-btn:hover {
+  opacity: 0.92;
+}
+
+.course-card-header-btn:active {
+  transform: scale(0.995);
+}
+
+@keyframes check-pop {
+  0% {
+    transform: scale(0.4);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.12);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.check-pop {
+  animation: check-pop 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .expandable-details,
+  .course-card-details,
+  .course-card-surface,
+  .course-card-chevron,
+  .section-row-surface,
+  .add-section-btn,
+  .footnote-pill,
+  .course-card-header-btn {
+    transition: none;
+  }
+
+  .course-card-surface[data-open='true'] .course-card-chevron {
+    transform: rotate(180deg);
+  }
+
+  .section-row-surface:hover,
+  .section-row-surface:active,
+  .section-row-surface.is-preview,
+  .course-card-surface[data-open='true'] .section-row-surface:hover {
+    transform: none;
+  }
+
+  .check-pop {
+    animation: none;
   }
 }
