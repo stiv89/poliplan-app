@@ -1,0 +1,357 @@
+{
+  "academicPeriods": [
+    {
+      "id": "11111111-1111-4111-8111-111111111101",
+      "name": "Primer Cuatrimestre 2026",
+      "year": 2026,
+      "term": 1,
+      "startsAt": "2026-03-01",
+      "endsAt": "2026-07-15",
+      "isActive": true
+    },
+    {
+      "id": "11111111-1111-4111-8111-111111111102",
+      "name": "Segundo Cuatrimestre 2025",
+      "year": 2025,
+      "term": 2,
+      "startsAt": "2025-08-01",
+      "endsAt": "2025-12-15",
+      "isActive": false
+    }
+  ],
+  "careers": [
+    {
+      "id": "22222222-2222-4222-8222-222222222201",
+      "code": "INF",
+      "name": "Ingeniería Informática",
+      "faculty": "Facultad Politécnica",
+      "campus": "San Lorenzo"
+    },
+    {
+      "id": "22222222-2222-4222-8222-222222222202",
+      "code": "CIV",
+      "name": "Ingeniería Civil",
+      "faculty": "Facultad Politécnica",
+      "campus": "San Lorenzo"
+    }
+  ],
+  "courses": [
+    {
+      "id": "33333333-3333-4333-8333-333333333301",
+      "code": "INF101",
+      "name": "Programación I",
+      "careerId": "22222222-2222-4222-8222-222222222201",
+      "level": 1,
+      "semester": 1
+    },
+    {
+      "id": "33333333-3333-4333-8333-333333333302",
+      "code": "INF102",
+      "name": "Matemática Discreta",
+      "careerId": "22222222-2222-4222-8222-222222222201",
+      "level": 1,
+      "semester": 1
+    },
+    {
+      "id": "33333333-3333-4333-8333-333333333303",
+      "code": "INF201",
+      "name": "Estructuras de Datos",
+      "careerId": "22222222-2222-4222-8222-222222222201",
+      "level": 2,
+      "semester": 3
+    },
+    {
+      "id": "33333333-3333-4333-8333-333333333304",
+      "code": "INF202",
+      "name": "Bases de Datos",
+      "careerId": "22222222-2222-4222-8222-222222222201",
+      "level": 2,
+      "semester": 3
+    },
+    {
+      "id": "33333333-3333-4333-8333-333333333305",
+      "code": "INF301",
+      "name": "Ingeniería de Software",
+      "careerId": "22222222-2222-4222-8222-222222222201",
+      "level": 3,
+      "semester": 5
+    },
+    {
+      "id": "33333333-3333-4333-8333-333333333306",
+      "code": "INF302",
+      "name": "Redes de Computadoras",
+      "careerId": "22222222-2222-4222-8222-222222222201",
+      "level": 3,
+      "semester": 5
+    },
+    {
+      "id": "33333333-3333-4333-8333-333333333307",
+      "code": "CIV101",
+      "name": "Estática",
+      "careerId": "22222222-2222-4222-8222-222222222202",
+      "level": 1,
+      "semester": 1
+    },
+    {
+      "id": "33333333-3333-4333-8333-333333333308",
+      "code": "CIV102",
+      "name": "Topografía",
+      "careerId": "22222222-2222-4222-8222-222222222202",
+      "level": 1,
+      "semester": 1
+    }
+  ],
+  "sections": [
+    {
+      "id": "44444444-4444-4444-8444-444444444401",
+      "courseId": "33333333-3333-4333-8333-333333333301",
+      "academicPeriodId": "11111111-1111-4111-8111-111111111101",
+      "sectionCode": "A",
+      "shift": "Mañana",
+      "teacherName": "Prof. Ana Ríos",
+      "teacherEmail": "ana.rios@example.com",
+      "meetings": [
+        {
+          "id": "55555555-5555-4555-8555-555555555501",
+          "sectionId": "44444444-4444-4444-8444-444444444401",
+          "dayOfWeek": 1,
+          "startTime": "08:00:00",
+          "endTime": "10:00:00",
+          "classroom": "Aula 101",
+          "specialDates": null
+        },
+        {
+          "id": "55555555-5555-4555-8555-555555555502",
+          "sectionId": "44444444-4444-4444-8444-444444444401",
+          "dayOfWeek": 3,
+          "startTime": "08:00:00",
+          "endTime": "10:00:00",
+          "classroom": "Lab 2",
+          "specialDates": null
+        }
+      ],
+      "exams": [
+        {
+          "id": "66666666-6666-4666-8666-666666666601",
+          "sectionId": "44444444-4444-4444-8444-444444444401",
+          "examType": "Parcial 1",
+          "examDate": "2026-04-15",
+          "startTime": "08:00:00",
+          "endTime": "10:00:00",
+          "classroom": "Aula 101"
+        }
+      ]
+    },
+    {
+      "id": "44444444-4444-4444-8444-444444444402",
+      "courseId": "33333333-3333-4333-8333-333333333302",
+      "academicPeriodId": "11111111-1111-4111-8111-111111111101",
+      "sectionCode": "B",
+      "shift": "Tarde",
+      "teacherName": "Prof. Luis Méndez",
+      "teacherEmail": "luis.mendez@example.com",
+      "meetings": [
+        {
+          "id": "55555555-5555-4555-8555-555555555503",
+          "sectionId": "44444444-4444-4444-8444-444444444402",
+          "dayOfWeek": 1,
+          "startTime": "17:00:00",
+          "endTime": "19:00:00",
+          "classroom": "Aula 205",
+          "specialDates": null
+        }
+      ],
+      "exams": [
+        {
+          "id": "66666666-6666-4666-8666-666666666602",
+          "sectionId": "44444444-4444-4444-8444-444444444402",
+          "examType": "Parcial 1",
+          "examDate": "2026-04-18",
+          "startTime": "17:00:00",
+          "endTime": "19:00:00",
+          "classroom": "Aula 205"
+        }
+      ]
+    },
+    {
+      "id": "44444444-4444-4444-8444-444444444403",
+      "courseId": "33333333-3333-4333-8333-333333333303",
+      "academicPeriodId": "11111111-1111-4111-8111-111111111101",
+      "sectionCode": "A",
+      "shift": "Noche",
+      "teacherName": "Prof. Carla Duarte",
+      "teacherEmail": "carla.duarte@example.com",
+      "meetings": [
+        {
+          "id": "55555555-5555-4555-8555-555555555504",
+          "sectionId": "44444444-4444-4444-8444-444444444403",
+          "dayOfWeek": 1,
+          "startTime": "18:00:00",
+          "endTime": "20:00:00",
+          "classroom": "Aula 310",
+          "specialDates": null
+        },
+        {
+          "id": "55555555-5555-4555-8555-555555555505",
+          "sectionId": "44444444-4444-4444-8444-444444444403",
+          "dayOfWeek": 4,
+          "startTime": "19:00:00",
+          "endTime": "21:00:00",
+          "classroom": "Lab 5",
+          "specialDates": null
+        }
+      ],
+      "exams": []
+    },
+    {
+      "id": "44444444-4444-4444-8444-444444444404",
+      "courseId": "33333333-3333-4333-8333-333333333304",
+      "academicPeriodId": "11111111-1111-4111-8111-111111111101",
+      "sectionCode": "C",
+      "shift": "Noche",
+      "teacherName": "Prof. Jorge Benítez",
+      "teacherEmail": "jorge.benitez@example.com",
+      "meetings": [
+        {
+          "id": "55555555-5555-4555-8555-555555555506",
+          "sectionId": "44444444-4444-4444-8444-444444444404",
+          "dayOfWeek": 2,
+          "startTime": "08:00:00",
+          "endTime": "10:00:00",
+          "classroom": "Aula 102",
+          "specialDates": null
+        }
+      ],
+      "exams": []
+    },
+    {
+      "id": "44444444-4444-4444-8444-444444444405",
+      "courseId": "33333333-3333-4333-8333-333333333305",
+      "academicPeriodId": "11111111-1111-4111-8111-111111111101",
+      "sectionCode": "A",
+      "shift": "Tarde",
+      "teacherName": "Prof. Sofía Acosta",
+      "teacherEmail": "sofia.acosta@example.com",
+      "meetings": [
+        {
+          "id": "55555555-5555-4555-8555-555555555507",
+          "sectionId": "44444444-4444-4444-8444-444444444405",
+          "dayOfWeek": 2,
+          "startTime": "08:00:00",
+          "endTime": "10:00:00",
+          "classroom": "Aula 401",
+          "specialDates": null
+        }
+      ],
+      "exams": []
+    },
+    {
+      "id": "44444444-4444-4444-8444-444444444406",
+      "courseId": "33333333-3333-4333-8333-333333333306",
+      "academicPeriodId": "11111111-1111-4111-8111-111111111101",
+      "sectionCode": "B",
+      "shift": "Mañana",
+      "teacherName": "Prof. Diego Romero",
+      "teacherEmail": "diego.romero@example.com",
+      "meetings": [
+        {
+          "id": "55555555-5555-4555-8555-555555555508",
+          "sectionId": "44444444-4444-4444-8444-444444444406",
+          "dayOfWeek": 5,
+          "startTime": "10:00:00",
+          "endTime": "12:00:00",
+          "classroom": "Lab Redes",
+          "specialDates": null
+        },
+        {
+          "id": "55555555-5555-4555-8555-555555555509",
+          "sectionId": "44444444-4444-4444-8444-444444444406",
+          "dayOfWeek": 6,
+          "startTime": "08:00:00",
+          "endTime": "11:00:00",
+          "classroom": "Lab Redes",
+          "specialDates": null
+        }
+      ],
+      "exams": []
+    },
+    {
+      "id": "44444444-4444-4444-8444-444444444407",
+      "courseId": "33333333-3333-4333-8333-333333333307",
+      "academicPeriodId": "11111111-1111-4111-8111-111111111101",
+      "sectionCode": "A",
+      "shift": "Mañana",
+      "teacherName": "Prof. Elena Vargas",
+      "teacherEmail": "elena.vargas@example.com",
+      "meetings": [
+        {
+          "id": "55555555-5555-4555-8555-555555555510",
+          "sectionId": "44444444-4444-4444-8444-444444444407",
+          "dayOfWeek": 3,
+          "startTime": "14:00:00",
+          "endTime": "16:00:00",
+          "classroom": "Aula Civil 1",
+          "specialDates": null
+        }
+      ],
+      "exams": []
+    },
+    {
+      "id": "44444444-4444-4444-8444-444444444408",
+      "courseId": "33333333-3333-4333-8333-333333333308",
+      "academicPeriodId": "11111111-1111-4111-8111-111111111101",
+      "sectionCode": "A",
+      "shift": "Tarde",
+      "teacherName": "Prof. Martín Ayala",
+      "teacherEmail": "martin.ayala@example.com",
+      "meetings": [
+        {
+          "id": "55555555-5555-4555-8555-555555555511",
+          "sectionId": "44444444-4444-4444-8444-444444444408",
+          "dayOfWeek": 4,
+          "startTime": "15:00:00",
+          "endTime": "17:00:00",
+          "classroom": "Campo práctico",
+          "specialDates": null
+        }
+      ],
+      "exams": []
+    },
+    {
+      "id": "44444444-4444-4444-8444-444444444409",
+      "courseId": "33333333-3333-4333-8333-333333333301",
+      "academicPeriodId": "11111111-1111-4111-8111-111111111102",
+      "sectionCode": "B",
+      "shift": "Noche",
+      "teacherName": "Prof. Ana Ríos",
+      "teacherEmail": "ana.rios@example.com",
+      "meetings": [
+        {
+          "id": "55555555-5555-4555-8555-555555555512",
+          "sectionId": "44444444-4444-4444-8444-444444444409",
+          "dayOfWeek": 2,
+          "startTime": "19:00:00",
+          "endTime": "21:00:00",
+          "classroom": "Aula 101",
+          "specialDates": null
+        }
+      ],
+      "exams": []
+    }
+  ],
+  "scheduleVersions": [
+    {
+      "id": "77777777-7777-4777-8777-777777777701",
+      "academicPeriodId": "11111111-1111-4111-8111-111111111101",
+      "version": 1,
+      "sourceUrl": null,
+      "sourceFileName": "sample-schedule.json",
+      "sourceChecksum": "sample-v1",
+      "sourceModifiedAt": null,
+      "importedAt": "2026-07-01T12:00:00.000Z",
+      "isActive": true,
+      "importStatus": "success",
+      "errorMessage": null
+    }
+  ]
+}

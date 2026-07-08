@@ -1,0 +1,412 @@
+import { db } from '@/db/database'
+import { getSupabaseClient } from '@/lib/supabase'
+import {
+  LocalScheduleRepository,
+  localScheduleRepository,
+} from '@/repositories/LocalScheduleRepository'
+import type { ScheduleRepository } from '@/repositories/ScheduleRepository'
+import type {
+  AcademicPeriod,
+  Career,
+  Course,
+  CourseSection,
+  ScheduleVersion,
+} from '@/types/academic'
+import {
+  mapDbAcademicPeriod,
+  mapDbCareer,
+  mapDbCourse,
+  mapDbExam,
+  mapDbMeeting,
+  mapDbScheduleVersion,
+  mapDbSection,
+} from '@/utils/normalization'
+
+export class SupabaseScheduleRepository implements ScheduleRepository {
+  private get client() {
+    const supabase = getSupabaseClient()
+    if (!supabase) {
+      throw new Error('Supabase no está configurado')
+    }
+    return supabase
+  }
+
+  async getAcademicPeriods(): Promise<AcademicPeriod[]> {
+    const { data, error } = await this.client
+      .from('academic_periods')
+      .select('*')
+      .order('year', { ascending: false })
+
+    if (error) {
+      throw error
+    }
+
+    return (data ?? []).map((row) => mapDbAcademicPeriod(row))
+  }
+
+  async getActiveAcademicPeriod(): Promise<AcademicPeriod | null> {
+    const { data, error } = await this.client
+      .from('academic_periods')
+      .select('*')
+      .eq('is_active', true)
+      .maybeSingle()
+
+    if (error) {
+      throw error
+    }
+
+    return data ? mapDbAcademicPeriod(data) : null
+  }
+
+  async getCareers(_periodId: string): Promise<Career[]> {
+    const { data, error } = await this.client.from('careers').select('*').order('name')
+    if (error) {
+      throw error
+    }
+    return (data ?? []).map((row) => mapDbCareer(row))
+  }
+
+  async getCourses(_periodId: string, careerId: string): Promise<Course[]> {
+    const { data, error } = await this.client
+      .from('courses')
+      .select('*')
+      .eq('career_id', careerId)
+      .order('name')
+
+    if (error) {
+      throw error
+    }
+
+    return (data ?? []).map((row) => mapDbCourse(row))
+  }
+
+  async getCoursesForPeriod(periodId: string): Promise<Course[]> {
+    return this.fetchAllCourses(periodId)
+  }
+
+  async getSections(periodId: string, courseId: string): Promise<CourseSection[]> {
+    const sections = await this.fetchSections({ periodId, courseId })
+    return sections
+  }
+
+  async getAllSections(periodId: string, careerId?: string): Promise<CourseSection[]> {
+    return this.fetchSections({ periodId, careerId })
+  }
+
+  async getSectionById(sectionId: string): Promise<CourseSection | null> {
+    const { data, error } = await this.client
+      .from('sections')
+      .select('*')
+      .eq('id', sectionId)
+      .maybeSingle()
+
+    if (error) {
+      throw error
+    }
+
+    if (!data) {
+      return null
+    }
+
+    const [meetings, exams] = await Promise.all([
+      this.fetchMeetings([sectionId]),
+      this.fetchExams([sectionId]),
+    ])
+
+    return mapDbSection(data, meetings, exams)
+  }
+
+  async getActiveScheduleVersion(periodId: string): Promise<ScheduleVersion | null> {
+    const { data, error } = await this.client
+      .from('schedule_versions')
+      .select('*')
+      .eq('academic_period_id', periodId)
+      .eq('is_active', true)
+      .maybeSingle()
+
+    if (error) {
+      throw error
+    }
+
+    return data ? mapDbScheduleVersion(data) : null
+  }
+
+  async refreshScheduleData(periodId: string): Promise<void> {
+    const [
+      periods,
+      careers,
+      courses,
+      sectionsRows,
+      meetingsRows,
+      examsRows,
+      version,
+    ] = await Promise.all([
+      this.getAcademicPeriods(),
+      this.getCareers(periodId),
+      this.fetchAllCourses(periodId),
+      this.fetchSectionRows(periodId),
+      this.fetchAllMeetings(periodId),
+      this.fetchAllExams(periodId),
+      this.getActiveScheduleVersion(periodId),
+    ])
+
+    const sectionIds = sectionsRows.map((row) => String(row.id))
+    const meetings = meetingsRows.filter((meeting) =>
+      sectionIds.includes(meeting.sectionId),
+    )
+    const exams = examsRows.filter((exam) => sectionIds.includes(exam.sectionId))
+
+    const sections = sectionsRows.map((row) =>
+      mapDbSection(
+        row,
+        meetings.filter((meeting) => meeting.sectionId === String(row.id)),
+        exams.filter((exam) => exam.sectionId === String(row.id)),
+      ),
+    )
+
+    await db.transaction(
+      'rw',
+      [
+        db.cachedAcademicPeriods,
+        db.cachedCareers,
+        db.cachedCourses,
+        db.cachedSections,
+        db.cachedMeetings,
+        db.cachedExams,
+        db.localScheduleVersions,
+      ],
+      async () => {
+        await db.cachedAcademicPeriods.bulkPut(periods)
+        await db.cachedCareers.bulkPut(careers)
+        await db.cachedCourses.bulkPut(courses)
+        await db.cachedSections.bulkPut(sections)
+        await db.cachedMeetings.bulkPut(meetings)
+        await db.cachedExams.bulkPut(exams)
+
+        if (version) {
+          await db.localScheduleVersions.put({
+            academicPeriodId: periodId,
+            version: version.version,
+            downloadedAt: new Date().toISOString(),
+            checksum: version.sourceChecksum,
+          })
+        }
+      },
+    )
+  }
+
+  private async fetchSections(input: {
+    periodId: string
+    courseId?: string
+    careerId?: string
+  }): Promise<CourseSection[]> {
+    const rows = await this.fetchSectionRows(input.periodId, input.courseId)
+
+    let sectionRows = rows
+    if (input.careerId) {
+      const courses = await this.getCourses(input.periodId, input.careerId)
+      const courseIds = new Set(courses.map((course) => course.id))
+      sectionRows = rows.filter((row) => courseIds.has(String(row.course_id)))
+    }
+
+    const sectionIds = sectionRows.map((row) => String(row.id))
+    const [meetings, exams] = await Promise.all([
+      this.fetchMeetings(sectionIds),
+      this.fetchExams(sectionIds),
+    ])
+
+    return sectionRows.map((row) =>
+      mapDbSection(
+        row,
+        meetings.filter((meeting) => meeting.sectionId === String(row.id)),
+        exams.filter((exam) => exam.sectionId === String(row.id)),
+      ),
+    )
+  }
+
+  private async fetchSectionRows(periodId: string, courseId?: string) {
+    let query = this.client.from('sections').select('*').eq('academic_period_id', periodId)
+    if (courseId) {
+      query = query.eq('course_id', courseId)
+    }
+    const { data, error } = await query
+    if (error) {
+      throw error
+    }
+    return data ?? []
+  }
+
+  private async fetchAllCourses(periodId: string): Promise<Course[]> {
+    const { data: sectionRows, error: sectionError } = await this.client
+      .from('sections')
+      .select('course_id')
+      .eq('academic_period_id', periodId)
+
+    if (sectionError) {
+      throw sectionError
+    }
+
+    const courseIds = [...new Set((sectionRows ?? []).map((row) => String(row.course_id)))]
+    if (courseIds.length === 0) {
+      return []
+    }
+
+    const { data, error } = await this.client.from('courses').select('*').in('id', courseIds)
+    if (error) {
+      throw error
+    }
+
+    return (data ?? []).map((row) => mapDbCourse(row))
+  }
+
+  private async fetchMeetings(sectionIds: string[]) {
+    if (sectionIds.length === 0) {
+      return []
+    }
+
+    const { data, error } = await this.client
+      .from('class_meetings')
+      .select('*')
+      .in('section_id', sectionIds)
+
+    if (error) {
+      throw error
+    }
+
+    return (data ?? []).map((row) => mapDbMeeting(row))
+  }
+
+  private async fetchAllMeetings(periodId: string) {
+    const sectionRows = await this.fetchSectionRows(periodId)
+    return this.fetchMeetings(sectionRows.map((row) => String(row.id)))
+  }
+
+  private async fetchExams(sectionIds: string[]) {
+    if (sectionIds.length === 0) {
+      return []
+    }
+
+    const { data, error } = await this.client
+      .from('exams')
+      .select('*')
+      .in('section_id', sectionIds)
+
+    if (error) {
+      throw error
+    }
+
+    return (data ?? []).map((row) => mapDbExam(row))
+  }
+
+  private async fetchAllExams(periodId: string) {
+    const sectionRows = await this.fetchSectionRows(periodId)
+    return this.fetchExams(sectionRows.map((row) => String(row.id)))
+  }
+}
+
+export class CompositeScheduleRepository implements ScheduleRepository {
+  constructor(
+    private remote: SupabaseScheduleRepository,
+    private local: LocalScheduleRepository,
+  ) {}
+
+  async getAcademicPeriods(): Promise<AcademicPeriod[]> {
+    return this.withFallback(() => this.remote.getAcademicPeriods(), () =>
+      this.local.getAcademicPeriods(),
+    )
+  }
+
+  async getActiveAcademicPeriod(): Promise<AcademicPeriod | null> {
+    return this.withFallback(() => this.remote.getActiveAcademicPeriod(), () =>
+      this.local.getActiveAcademicPeriod(),
+    )
+  }
+
+  async getCareers(periodId: string): Promise<Career[]> {
+    return this.withFallback(() => this.remote.getCareers(periodId), () =>
+      this.local.getCareers(periodId),
+    )
+  }
+
+  async getCourses(periodId: string, careerId: string): Promise<Course[]> {
+    return this.withFallback(() => this.remote.getCourses(periodId, careerId), () =>
+      this.local.getCourses(periodId, careerId),
+    )
+  }
+
+  async getCoursesForPeriod(periodId: string): Promise<Course[]> {
+    return this.withFallback(() => this.remote.getCoursesForPeriod(periodId), () =>
+      this.local.getCoursesForPeriod(periodId),
+    )
+  }
+
+  async getSections(periodId: string, courseId: string): Promise<CourseSection[]> {
+    return this.withFallback(() => this.remote.getSections(periodId, courseId), () =>
+      this.local.getSections(periodId, courseId),
+    )
+  }
+
+  async getAllSections(periodId: string, careerId?: string): Promise<CourseSection[]> {
+    return this.withFallback(() => this.remote.getAllSections(periodId, careerId), () =>
+      this.local.getAllSections(periodId, careerId),
+    )
+  }
+
+  async getSectionById(sectionId: string): Promise<CourseSection | null> {
+    return this.withFallback(() => this.remote.getSectionById(sectionId), () =>
+      this.local.getSectionById(sectionId),
+    )
+  }
+
+  async getActiveScheduleVersion(periodId: string): Promise<ScheduleVersion | null> {
+    return this.withFallback(() => this.remote.getActiveScheduleVersion(periodId), () =>
+      this.local.getActiveScheduleVersion(periodId),
+    )
+  }
+
+  async refreshScheduleData(periodId: string): Promise<void> {
+    if (!navigator.onLine || !getSupabaseClient()) {
+      await this.local.refreshScheduleData(periodId)
+      return
+    }
+
+    try {
+      await this.remote.refreshScheduleData(periodId)
+    } catch {
+      await this.local.refreshScheduleData(periodId)
+    }
+  }
+
+  private async withFallback<T>(
+    remoteFn: () => Promise<T>,
+    localFn: () => Promise<T>,
+  ): Promise<T> {
+    if (!navigator.onLine || !getSupabaseClient()) {
+      return localFn()
+    }
+
+    try {
+      return await remoteFn()
+    } catch {
+      return localFn()
+    }
+  }
+}
+
+const supabaseRepository = new SupabaseScheduleRepository()
+
+export function createScheduleRepository(): ScheduleRepository {
+  if (import.meta.env.VITE_USE_SAMPLE_DATA === 'true') {
+    return localScheduleRepository
+  }
+
+  if (!getSupabaseClient()) {
+    return localScheduleRepository
+  }
+
+  return new CompositeScheduleRepository(supabaseRepository, localScheduleRepository)
+}
+
+export const scheduleRepository = createScheduleRepository()
+
+export { localScheduleRepository }
