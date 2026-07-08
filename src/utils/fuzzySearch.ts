@@ -13,22 +13,24 @@ export function levenshteinDistance(left: string, right: string): number {
   if (left.length === 0) return right.length
   if (right.length === 0) return left.length
 
-  const matrix = Array.from({ length: left.length + 1 }, (_, row) =>
+  const matrix: number[][] = Array.from({ length: left.length + 1 }, (_, row) =>
     Array.from({ length: right.length + 1 }, (_, col) => (row === 0 ? col : col === 0 ? row : 0)),
   )
 
   for (let row = 1; row <= left.length; row += 1) {
+    const currentRow = matrix[row]!
+    const previousRow = matrix[row - 1]!
     for (let col = 1; col <= right.length; col += 1) {
       const cost = left[row - 1] === right[col - 1] ? 0 : 1
-      matrix[row][col] = Math.min(
-        matrix[row - 1][col] + 1,
-        matrix[row][col - 1] + 1,
-        matrix[row - 1][col - 1] + cost,
+      currentRow[col] = Math.min(
+        previousRow[col]! + 1,
+        currentRow[col - 1]! + 1,
+        previousRow[col - 1]! + cost,
       )
     }
   }
 
-  return matrix[left.length][right.length]
+  return matrix[left.length]![right.length]!
 }
 
 function isSubsequence(needle: string, haystack: string): boolean {

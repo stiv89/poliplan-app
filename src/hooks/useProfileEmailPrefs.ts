@@ -18,12 +18,14 @@ export function useProfileEmailPrefs() {
     let cancelled = false
     setLoading(true)
 
-    void client
-      .from('profiles')
-      .select('notify_schedule_updates')
-      .eq('id', user.id)
-      .maybeSingle()
-      .then(({ data, error }) => {
+    void (async () => {
+      try {
+        const { data, error } = await client
+          .from('profiles')
+          .select('notify_schedule_updates')
+          .eq('id', user.id)
+          .maybeSingle()
+
         if (cancelled) return
         if (error) {
           console.warn('useProfileEmailPrefs', error.message)
@@ -32,10 +34,10 @@ export function useProfileEmailPrefs() {
         if (data?.notify_schedule_updates != null) {
           setNotifyScheduleUpdates(data.notify_schedule_updates)
         }
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setLoading(false)
-      })
+      }
+    })()
 
     return () => {
       cancelled = true
@@ -57,7 +59,7 @@ export function useProfileEmailPrefs() {
 
     if (error) {
       console.warn('useProfileEmailPrefs update', error.message)
-      setNotifyScheduleUpdates((current) => !enabled)
+      setNotifyScheduleUpdates(!enabled)
     }
   }, [user])
 

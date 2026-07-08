@@ -73,7 +73,7 @@ describe('scheduleFilters', () => {
     const section = {
       id: 's-def',
       meetings: [],
-    } as CourseSection
+    } as unknown as CourseSection
 
     expect(sectionMatchesViewFilters(section, DEFAULT_SCHEDULE_VIEW_FILTERS)).toBe(true)
     expect(
