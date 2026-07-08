@@ -132,23 +132,20 @@ export class SupabaseScheduleRepository implements ScheduleRepository {
   }
 
   async refreshScheduleData(periodId: string): Promise<void> {
-    const [
-      periods,
-      careers,
-      courses,
-      sectionsRows,
-      meetingsRows,
-      examsRows,
-      version,
-    ] = await Promise.all([
-      this.getAcademicPeriods(),
-      this.getCareers(periodId),
-      this.fetchAllCourses(periodId),
-      this.fetchSectionRows(periodId),
-      this.fetchAllMeetings(periodId),
-      this.fetchAllExams(periodId),
-      this.getActiveScheduleVersion(periodId),
-    ])
+    const version = await this.getActiveScheduleVersion(periodId)
+    if (!version) {
+      throw new Error('No hay versión activa para sincronizar')
+    }
+
+    const [periods, careers, courses, sectionsRows, meetingsRows, examsRows] =
+      await Promise.all([
+        this.getAcademicPeriods(),
+        this.getCareers(periodId),
+        this.fetchAllCourses(periodId, version.id),
+        this.fetchSectionRows(periodId, undefined, version.id),
+        this.fetchAllMeetings(periodId, version.id),
+        this.fetchAllExams(periodId, version.id),
+      ])
 
     const sectionIds = sectionsRows.map((row) => String(row.id))
     const meetings = meetingsRows.filter((meeting) =>
@@ -164,35 +161,99 @@ export class SupabaseScheduleRepository implements ScheduleRepository {
       ),
     )
 
-    await db.transaction(
-      'rw',
-      [
-        db.cachedAcademicPeriods,
-        db.cachedCareers,
-        db.cachedCourses,
-        db.cachedSections,
-        db.cachedMeetings,
-        db.cachedExams,
-        db.localScheduleVersions,
-      ],
-      async () => {
-        await db.cachedAcademicPeriods.bulkPut(periods)
-        await db.cachedCareers.bulkPut(careers)
-        await db.cachedCourses.bulkPut(courses)
-        await db.cachedSections.bulkPut(sections)
-        await db.cachedMeetings.bulkPut(meetings)
-        await db.cachedExams.bulkPut(exams)
+    const previousSnapshot = {
+      periods: await db.cachedAcademicPeriods.toArray(),
+      careers: await db.cachedCareers.toArray(),
+      courses: await db.cachedCourses.toArray(),
+      sections: await db.cachedSections.toArray(),
+      meetings: await db.cachedMeetings.toArray(),
+      exams: await db.cachedExams.toArray(),
+      versions: await db.localScheduleVersions.toArray(),
+    }
 
-        if (version) {
+    try {
+      await db.transaction(
+        'rw',
+        [
+          db.cachedAcademicPeriods,
+          db.cachedCareers,
+          db.cachedCourses,
+          db.cachedSections,
+          db.cachedMeetings,
+          db.cachedExams,
+          db.localScheduleVersions,
+        ],
+        async () => {
+          const unrelatedPeriods = previousSnapshot.periods.filter(
+            (period) => period.id !== periodId,
+          )
+          const unrelatedSections = previousSnapshot.sections.filter(
+            (section) => section.academicPeriodId !== periodId,
+          )
+          const unrelatedSectionIds = new Set(unrelatedSections.map((section) => section.id))
+          const unrelatedMeetings = previousSnapshot.meetings.filter(
+            (meeting) => !unrelatedSectionIds.has(meeting.sectionId),
+          )
+          const unrelatedExams = previousSnapshot.exams.filter(
+            (exam) => !unrelatedSectionIds.has(exam.sectionId),
+          )
+
+          await db.cachedAcademicPeriods.clear()
+          await db.cachedCareers.clear()
+          await db.cachedCourses.clear()
+          await db.cachedSections.clear()
+          await db.cachedMeetings.clear()
+          await db.cachedExams.clear()
+
+          await db.cachedAcademicPeriods.bulkPut(unrelatedPeriods)
+          await db.cachedAcademicPeriods.bulkPut(periods)
+          await db.cachedCareers.bulkPut(careers)
+          await db.cachedCourses.bulkPut(courses)
+          await db.cachedSections.bulkPut(unrelatedSections)
+          await db.cachedSections.bulkPut(sections)
+          await db.cachedMeetings.bulkPut(unrelatedMeetings)
+          await db.cachedMeetings.bulkPut(meetings)
+          await db.cachedExams.bulkPut(unrelatedExams)
+          await db.cachedExams.bulkPut(exams)
+
           await db.localScheduleVersions.put({
             academicPeriodId: periodId,
             version: version.version,
             downloadedAt: new Date().toISOString(),
             checksum: version.sourceChecksum,
           })
-        }
-      },
-    )
+        },
+      )
+    } catch (error) {
+      await db.transaction(
+        'rw',
+        [
+          db.cachedAcademicPeriods,
+          db.cachedCareers,
+          db.cachedCourses,
+          db.cachedSections,
+          db.cachedMeetings,
+          db.cachedExams,
+          db.localScheduleVersions,
+        ],
+        async () => {
+          await db.cachedAcademicPeriods.clear()
+          await db.cachedCareers.clear()
+          await db.cachedCourses.clear()
+          await db.cachedSections.clear()
+          await db.cachedMeetings.clear()
+          await db.cachedExams.clear()
+          await db.cachedAcademicPeriods.bulkPut(previousSnapshot.periods)
+          await db.cachedCareers.bulkPut(previousSnapshot.careers)
+          await db.cachedCourses.bulkPut(previousSnapshot.courses)
+          await db.cachedSections.bulkPut(previousSnapshot.sections)
+          await db.cachedMeetings.bulkPut(previousSnapshot.meetings)
+          await db.cachedExams.bulkPut(previousSnapshot.exams)
+          await db.localScheduleVersions.bulkPut(previousSnapshot.versions)
+        },
+      )
+      throw error
+    }
   }
 
   private async fetchSections(input: {
@@ -200,7 +261,12 @@ export class SupabaseScheduleRepository implements ScheduleRepository {
     courseId?: string
     careerId?: string
   }): Promise<CourseSection[]> {
-    const rows = await this.fetchSectionRows(input.periodId, input.courseId)
+    const version = await this.getActiveScheduleVersion(input.periodId)
+    if (!version) {
+      return []
+    }
+
+    const rows = await this.fetchSectionRows(input.periodId, input.courseId, version.id)
 
     let sectionRows = rows
     if (input.careerId) {
@@ -224,8 +290,23 @@ export class SupabaseScheduleRepository implements ScheduleRepository {
     )
   }
 
-  private async fetchSectionRows(periodId: string, courseId?: string) {
-    let query = this.client.from('sections').select('*').eq('academic_period_id', periodId)
+  private async fetchSectionRows(
+    periodId: string,
+    courseId?: string,
+    versionId?: string,
+  ) {
+    const activeVersionId =
+      versionId ?? (await this.getActiveScheduleVersion(periodId))?.id ?? null
+
+    if (!activeVersionId) {
+      return []
+    }
+
+    let query = this.client
+      .from('sections')
+      .select('*')
+      .eq('academic_period_id', periodId)
+      .eq('schedule_version_id', activeVersionId)
     if (courseId) {
       query = query.eq('course_id', courseId)
     }
@@ -236,11 +317,19 @@ export class SupabaseScheduleRepository implements ScheduleRepository {
     return data ?? []
   }
 
-  private async fetchAllCourses(periodId: string): Promise<Course[]> {
+  private async fetchAllCourses(periodId: string, versionId?: string): Promise<Course[]> {
+    const activeVersionId =
+      versionId ?? (await this.getActiveScheduleVersion(periodId))?.id ?? null
+
+    if (!activeVersionId) {
+      return []
+    }
+
     const { data: sectionRows, error: sectionError } = await this.client
       .from('sections')
       .select('course_id')
       .eq('academic_period_id', periodId)
+      .eq('schedule_version_id', activeVersionId)
 
     if (sectionError) {
       throw sectionError
@@ -276,8 +365,8 @@ export class SupabaseScheduleRepository implements ScheduleRepository {
     return (data ?? []).map((row) => mapDbMeeting(row))
   }
 
-  private async fetchAllMeetings(periodId: string) {
-    const sectionRows = await this.fetchSectionRows(periodId)
+  private async fetchAllMeetings(periodId: string, versionId?: string) {
+    const sectionRows = await this.fetchSectionRows(periodId, undefined, versionId)
     return this.fetchMeetings(sectionRows.map((row) => String(row.id)))
   }
 
@@ -298,8 +387,8 @@ export class SupabaseScheduleRepository implements ScheduleRepository {
     return (data ?? []).map((row) => mapDbExam(row))
   }
 
-  private async fetchAllExams(periodId: string) {
-    const sectionRows = await this.fetchSectionRows(periodId)
+  private async fetchAllExams(periodId: string, versionId?: string) {
+    const sectionRows = await this.fetchSectionRows(periodId, undefined, versionId)
     return this.fetchExams(sectionRows.map((row) => String(row.id)))
   }
 }

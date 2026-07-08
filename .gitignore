@@ -15,6 +15,7 @@ dist-ssr
 # Environment
 .env
 .env.local
+.env.admin
 .env.*.local
 
 # Editor
@@ -30,6 +31,7 @@ dist-ssr
 
 # Testing
 coverage
+reports/
 
 # Temp
 tmp

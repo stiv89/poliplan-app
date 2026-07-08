@@ -33,8 +33,21 @@ export class PoliPlanDatabase extends Dexie {
       settings: 'id',
       selectedSections: 'id, sectionId, courseId, academicPeriodId, createdAt',
       cachedAcademicPeriods: 'id, isActive, year, term',
-      cachedCareers: 'id, code',
-      cachedCourses: 'id, careerId, code',
+      cachedCareers: 'id, code, name',
+      cachedCourses: 'id, careerId, code, name',
+      cachedSections: 'id, courseId, academicPeriodId, sectionCode',
+      cachedMeetings: 'id, sectionId, dayOfWeek',
+      cachedExams: 'id, sectionId, examDate',
+      localScheduleVersions: 'academicPeriodId, version',
+      syncQueue: 'id, status, createdAt',
+    })
+
+    this.version(2).stores({
+      settings: 'id',
+      selectedSections: 'id, sectionId, courseId, academicPeriodId, createdAt',
+      cachedAcademicPeriods: 'id, isActive, year, term',
+      cachedCareers: 'id, code, name',
+      cachedCourses: 'id, careerId, code, name',
       cachedSections: 'id, courseId, academicPeriodId, sectionCode',
       cachedMeetings: 'id, sectionId, dayOfWeek',
       cachedExams: 'id, sectionId, examDate',

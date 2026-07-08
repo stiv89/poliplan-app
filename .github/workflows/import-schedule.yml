@@ -1,0 +1,60 @@
+name: Import institutional schedule
+
+on:
+  workflow_dispatch:
+    inputs:
+      excel_file:
+        description: Ruta relativa del Excel dentro del repo
+        required: true
+        default: excel/Horario de clases y examenes Primer Periodo 2026 version web 05062026.xlsx
+      period_id:
+        description: UUID del periodo académico
+        required: true
+        default: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1
+      dry_run:
+        description: Ejecutar solo dry-run
+        type: boolean
+        default: true
+
+jobs:
+  import-schedule:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Dry run import
+        if: inputs.dry_run == true
+        run: |
+          npm run import:schedule -- "${{ inputs.excel_file }}" \
+            --dry-run \
+            --all-sheets \
+            --verbose \
+            --period-id="${{ inputs.period_id }}"
+
+      - name: Real import
+        if: inputs.dry_run == false
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          npm run import:schedule -- "${{ inputs.excel_file }}" \
+            --all-sheets \
+            --verbose \
+            --period-id="${{ inputs.period_id }}"
+
+      - name: Verify Supabase counts
+        if: inputs.dry_run == false
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: npm run admin:verify -- "${{ inputs.period_id }}"

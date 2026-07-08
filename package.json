@@ -12,16 +12,20 @@
     "format:check": "prettier --check \"src/**/*.{ts,tsx,css}\" \"scripts/**/*.ts\"",
     "test": "vitest",
     "test:run": "vitest run",
+    "test:import": "vitest run scripts/import-schedule/tests",
     "typecheck": "tsc -p tsconfig.app.json --noEmit",
-    "import:schedule": "tsx scripts/import-schedule/index.ts"
+    "import:schedule": "tsx scripts/import-schedule/index.ts",
+    "admin:verify": "tsx scripts/admin/verify-supabase.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.49.8",
+    "commander": "^15.0.0",
     "dexie": "^4.0.11",
     "lucide-react": "^0.511.0",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-router-dom": "^7.6.2",
+    "xlsx": "^0.18.5",
     "zod": "^3.25.36"
   },
   "devDependencies": {

@@ -60,7 +60,7 @@ npm run test
 npm run test:run
 npm run format
 npm run typecheck
-npm run import:schedule -- ./archivo.xlsx
+npm run import:schedule -- "./excel/archivo.xlsx" --dry-run --all-sheets --verbose
 ```
 
 ## Estructura del proyecto

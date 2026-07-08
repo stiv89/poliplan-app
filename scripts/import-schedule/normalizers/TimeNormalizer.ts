@@ -1,0 +1,164 @@
+import type { ImportIssue } from '../types'
+import { cellToRawString } from './TextNormalizer'
+
+const TIME_PATTERN =
+  /(\d{1,2})[:.](\d{2})\s*(?:-\s*(\d{1,2})[:.](\d{2}))?(?:\s*(am|pm))?/i
+
+export function normalizeTime(value: unknown): string | null {
+  const parsed = parseTimeRange(value)
+  return parsed?.startTime ?? null
+}
+
+export function parseTimeRange(value: unknown): {
+  startTime: string
+  endTime: string
+} | null {
+  if (value == null || cellToRawString(value) === '') {
+    return null
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return excelSerialToRange(value)
+  }
+
+  if (value instanceof Date) {
+    return dateToRange(value)
+  }
+
+  const raw = cellToRawString(value)
+  if (!raw) {
+    return null
+  }
+
+  const numeric = Number(raw.replace(',', '.'))
+  if (!Number.isNaN(numeric) && raw.match(/^\d+([.,]\d+)?$/)) {
+    const fromSerial = excelSerialToRange(numeric)
+    if (fromSerial) {
+      return fromSerial
+    }
+  }
+
+  const normalized = raw
+    .replace(/\u2013|\u2014|–|—/g, '-')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  const match = normalized.match(TIME_PATTERN)
+  if (!match) {
+    return null
+  }
+
+  let startHour = Number(match[1])
+  const startMinute = Number(match[2])
+  let endHour = match[3] ? Number(match[3]) : startHour + 1
+  const endMinute = match[4] ? Number(match[4]) : startMinute
+  const meridiem = match[5]?.toLowerCase()
+
+  if (meridiem === 'pm' && startHour < 12) {
+    startHour += 12
+  }
+  if (meridiem === 'pm' && endHour < 12) {
+    endHour += 12
+  }
+
+  const startTime = toTimeString(startHour, startMinute)
+  const endTime = toTimeString(endHour, endMinute)
+
+  if (compareTimes(startTime, endTime) >= 0) {
+    return null
+  }
+
+  return { startTime, endTime }
+}
+
+export function excelSerialToRange(serial: number): { startTime: string; endTime: string } | null {
+  if (serial >= 1) {
+    return null
+  }
+
+  const totalMinutes = Math.round(serial * 24 * 60)
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+  const startTime = toTimeString(hours, minutes)
+  const endMinutes = totalMinutes + 60
+  const endTime = toTimeString(Math.floor(endMinutes / 60) % 24, endMinutes % 60)
+  return { startTime, endTime }
+}
+
+export function dateToRange(date: Date): { startTime: string; endTime: string } | null {
+  if (Number.isNaN(date.getTime())) {
+    return null
+  }
+
+  const startTime = toTimeString(date.getHours(), date.getMinutes())
+  const endHour = (date.getHours() + 1) % 24
+  const endTime = toTimeString(endHour, date.getMinutes())
+  return { startTime, endTime }
+}
+
+export function toTimeString(hours: number, minutes: number): string {
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`
+}
+
+export function compareTimes(left: string, right: string): number {
+  const toMinutes = (time: string) => {
+    const [hours, minutes] = time.split(':').map(Number)
+    return (hours ?? 0) * 60 + (minutes ?? 0)
+  }
+  return toMinutes(left) - toMinutes(right)
+}
+
+export function parseExamDate(value: unknown): string | null {
+  if (value == null) {
+    return null
+  }
+
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    return value.toISOString().slice(0, 10)
+  }
+
+  const raw = cellToRawString(value)
+  if (!raw) {
+    return null
+  }
+
+  const slashMatch = raw.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})/)
+  if (slashMatch) {
+    const day = slashMatch[1]?.padStart(2, '0')
+    const month = slashMatch[2]?.padStart(2, '0')
+    let year = slashMatch[3] ?? ''
+    if (year.length === 2) {
+      year = Number(year) >= 70 ? `19${year}` : `20${year}`
+    }
+    return `${year}-${month}-${day}`
+  }
+
+  const parsed = new Date(raw)
+  if (!Number.isNaN(parsed.getTime()) && parsed.getFullYear() > 1980) {
+    return parsed.toISOString().slice(0, 10)
+  }
+
+  return null
+}
+
+export function parseScheduleCell(
+  scheduleValue: unknown,
+  issueSink: (issue: ImportIssue) => void,
+  context: { sheetName: string; rowNumber: number; dayLabel: string },
+): { startTime: string; endTime: string } | null {
+  const range = parseTimeRange(scheduleValue)
+  if (!range) {
+    const raw = cellToRawString(scheduleValue)
+    if (raw && !['---', '-- --', '-'].includes(raw)) {
+      issueSink({
+        code: 'INVALID_SCHEDULE_TIME',
+        message: `Horario inválido en ${context.dayLabel}: "${raw}"`,
+        severity: 'warning',
+        sheetName: context.sheetName,
+        rowNumber: context.rowNumber,
+      })
+    }
+    return null
+  }
+  return range
+}
