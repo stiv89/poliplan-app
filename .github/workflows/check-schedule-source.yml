@@ -1,0 +1,60 @@
+name: Check schedule source
+
+on:
+  workflow_dispatch:
+    inputs:
+      source_url:
+        description: URL de la fuente oficial
+        required: true
+        default: https://www.pol.una.py/academico/horarios-de-clases-y-examenes/
+      period_id:
+        description: UUID del periodo académico
+        required: true
+        default: aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1
+      download_only:
+        description: Solo descargar y validar
+        type: boolean
+        default: false
+
+# schedule:
+#   - cron: "17 * * * *"
+
+jobs:
+  check-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run schedule source checker
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          mkdir -p reports
+          npm run check:schedule-source -- \
+            --source-url="${{ inputs.source_url }}" \
+            --period-id="${{ inputs.period_id }}" \
+            --output reports/check-schedule-source.json \
+            ${{ inputs.download_only && '--download-only' || '--dry-run' }}
+
+      - name: Upload report artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: check-schedule-source-report
+          path: reports/check-schedule-source.json
+
+      - name: Preview import command for later
+        run: |
+          echo "Comando preparado para importación real posterior:"
+          echo "npm run import:schedule -- <ruta-del-archivo> --all-sheets --verbose --period-id=\"${{ inputs.period_id }}\""

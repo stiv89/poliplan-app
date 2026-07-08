@@ -1,9 +1,11 @@
 import { db } from '@/db/database'
 import { getSupabaseClient } from '@/lib/supabase'
+import { chunkValues, fetchAllPages } from '@/lib/supabasePagination'
 import {
   LocalScheduleRepository,
   localScheduleRepository,
 } from '@/repositories/LocalScheduleRepository'
+import { detectChanges, persistChanges } from '@/services/changeDetectionService'
 import type { ScheduleRepository } from '@/repositories/ScheduleRepository'
 import type {
   AcademicPeriod,
@@ -142,7 +144,7 @@ export class SupabaseScheduleRepository implements ScheduleRepository {
         this.getAcademicPeriods(),
         this.getCareers(periodId),
         this.fetchAllCourses(periodId, version.id),
-        this.fetchSectionRows(periodId, undefined, version.id),
+        this.fetchSectionRows(periodId, { versionId: version.id }),
         this.fetchAllMeetings(periodId, version.id),
         this.fetchAllExams(periodId, version.id),
       ])
@@ -224,6 +226,41 @@ export class SupabaseScheduleRepository implements ScheduleRepository {
           })
         },
       )
+
+      const previousPeriodSections = previousSnapshot.sections.filter(
+        (section) => section.academicPeriodId === periodId,
+      )
+      const previousVersion = previousSnapshot.versions.find(
+        (item) => item.academicPeriodId === periodId,
+      )
+
+      const settings = await db.settings.get('app-settings')
+      const activeScheduleId = settings?.activeScheduleId
+      const selectedSectionIds = activeScheduleId
+        ? new Set(
+            (
+              await db.selectedSections.where('scheduleId').equals(activeScheduleId).toArray()
+            ).map((record) => record.sectionId),
+          )
+        : new Set<string>()
+
+      const coursesMap = new Map(
+        [...previousSnapshot.courses, ...courses].map((course) => [course.id, { name: course.name }]),
+      )
+
+      const changes = detectChanges({
+        previousSections: previousPeriodSections,
+        newSections: sections,
+        coursesById: coursesMap,
+        selectedSectionIds,
+        versionFrom: previousVersion?.version ?? 0,
+        versionTo: version.version,
+      })
+
+      if (changes.length > 0) {
+        await persistChanges(changes)
+        window.dispatchEvent(new CustomEvent('poliplan:changes-updated'))
+      }
     } catch (error) {
       await db.transaction(
         'rw',
@@ -266,13 +303,23 @@ export class SupabaseScheduleRepository implements ScheduleRepository {
       return []
     }
 
-    const rows = await this.fetchSectionRows(input.periodId, input.courseId, version.id)
+    let sectionRows: Record<string, unknown>[]
 
-    let sectionRows = rows
     if (input.careerId) {
       const courses = await this.getCourses(input.periodId, input.careerId)
-      const courseIds = new Set(courses.map((course) => course.id))
-      sectionRows = rows.filter((row) => courseIds.has(String(row.course_id)))
+      const courseIds = courses.map((course) => course.id)
+      if (courseIds.length === 0) {
+        return []
+      }
+      sectionRows = await this.fetchSectionRows(input.periodId, {
+        versionId: version.id,
+        courseIds,
+      })
+    } else {
+      sectionRows = await this.fetchSectionRows(input.periodId, {
+        courseId: input.courseId,
+        versionId: version.id,
+      })
     }
 
     const sectionIds = sectionRows.map((row) => String(row.id))
@@ -292,29 +339,51 @@ export class SupabaseScheduleRepository implements ScheduleRepository {
 
   private async fetchSectionRows(
     periodId: string,
-    courseId?: string,
-    versionId?: string,
+    options: {
+      courseId?: string
+      courseIds?: string[]
+      versionId?: string
+    } = {},
   ) {
     const activeVersionId =
-      versionId ?? (await this.getActiveScheduleVersion(periodId))?.id ?? null
+      options.versionId ?? (await this.getActiveScheduleVersion(periodId))?.id ?? null
 
     if (!activeVersionId) {
       return []
     }
 
-    let query = this.client
-      .from('sections')
-      .select('*')
-      .eq('academic_period_id', periodId)
-      .eq('schedule_version_id', activeVersionId)
-    if (courseId) {
-      query = query.eq('course_id', courseId)
+    if (options.courseIds && options.courseIds.length > 0) {
+      const chunks = chunkValues(options.courseIds)
+      const rows = await Promise.all(
+        chunks.map((courseIds) =>
+          fetchAllPages<Record<string, unknown>>(({ from, to }) =>
+            this.client
+              .from('sections')
+              .select('*')
+              .eq('academic_period_id', periodId)
+              .eq('schedule_version_id', activeVersionId)
+              .in('course_id', courseIds)
+              .range(from, to),
+          ),
+        ),
+      )
+      return rows.flat()
     }
-    const { data, error } = await query
-    if (error) {
-      throw error
-    }
-    return data ?? []
+
+    return fetchAllPages<Record<string, unknown>>(({ from, to }) => {
+      let query = this.client
+        .from('sections')
+        .select('*')
+        .eq('academic_period_id', periodId)
+        .eq('schedule_version_id', activeVersionId)
+        .range(from, to)
+
+      if (options.courseId) {
+        query = query.eq('course_id', options.courseId)
+      }
+
+      return query
+    })
   }
 
   private async fetchAllCourses(periodId: string, versionId?: string): Promise<Course[]> {
@@ -325,27 +394,29 @@ export class SupabaseScheduleRepository implements ScheduleRepository {
       return []
     }
 
-    const { data: sectionRows, error: sectionError } = await this.client
-      .from('sections')
-      .select('course_id')
-      .eq('academic_period_id', periodId)
-      .eq('schedule_version_id', activeVersionId)
+    const sectionRows = await fetchAllPages<{ course_id: string }>(({ from, to }) =>
+      this.client
+        .from('sections')
+        .select('course_id')
+        .eq('academic_period_id', periodId)
+        .eq('schedule_version_id', activeVersionId)
+        .range(from, to),
+    )
 
-    if (sectionError) {
-      throw sectionError
-    }
-
-    const courseIds = [...new Set((sectionRows ?? []).map((row) => String(row.course_id)))]
+    const courseIds = [...new Set(sectionRows.map((row) => String(row.course_id)))]
     if (courseIds.length === 0) {
       return []
     }
 
-    const { data, error } = await this.client.from('courses').select('*').in('id', courseIds)
-    if (error) {
-      throw error
-    }
+    const courseRows = await Promise.all(
+      chunkValues(courseIds).map((ids) =>
+        fetchAllPages<Record<string, unknown>>(({ from, to }) =>
+          this.client.from('courses').select('*').in('id', ids).range(from, to),
+        ),
+      ),
+    )
 
-    return (data ?? []).map((row) => mapDbCourse(row))
+    return courseRows.flat().map((row) => mapDbCourse(row))
   }
 
   private async fetchMeetings(sectionIds: string[]) {
@@ -353,20 +424,19 @@ export class SupabaseScheduleRepository implements ScheduleRepository {
       return []
     }
 
-    const { data, error } = await this.client
-      .from('class_meetings')
-      .select('*')
-      .in('section_id', sectionIds)
+    const rows = await Promise.all(
+      chunkValues(sectionIds).map((chunk) =>
+        fetchAllPages<Record<string, unknown>>(({ from, to }) =>
+          this.client.from('class_meetings').select('*').in('section_id', chunk).range(from, to),
+        ),
+      ),
+    )
 
-    if (error) {
-      throw error
-    }
-
-    return (data ?? []).map((row) => mapDbMeeting(row))
+    return rows.flat().map((row) => mapDbMeeting(row))
   }
 
   private async fetchAllMeetings(periodId: string, versionId?: string) {
-    const sectionRows = await this.fetchSectionRows(periodId, undefined, versionId)
+    const sectionRows = await this.fetchSectionRows(periodId, { versionId })
     return this.fetchMeetings(sectionRows.map((row) => String(row.id)))
   }
 
@@ -375,20 +445,19 @@ export class SupabaseScheduleRepository implements ScheduleRepository {
       return []
     }
 
-    const { data, error } = await this.client
-      .from('exams')
-      .select('*')
-      .in('section_id', sectionIds)
+    const rows = await Promise.all(
+      chunkValues(sectionIds).map((chunk) =>
+        fetchAllPages<Record<string, unknown>>(({ from, to }) =>
+          this.client.from('exams').select('*').in('section_id', chunk).range(from, to),
+        ),
+      ),
+    )
 
-    if (error) {
-      throw error
-    }
-
-    return (data ?? []).map((row) => mapDbExam(row))
+    return rows.flat().map((row) => mapDbExam(row))
   }
 
   private async fetchAllExams(periodId: string, versionId?: string) {
-    const sectionRows = await this.fetchSectionRows(periodId, undefined, versionId)
+    const sectionRows = await this.fetchSectionRows(periodId, { versionId })
     return this.fetchExams(sectionRows.map((row) => String(row.id)))
   }
 }

@@ -31,6 +31,14 @@ describe('TimeNormalizer', () => {
     expect(parseTimeRange('20:00 - 17:00')).toBeNull()
   })
 
+  it('normaliza horas fuera de rango desde Excel', () => {
+    expect(normalizeTime('24:20')).toBe('00:20:00')
+    expect(parseTimeRange(1 + 20 / (24 * 60))).toEqual({
+      startTime: '00:20:00',
+      endTime: '01:20:00',
+    })
+  })
+
   it('parsea fechas de examen', () => {
     expect(parseExamDate('Mar 07/04/26')).toBe('2026-04-07')
   })

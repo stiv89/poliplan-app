@@ -29,6 +29,7 @@ const baseBundle: NormalizedImportBundle = {
     shift: 'M',
     teacherName: 'Docente',
     teacherEmail: null,
+    teacherId: null,
     naturalKey: `section-${index}`,
     sourceSheet: 'IIN',
     sourceRow: index + 12,

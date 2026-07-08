@@ -7,7 +7,7 @@ const sampleBundle = {
   academicPeriods: [
     {
       id: '11111111-1111-4111-8111-111111111101',
-      name: 'Primer Cuatrimestre 2026',
+      name: 'Primer Periodo 2026',
       year: 2026,
       term: 1,
       startsAt: '2026-03-01',
@@ -41,8 +41,9 @@ const sampleBundle = {
       academicPeriodId: '11111111-1111-4111-8111-111111111101',
       sectionCode: 'A',
       shift: 'Mañana',
-      teacherName: 'Prof. Ana Ríos',
-      teacherEmail: null,
+    teacherName: 'Prof. Ana Ríos',
+    teacherEmail: null,
+    teacherId: null,
       meetings: [
         {
           id: '55555555-5555-4555-8555-555555555501',
@@ -95,13 +96,15 @@ describe('LocalScheduleRepository', () => {
     expect(section).toBeTruthy()
 
     await repository.saveBundle(bundle)
+    const schedule = await repository.ensureDefaultSchedule(periodId!)
     await repository.addSelectedSection({
+      scheduleId: schedule.id,
       sectionId: section!.id,
       courseId: section!.courseId,
       academicPeriodId: periodId!,
     })
 
-    const selected = await repository.getSelectedSectionEntities(periodId!)
+    const selected = await repository.getSelectedSectionEntities(schedule.id)
     expect(selected).toHaveLength(1)
     expect(selected[0]?.id).toBe(section!.id)
   })

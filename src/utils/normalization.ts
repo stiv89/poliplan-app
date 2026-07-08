@@ -7,6 +7,7 @@ import type {
   Exam,
   ScheduleVersion,
 } from '@/types/academic'
+import { resolveSectionShift } from '@/utils/sectionCode'
 
 export function normalizeTime(value: string): string {
   const parts = value.trim().split(':')
@@ -87,14 +88,18 @@ export function mapDbSection(
   meetings: ClassMeeting[],
   exams: Exam[],
 ): CourseSection {
+  const sectionCode = String(row.section_code)
+  const rawShift = normalizeText(row.shift as string | null)
+
   return {
     id: String(row.id),
     courseId: String(row.course_id),
     academicPeriodId: String(row.academic_period_id),
-    sectionCode: String(row.section_code),
-    shift: normalizeText(row.shift as string | null),
+    sectionCode,
+    shift: resolveSectionShift({ sectionCode, shift: rawShift }),
     teacherName: normalizeText(row.teacher_name as string | null),
     teacherEmail: normalizeText(row.teacher_email as string | null),
+    teacherId: row.teacher_id ? String(row.teacher_id) : null,
     meetings,
     exams,
   }

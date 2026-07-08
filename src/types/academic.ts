@@ -53,6 +53,7 @@ export interface CourseSection {
   shift: string | null
   teacherName: string | null
   teacherEmail: string | null
+  teacherId: string | null
   meetings: ClassMeeting[]
   exams: Exam[]
 }
@@ -105,4 +106,58 @@ export interface SampleScheduleBundle {
   courses: Course[]
   sections: CourseSection[]
   scheduleVersions: ScheduleVersion[]
+}
+
+// ── Detección de cambios entre versiones ────────────────────────────────────
+
+export type ChangeEntityType = 'section' | 'meeting' | 'exam'
+
+export type ChangeSeverity = 'critical' | 'important' | 'informational'
+
+export type ChangeField =
+  // exam
+  | 'examDate'
+  | 'examTime'
+  | 'examClassroom'
+  // meeting
+  | 'meetingDay'
+  | 'meetingTime'
+  | 'meetingClassroom'
+  // section
+  | 'teacherName'
+  | 'sectionAdded'
+  | 'sectionRemoved'
+
+export interface ScheduleChange {
+  id: string
+  entityType: ChangeEntityType
+  /** ID de la sección afectada (siempre presente) */
+  sectionId: string
+  /** ID de la materia/course afectada */
+  courseId: string
+  /** Nombre de la materia (desnormalizado para mostrar sin joins) */
+  courseName: string
+  /** Código de sección (desnormalizado) */
+  sectionCode: string
+  field: ChangeField
+  previousValue: string | null
+  newValue: string | null
+  severity: ChangeSeverity
+  detectedAt: string          // ISO 8601
+  versionFrom: number
+  versionTo: number
+  /** Verdadero si el usuario ya vio este cambio */
+  seen: boolean
+}
+
+// ── Metadata de confianza / procedencia ─────────────────────────────────────
+
+export type DataTrustStatus = 'confirmed' | 'pending' | 'modified'
+
+export interface DataTrustInfo {
+  versionNumber: number
+  sourceFileName: string | null
+  sourceChecksum: string | null
+  importedAt: string          // ISO 8601
+  status: DataTrustStatus
 }

@@ -72,16 +72,17 @@ export function parseTimeRange(value: unknown): {
 }
 
 export function excelSerialToRange(serial: number): { startTime: string; endTime: string } | null {
-  if (serial >= 1) {
+  const timeFraction = serial >= 1 ? serial % 1 : serial
+  if (timeFraction <= 0) {
     return null
   }
 
-  const totalMinutes = Math.round(serial * 24 * 60)
+  const totalMinutes = Math.round(timeFraction * 24 * 60)
   const hours = Math.floor(totalMinutes / 60)
   const minutes = totalMinutes % 60
   const startTime = toTimeString(hours, minutes)
   const endMinutes = totalMinutes + 60
-  const endTime = toTimeString(Math.floor(endMinutes / 60) % 24, endMinutes % 60)
+  const endTime = toTimeString(Math.floor(endMinutes / 60), endMinutes % 60)
   return { startTime, endTime }
 }
 
@@ -97,7 +98,12 @@ export function dateToRange(date: Date): { startTime: string; endTime: string } 
 }
 
 export function toTimeString(hours: number, minutes: number): string {
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:00`
+  let totalMinutes = hours * 60 + minutes
+  if (totalMinutes < 0) totalMinutes = 0
+  totalMinutes = totalMinutes % (24 * 60)
+  const normalizedHours = Math.floor(totalMinutes / 60)
+  const normalizedMinutes = totalMinutes % 60
+  return `${String(normalizedHours).padStart(2, '0')}:${String(normalizedMinutes).padStart(2, '0')}:00`
 }
 
 export function compareTimes(left: string, right: string): number {

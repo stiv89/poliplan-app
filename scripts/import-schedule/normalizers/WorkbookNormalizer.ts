@@ -20,6 +20,12 @@ import {
 } from './TextNormalizer'
 import { parseExamDate, parseScheduleCell, parseTimeRange } from './TimeNormalizer'
 
+function shiftFromSectionCode(sectionCode: string): string | null {
+  const letter = sectionCode.trim().charAt(0).toUpperCase()
+  const map: Record<string, string> = { M: 'Mañana', T: 'Tarde', N: 'Noche' }
+  return map[letter] ?? null
+}
+
 const CAREER_NAMES: Record<string, string> = {
   IAE: 'Ingeniería Aeronáutica',
   ICM: 'Ingeniería Civil Mención Construcciones',
@@ -138,7 +144,10 @@ export function normalizeWorkbookRows(input: {
       courseId,
       academicPeriodId: input.academicPeriodId ?? periodKey,
       sectionCode: row.sectionCode.rawValue.trim(),
-      shift: row.shift.rawValue.trim() || null,
+      shift:
+        row.shift.rawValue.trim() ||
+        shiftFromSectionCode(row.sectionCode.rawValue.trim()) ||
+        null,
       teacherName: row.teacherName.rawValue.trim() || null,
       teacherEmail: row.teacherEmail.rawValue.trim() || null,
       naturalKey: sectionNaturalKey,

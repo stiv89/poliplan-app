@@ -19,6 +19,7 @@ function createSection(
     shift: 'Mañana',
     teacherName: 'Docente',
     teacherEmail: null,
+    teacherId: null,
     meetings: meetings.map((meeting) => ({
       sectionId: id,
       classroom: 'Aula',

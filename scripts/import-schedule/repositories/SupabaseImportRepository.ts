@@ -3,6 +3,11 @@ import type {
   NormalizedImportBundle,
   ScheduleImportRepository,
 } from '../types'
+import {
+  buildTeacherRecords,
+  resolveTeacherIdForSection,
+  teacherMapKey,
+} from '../normalizers/TeacherResolver'
 
 function getAdminClient(): SupabaseClient {
   const url = process.env.SUPABASE_URL
@@ -160,6 +165,8 @@ export class SupabaseImportRepository implements ScheduleImportRepository {
         { onConflict: 'id' },
       )
 
+      const teacherKeyToId = await this.ensureTeacherIds(input.bundle.sections)
+
       await batchInsert(
         this.client,
         'sections',
@@ -172,6 +179,11 @@ export class SupabaseImportRepository implements ScheduleImportRepository {
           shift: section.shift,
           teacher_name: section.teacherName,
           teacher_email: section.teacherEmail,
+          teacher_id: resolveTeacherIdForSection(
+            teacherKeyToId,
+            section.teacherName,
+            section.teacherEmail,
+          ),
         })),
       )
 
@@ -275,6 +287,33 @@ export class SupabaseImportRepository implements ScheduleImportRepository {
     }
 
     return data
+  }
+
+  private async ensureTeacherIds(
+    sections: NormalizedImportBundle['sections'],
+  ): Promise<Map<string, string>> {
+    const records = buildTeacherRecords(sections)
+    const keyToId = new Map<string, string>()
+
+    for (const record of records) {
+      const key = teacherMapKey(record.name, record.email)
+      if (!key || keyToId.has(key)) continue
+
+      const { data, error } = await this.client.rpc('resolve_teacher', {
+        p_name: record.name,
+        p_email: record.email,
+      })
+
+      if (error) {
+        throw error
+      }
+
+      if (data) {
+        keyToId.set(key, String(data))
+      }
+    }
+
+    return keyToId
   }
 }
 

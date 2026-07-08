@@ -9,7 +9,7 @@ import type {
   SampleScheduleBundle,
   ScheduleVersion,
 } from '@/types/academic'
-import type { SelectedSectionRecord } from '@/types/schedule'
+import type { SelectedSectionRecord, SavedScheduleRecord } from '@/types/schedule'
 import { attachMeetingsAndExams } from '@/utils/normalization'
 
 let sampleCache: SampleScheduleBundle | null = null
@@ -205,14 +205,23 @@ export class LocalScheduleRepository implements ScheduleRepository {
 
   async getSettings() {
     await ensureSettings()
-    return (await db.settings.get(SETTINGS_ID)) ?? DEFAULT_SETTINGS
+    const stored = await db.settings.get(SETTINGS_ID)
+    return { ...DEFAULT_SETTINGS, ...stored }
   }
 
   async updateSettings(
     patch: Partial<{
       selectedCareerId: string | null
       selectedAcademicPeriodId: string | null
+      activeScheduleId: string | null
       theme: 'light' | 'dark' | 'system'
+      autoSyncEnabled: boolean
+      syncOnOpen: boolean
+      showChangeAlerts: boolean
+      syncPromptDismissedAt: string | null
+      notificationPromptDismissedAt: string | null
+      lastUserScheduleSyncAt: string | null
+      remoteScheduleByLocalId: Record<string, string>
     }>,
   ) {
     const current = await this.getSettings()
@@ -225,44 +234,260 @@ export class LocalScheduleRepository implements ScheduleRepository {
     return next
   }
 
-  async getSelectedSections(periodId: string): Promise<SelectedSectionRecord[]> {
-    return db.selectedSections.where('academicPeriodId').equals(periodId).toArray()
+  async getSavedSchedules(options?: {
+    academicPeriodId?: string
+    includeDeleted?: boolean
+  }): Promise<SavedScheduleRecord[]> {
+    let schedules = await db.savedSchedules.orderBy('updatedAt').reverse().toArray()
+
+    if (options?.academicPeriodId) {
+      schedules = schedules.filter(
+        (schedule) => schedule.academicPeriodId === options.academicPeriodId,
+      )
+    }
+
+    if (!options?.includeDeleted) {
+      schedules = schedules.filter((schedule) => schedule.deletedAt == null)
+    }
+
+    return schedules
+  }
+
+  async getSavedScheduleById(scheduleId: string): Promise<SavedScheduleRecord | null> {
+    return (await db.savedSchedules.get(scheduleId)) ?? null
+  }
+
+  async ensureDefaultSchedule(
+    periodId: string,
+    careerId: string | null = null,
+  ): Promise<SavedScheduleRecord> {
+    const existing = await db.savedSchedules
+      .where('academicPeriodId')
+      .equals(periodId)
+      .filter((schedule) => schedule.deletedAt == null)
+      .first()
+
+    if (existing) {
+      return existing
+    }
+
+    const now = new Date().toISOString()
+    const schedule: SavedScheduleRecord = {
+      id: crypto.randomUUID(),
+      name: 'Mi horario',
+      academicPeriodId: periodId,
+      selectedCareerId: careerId,
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: null,
+    }
+    await db.savedSchedules.put(schedule)
+    return schedule
+  }
+
+  async resolveActiveSchedule(
+    periodId: string,
+    preferredScheduleId: string | null,
+    careerId: string | null,
+  ): Promise<SavedScheduleRecord> {
+    if (preferredScheduleId) {
+      const preferred = await db.savedSchedules.get(preferredScheduleId)
+      if (preferred && preferred.deletedAt == null && preferred.academicPeriodId === periodId) {
+        return preferred
+      }
+    }
+
+    const active = await db.savedSchedules
+      .where('academicPeriodId')
+      .equals(periodId)
+      .filter((schedule) => schedule.deletedAt == null)
+      .sortBy('updatedAt')
+
+    if (active.length > 0) {
+      return active[active.length - 1]!
+    }
+
+    return this.ensureDefaultSchedule(periodId, careerId)
+  }
+
+  async createSavedSchedule(input: {
+    name: string
+    academicPeriodId: string
+    selectedCareerId?: string | null
+    copyFromScheduleId?: string | null
+  }): Promise<SavedScheduleRecord> {
+    const now = new Date().toISOString()
+    const schedule: SavedScheduleRecord = {
+      id: crypto.randomUUID(),
+      name: input.name.trim() || 'Nuevo horario',
+      academicPeriodId: input.academicPeriodId,
+      selectedCareerId: input.selectedCareerId ?? null,
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: null,
+    }
+
+    await db.transaction('rw', db.savedSchedules, db.selectedSections, async () => {
+      await db.savedSchedules.put(schedule)
+
+      if (input.copyFromScheduleId) {
+        const sourceSections = await db.selectedSections
+          .where('scheduleId')
+          .equals(input.copyFromScheduleId)
+          .toArray()
+
+        if (sourceSections.length > 0) {
+          await db.selectedSections.bulkPut(
+            sourceSections.map((section) => ({
+              id: crypto.randomUUID(),
+              scheduleId: schedule.id,
+              sectionId: section.sectionId,
+              courseId: section.courseId,
+              academicPeriodId: section.academicPeriodId,
+              createdAt: now,
+            })),
+          )
+        }
+      }
+    })
+
+    return schedule
+  }
+
+  async renameSavedSchedule(scheduleId: string, name: string): Promise<SavedScheduleRecord> {
+    const schedule = await db.savedSchedules.get(scheduleId)
+    if (!schedule || schedule.deletedAt) {
+      throw new Error('Horario no encontrado')
+    }
+
+    const next = {
+      ...schedule,
+      name: name.trim() || schedule.name,
+      updatedAt: new Date().toISOString(),
+    }
+    await db.savedSchedules.put(next)
+    return next
+  }
+
+  async touchSavedSchedule(scheduleId: string): Promise<void> {
+    const schedule = await db.savedSchedules.get(scheduleId)
+    if (!schedule || schedule.deletedAt) return
+    await db.savedSchedules.put({
+      ...schedule,
+      updatedAt: new Date().toISOString(),
+    })
+  }
+
+  async setSavedScheduleCareer(
+    scheduleId: string,
+    careerId: string | null,
+  ): Promise<SavedScheduleRecord> {
+    const schedule = await db.savedSchedules.get(scheduleId)
+    if (!schedule || schedule.deletedAt) {
+      throw new Error('Horario no encontrado')
+    }
+
+    const next = {
+      ...schedule,
+      selectedCareerId: careerId,
+      updatedAt: new Date().toISOString(),
+    }
+    await db.savedSchedules.put(next)
+    return next
+  }
+
+  async softDeleteSavedSchedule(scheduleId: string): Promise<SavedScheduleRecord> {
+    const schedule = await db.savedSchedules.get(scheduleId)
+    if (!schedule || schedule.deletedAt) {
+      throw new Error('Horario no encontrado')
+    }
+
+    const next = {
+      ...schedule,
+      deletedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    }
+    await db.savedSchedules.put(next)
+    return next
+  }
+
+  async restoreSavedSchedule(scheduleId: string): Promise<SavedScheduleRecord> {
+    const schedule = await db.savedSchedules.get(scheduleId)
+    if (!schedule) {
+      throw new Error('Horario no encontrado')
+    }
+
+    const next = {
+      ...schedule,
+      deletedAt: null,
+      updatedAt: new Date().toISOString(),
+    }
+    await db.savedSchedules.put(next)
+    return next
+  }
+
+  async permanentlyDeleteSavedSchedule(scheduleId: string): Promise<void> {
+    await db.transaction('rw', db.savedSchedules, db.selectedSections, async () => {
+      await db.selectedSections.where('scheduleId').equals(scheduleId).delete()
+      await db.savedSchedules.delete(scheduleId)
+    })
+  }
+
+  async getSelectedSections(scheduleId: string): Promise<SelectedSectionRecord[]> {
+    return db.selectedSections.where('scheduleId').equals(scheduleId).toArray()
   }
 
   async addSelectedSection(input: {
+    scheduleId: string
     sectionId: string
     courseId: string
     academicPeriodId: string
   }): Promise<SelectedSectionRecord> {
     const record: SelectedSectionRecord = {
       id: crypto.randomUUID(),
+      scheduleId: input.scheduleId,
       sectionId: input.sectionId,
       courseId: input.courseId,
       academicPeriodId: input.academicPeriodId,
       createdAt: new Date().toISOString(),
     }
     await db.selectedSections.put(record)
+    await this.touchSavedSchedule(input.scheduleId)
     return record
   }
 
-  async removeSelectedSection(sectionId: string, periodId: string): Promise<void> {
+  async removeSelectedSection(
+    sectionId: string,
+    scheduleId: string,
+  ): Promise<void> {
     const existing = await db.selectedSections
-      .where('academicPeriodId')
-      .equals(periodId)
+      .where('scheduleId')
+      .equals(scheduleId)
       .filter((item) => item.sectionId === sectionId)
       .first()
 
     if (existing) {
       await db.selectedSections.delete(existing.id)
+      await this.touchSavedSchedule(scheduleId)
     }
   }
 
-  async getSelectedSectionEntities(periodId: string): Promise<CourseSection[]> {
-    const selected = await this.getSelectedSections(periodId)
+  async clearSelectedSections(scheduleId: string): Promise<void> {
+    await db.selectedSections.where('scheduleId').equals(scheduleId).delete()
+    await this.touchSavedSchedule(scheduleId)
+  }
+
+  async getSelectedSectionEntities(scheduleId: string): Promise<CourseSection[]> {
+    const selected = await this.getSelectedSections(scheduleId)
     const sections = await Promise.all(
       selected.map((item) => this.getSectionById(item.sectionId)),
     )
     return sections.filter((section): section is CourseSection => section !== null)
+  }
+
+  /** @deprecated use schedule-scoped getters */
+  async getSelectedSectionsByPeriod(periodId: string): Promise<SelectedSectionRecord[]> {
+    return db.selectedSections.where('academicPeriodId').equals(periodId).toArray()
   }
 
   private async hydrateSection(section: CourseSection): Promise<CourseSection> {

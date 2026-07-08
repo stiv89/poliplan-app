@@ -1,28 +1,30 @@
 import { readFileSync, existsSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-export function loadAdminEnv(): void {
-  const adminEnvPath = resolve(process.cwd(), '.env.admin')
-  if (!existsSync(adminEnvPath)) {
-    return
-  }
+function parseEnvFile(path: string): void {
+  if (!existsSync(path)) return
 
-  for (const line of readFileSync(adminEnvPath, 'utf8').split('\n')) {
+  for (const line of readFileSync(path, 'utf8').split('\n')) {
     const trimmed = line.trim()
-    if (!trimmed || trimmed.startsWith('#')) {
-      continue
-    }
+    if (!trimmed || trimmed.startsWith('#')) continue
 
     const separatorIndex = trimmed.indexOf('=')
-    if (separatorIndex === -1) {
-      continue
-    }
+    if (separatorIndex === -1) continue
 
     const key = trimmed.slice(0, separatorIndex).trim()
-    const value = trimmed.slice(separatorIndex + 1).trim()
-    if (key && !process.env[key]) {
+    const value = trimmed.slice(separatorIndex + 1).trim().replace(/^["']|["']$/g, '')
+    if (key && process.env[key] === undefined) {
       process.env[key] = value
     }
+  }
+}
+
+export function loadAdminEnv(): void {
+  parseEnvFile(resolve(process.cwd(), '.env.admin'))
+  parseEnvFile(resolve(process.cwd(), '.env'))
+
+  if (!process.env.SUPABASE_URL && process.env.VITE_SUPABASE_URL) {
+    process.env.SUPABASE_URL = process.env.VITE_SUPABASE_URL
   }
 }
 

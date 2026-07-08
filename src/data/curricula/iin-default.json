@@ -1,0 +1,62 @@
+{
+  "id": "iin-fpuna-default",
+  "careerCode": "IIN",
+  "name": "Ingeniería en Informática",
+  "totalCredits": 337,
+  "courses": [
+    { "id": "iin-s1-md", "curriculumId": "iin-fpuna-default", "code": "S1-01", "name": "Matemática Discreta", "semesterNumber": 1, "credits": 6, "type": "required" },
+    { "id": "iin-s1-oac1", "curriculumId": "iin-fpuna-default", "code": "S1-02", "name": "Organización y Arquitectura de Computadoras I", "semesterNumber": 1, "credits": 6, "type": "required" },
+    { "id": "iin-s1-fm", "curriculumId": "iin-fpuna-default", "code": "S1-03", "name": "Fundamentos de Matemática", "semesterNumber": 1, "credits": 6, "type": "required" },
+    { "id": "iin-s1-emp", "curriculumId": "iin-fpuna-default", "code": "S1-04", "name": "Emprendedorismo", "semesterNumber": 1, "credits": 4, "type": "required" },
+    { "id": "iin-s1-eoe", "curriculumId": "iin-fpuna-default", "code": "S1-05", "name": "Expresión Oral y Escrita", "semesterNumber": 1, "credits": 4, "type": "required" },
+    { "id": "iin-s1-aed1", "curriculumId": "iin-fpuna-default", "code": "S1-06", "name": "Algoritmos y Estructura de Datos I", "semesterNumber": 1, "credits": 6, "type": "required" },
+
+    { "id": "iin-s2-ing", "curriculumId": "iin-fpuna-default", "code": "S2-01", "name": "Inglés", "semesterNumber": 2, "credits": 4, "type": "required" },
+    { "id": "iin-s2-cal1", "curriculumId": "iin-fpuna-default", "code": "S2-02", "name": "Cálculo I", "semesterNumber": 2, "credits": 6, "type": "required" },
+    { "id": "iin-s2-oac2", "curriculumId": "iin-fpuna-default", "code": "S2-03", "name": "Organización y Arquitectura de Computadoras II", "semesterNumber": 2, "credits": 6, "type": "required" },
+    { "id": "iin-s2-alg", "curriculumId": "iin-fpuna-default", "code": "S2-04", "name": "Álgebra Lineal", "semesterNumber": 2, "credits": 6, "type": "required" },
+    { "id": "iin-s2-aed2", "curriculumId": "iin-fpuna-default", "code": "S2-05", "name": "Algoritmos y Estructura de Datos II", "semesterNumber": 2, "credits": 6, "type": "required" },
+    { "id": "iin-s2-lp1", "curriculumId": "iin-fpuna-default", "code": "S2-06", "name": "Lenguajes de Programación I", "semesterNumber": 2, "credits": 6, "type": "required" },
+
+    { "id": "iin-s3-fis1", "curriculumId": "iin-fpuna-default", "code": "S3-01", "name": "Física 1", "semesterNumber": 3, "credits": 6, "type": "required" },
+    { "id": "iin-s3-cal2", "curriculumId": "iin-fpuna-default", "code": "S3-02", "name": "Cálculo II", "semesterNumber": 3, "credits": 6, "type": "required" },
+    { "id": "iin-s3-cont", "curriculumId": "iin-fpuna-default", "code": "S3-03", "name": "Contabilidad", "semesterNumber": 3, "credits": 4, "type": "required" },
+    { "id": "iin-s3-log", "curriculumId": "iin-fpuna-default", "code": "S3-04", "name": "Lógica para Ciencias de la Computación", "semesterNumber": 3, "credits": 6, "type": "required" },
+    { "id": "iin-s3-aed3", "curriculumId": "iin-fpuna-default", "code": "S3-05", "name": "Algoritmos y Estructura de Datos III", "semesterNumber": 3, "credits": 6, "type": "required" },
+    { "id": "iin-s3-lp2", "curriculumId": "iin-fpuna-default", "code": "S3-06", "name": "Lenguajes de Programación II", "semesterNumber": 3, "credits": 6, "type": "required" },
+
+    { "id": "iin-s4-eco", "curriculumId": "iin-fpuna-default", "code": "S4-01", "name": "Economía y Finanzas", "semesterNumber": 4, "credits": 4, "type": "required" },
+    { "id": "iin-s4-cal3", "curriculumId": "iin-fpuna-default", "code": "S4-02", "name": "Cálculo III", "semesterNumber": 4, "credits": 6, "type": "required" },
+    { "id": "iin-s4-red1", "curriculumId": "iin-fpuna-default", "code": "S4-03", "name": "Redes de Computadoras I", "semesterNumber": 4, "credits": 6, "type": "required" },
+    { "id": "iin-s4-so", "curriculumId": "iin-fpuna-default", "code": "S4-04", "name": "Sistemas Operativos", "semesterNumber": 4, "credits": 6, "type": "required" },
+    { "id": "iin-s4-fis2", "curriculumId": "iin-fpuna-default", "code": "S4-05", "name": "Física 2", "semesterNumber": 4, "credits": 6, "type": "required" },
+    { "id": "iin-s4-prob", "curriculumId": "iin-fpuna-default", "code": "S4-06", "name": "Probabilidades y Estadística", "semesterNumber": 4, "credits": 6, "type": "required" },
+
+    { "id": "iin-s5-tom", "curriculumId": "iin-fpuna-default", "code": "S5-01", "name": "Técnicas de Organización y Métodos", "semesterNumber": 5, "credits": 4, "type": "required" },
+    { "id": "iin-s5-io1", "curriculumId": "iin-fpuna-default", "code": "S5-02", "name": "Investigación de Operaciones I", "semesterNumber": 5, "credits": 6, "type": "required" },
+    { "id": "iin-s5-lp3", "curriculumId": "iin-fpuna-default", "code": "S5-03", "name": "Lenguajes de Programación III", "semesterNumber": 5, "credits": 6, "type": "required" },
+    { "id": "iin-s5-red2", "curriculumId": "iin-fpuna-default", "code": "S5-04", "name": "Redes de Computadoras II", "semesterNumber": 5, "credits": 6, "type": "required" },
+    { "id": "iin-s5-sd", "curriculumId": "iin-fpuna-default", "code": "S5-05", "name": "Sistemas Distribuidos", "semesterNumber": 5, "credits": 6, "type": "required" },
+
+    { "id": "iin-s6-bd1", "curriculumId": "iin-fpuna-default", "code": "S6-01", "name": "Base de Datos I", "semesterNumber": 6, "credits": 6, "type": "required" },
+    { "id": "iin-s6-is1", "curriculumId": "iin-fpuna-default", "code": "S6-02", "name": "Ingeniería de Software I", "semesterNumber": 6, "credits": 6, "type": "required" },
+    { "id": "iin-s6-mn", "curriculumId": "iin-fpuna-default", "code": "S6-03", "name": "Métodos Numéricos", "semesterNumber": 6, "credits": 6, "type": "required" },
+
+    { "id": "iin-s7-ma", "curriculumId": "iin-fpuna-default", "code": "S7-01", "name": "Matemática Aplicada", "semesterNumber": 7, "credits": 6, "type": "required" },
+    { "id": "iin-s7-el1", "curriculumId": "iin-fpuna-default", "code": "S7-E1", "name": "Electiva 1", "semesterNumber": 7, "credits": 6, "type": "elective", "electiveSlot": "Electiva 1" },
+    { "id": "iin-s7-op1", "curriculumId": "iin-fpuna-default", "code": "S7-O1", "name": "Optativa 1", "semesterNumber": 7, "credits": 4, "type": "optional", "electiveSlot": "Optativa 1" },
+    { "id": "iin-s7-is2", "curriculumId": "iin-fpuna-default", "code": "S7-02", "name": "Ingeniería de Software II", "semesterNumber": 7, "credits": 6, "type": "required" },
+
+    { "id": "iin-s8-is3", "curriculumId": "iin-fpuna-default", "code": "S8-01", "name": "Ingeniería de Software III", "semesterNumber": 8, "credits": 6, "type": "required" },
+    { "id": "iin-s8-op2", "curriculumId": "iin-fpuna-default", "code": "S8-O2", "name": "Optativa 2", "semesterNumber": 8, "credits": 4, "type": "optional", "electiveSlot": "Optativa 2" },
+    { "id": "iin-s8-bd2", "curriculumId": "iin-fpuna-default", "code": "S8-02", "name": "Base de Datos II", "semesterNumber": 8, "credits": 6, "type": "required" },
+    { "id": "iin-s8-el3", "curriculumId": "iin-fpuna-default", "code": "S8-E3", "name": "Electiva 3", "semesterNumber": 8, "credits": 6, "type": "elective", "electiveSlot": "Electiva 3" },
+    { "id": "iin-s8-el2", "curriculumId": "iin-fpuna-default", "code": "S8-E2", "name": "Electiva 2", "semesterNumber": 8, "credits": 6, "type": "elective", "electiveSlot": "Electiva 2" },
+
+    { "id": "iin-s9-op3", "curriculumId": "iin-fpuna-default", "code": "S9-O3", "name": "Optativa 3", "semesterNumber": 9, "credits": 4, "type": "optional", "electiveSlot": "Optativa 3" },
+    { "id": "iin-s9-el5", "curriculumId": "iin-fpuna-default", "code": "S9-E5", "name": "Electiva 5", "semesterNumber": 9, "credits": 6, "type": "elective", "electiveSlot": "Electiva 5" },
+    { "id": "iin-s9-el4", "curriculumId": "iin-fpuna-default", "code": "S9-E4", "name": "Electiva 4", "semesterNumber": 9, "credits": 6, "type": "elective", "electiveSlot": "Electiva 4" },
+
+    { "id": "iin-ext", "curriculumId": "iin-fpuna-default", "code": "EXT", "name": "Créditos de Extensión Universitaria", "semesterNumber": 0, "credits": null, "type": "extension" }
+  ]
+}

@@ -1,12 +1,18 @@
--- Seed opcional para entornos de desarrollo administrativos.
--- No incluye datos reales de la facultad.
+-- Seed mínimo de referencia. Para datos reales usar admin:fresh-start o import:schedule.
+-- Periodo ID estable (debe coincidir con la app y el importador).
 
 insert into public.academic_periods (id, name, year, term, starts_at, ends_at, is_active)
-values
-  ('11111111-1111-4111-8111-111111111101', 'Primer Cuatrimestre 2026', 2026, 1, '2026-03-01', '2026-07-15', true)
-on conflict (id) do nothing;
+values (
+  'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1',
+  'Primer Periodo 2026',
+  2026,
+  1,
+  '2026-03-01',
+  '2026-07-15',
+  true
+)
+on conflict (id) do update set
+  name = excluded.name,
+  is_active = excluded.is_active;
 
-insert into public.careers (id, code, name, faculty, campus)
-values
-  ('22222222-2222-4222-8222-222222222201', 'INF', 'Ingeniería Informática', 'Facultad Politécnica', 'San Lorenzo')
-on conflict (id) do nothing;
+-- Carreras: ver supabase/seed-careers.sql (14 carreras FPUNA con IDs deterministas).

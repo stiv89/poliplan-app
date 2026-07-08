@@ -125,3 +125,52 @@ export function getConflictsForSection(
       conflict.secondSectionId === sectionId,
   )
 }
+
+export function sectionsHaveTimeOverlap(
+  first: CourseSection,
+  second: CourseSection,
+): boolean {
+  for (const meetingA of first.meetings) {
+    for (const meetingB of second.meetings) {
+      if (meetingA.dayOfWeek !== meetingB.dayOfWeek) continue
+      if (
+        doTimesOverlap(
+          meetingA.startTime,
+          meetingA.endTime,
+          meetingB.startTime,
+          meetingB.endTime,
+        )
+      ) {
+        return true
+      }
+    }
+  }
+  return false
+}
+
+export function getPreviewConflicts(
+  previewSection: CourseSection,
+  selectedSections: CourseSection[],
+): ScheduleConflict[] {
+  if (selectedSections.length === 0) return []
+  return detectScheduleConflicts([previewSection, ...selectedSections]).filter(
+    (conflict) =>
+      conflict.firstSectionId === previewSection.id ||
+      conflict.secondSectionId === previewSection.id,
+  )
+}
+
+export function meetingOverlapsPreview(
+  dayOfWeek: number,
+  startTime: string,
+  endTime: string,
+  previewSection: CourseSection,
+): boolean {
+  for (const meeting of previewSection.meetings) {
+    if (meeting.dayOfWeek !== dayOfWeek) continue
+    if (doTimesOverlap(startTime, endTime, meeting.startTime, meeting.endTime)) {
+      return true
+    }
+  }
+  return false
+}
