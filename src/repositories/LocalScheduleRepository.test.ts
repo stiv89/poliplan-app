@@ -108,4 +108,41 @@ describe('LocalScheduleRepository', () => {
     expect(selected).toHaveLength(1)
     expect(selected[0]?.id).toBe(section!.id)
   })
+
+  it('resuelve horarios distintos por periodo', async () => {
+    const periodA = '11111111-1111-4111-8111-111111111101'
+    const periodB = '11111111-1111-4111-8111-111111111102'
+
+    const scheduleA = await repository.ensureDefaultSchedule(periodA)
+    const scheduleB = await repository.ensureDefaultSchedule(periodB)
+
+    expect(scheduleA.id).not.toBe(scheduleB.id)
+    expect(scheduleA.academicPeriodId).toBe(periodA)
+    expect(scheduleB.academicPeriodId).toBe(periodB)
+  })
+
+  it('elimina selecciones de otro periodo al cargar un horario', async () => {
+    const bundle = sampleBundle as SampleScheduleBundle
+    const periodId = bundle.academicPeriods[0]?.id
+    const section = bundle.sections[0]
+    const otherPeriodId = '11111111-1111-4111-8111-111111111102'
+
+    expect(periodId).toBeTruthy()
+    expect(section).toBeTruthy()
+
+    await repository.saveBundle(bundle)
+    const schedule = await repository.ensureDefaultSchedule(periodId!)
+    await repository.addSelectedSection({
+      scheduleId: schedule.id,
+      sectionId: section!.id,
+      courseId: section!.courseId,
+      academicPeriodId: otherPeriodId,
+    })
+
+    const selected = await repository.getSelectedSectionEntities(schedule.id)
+    expect(selected).toHaveLength(0)
+
+    const remaining = await repository.getSelectedSections(schedule.id)
+    expect(remaining).toHaveLength(0)
+  })
 })

@@ -1,7 +1,7 @@
 /**
  * WeeklyScheduleGrid — Calendario semanal protagonista
  */
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { AlertTriangle } from 'lucide-react'
 import { DAYS_OF_WEEK, getCourseColor } from '@/config/constants'
 import { DEFAULT_SCHEDULE_VIEW_FILTERS } from '@/types/scheduleFilters'
@@ -9,15 +9,16 @@ import type { ScheduleViewFilters } from '@/types/scheduleFilters'
 import { formatTimeRange, timeToMinutes } from '@/utils/times'
 import { meetingMatchesViewFilters } from '@/utils/scheduleFilters'
 import {
+  getMeetingConflictDetails,
   getPreviewConflicts,
   meetingOverlapsPreview,
 } from '@/utils/conflicts'
+import { ClassBlockPopoverLayer } from '@/components/schedule/ClassBlockPopoverLayer'
 import {
-  ClassBlockDetail,
   shortCourseLabel,
-  type ClassBlockConflict,
   type ClassBlockInfo,
 } from '@/components/schedule/ClassBlockDetail'
+import { useClassBlockPopover } from '@/components/schedule/useClassBlockPopover'
 import { getSectionScheduleTitle } from '@/utils/electiveCourses'
 import type { CourseSection, ScheduleConflict } from '@/types/academic'
 
@@ -44,9 +45,19 @@ export function WeeklyScheduleGrid({
   previewSection = null,
   viewFilters = DEFAULT_SCHEDULE_VIEW_FILTERS,
 }: WeeklyScheduleGridProps) {
-  const [activeBlock, setActiveBlock] = useState<ClassBlockInfo | null>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const lastScrolledPreviewId = useRef<string | null>(null)
+  const {
+    activeBlock,
+    anchorRef,
+    popoverRef,
+    handleBlockClick,
+    handleBlockMouseEnter,
+    handleBlockMouseLeave,
+    handlePopoverMouseEnter,
+    handlePopoverMouseLeave,
+    close: closePopover,
+  } = useClassBlockPopover()
 
   const visibleDays = useMemo(
     () => DAYS_OF_WEEK.filter((day) => viewFilters.days.includes(day.value)),
@@ -87,23 +98,6 @@ export function WeeklyScheduleGrid({
 
   const sectionsById = new Map(selectedSections.map((s) => [s.id, s]))
 
-  const conflictSectionIds = new Set<string>()
-  for (const c of conflicts) {
-    conflictSectionIds.add(c.firstSectionId)
-    conflictSectionIds.add(c.secondSectionId)
-  }
-
-  const conflictsBySectionId = new Map<string, ClassBlockConflict[]>()
-  for (const c of conflicts) {
-    const add = (id: string, other: string) => {
-      const existing = conflictsBySectionId.get(id) ?? []
-      existing.push({ overlapStart: c.overlapStart, overlapEnd: c.overlapEnd, otherSectionId: other })
-      conflictsBySectionId.set(id, existing)
-    }
-    add(c.firstSectionId, c.secondSectionId)
-    add(c.secondSectionId, c.firstSectionId)
-  }
-
   const blocks: ClassBlockInfo[] = selectedSections.flatMap((section) => {
     const course = coursesById.get(section.courseId)
     return section.meetings
@@ -115,23 +109,32 @@ export function WeeklyScheduleGrid({
           viewFilters,
         ),
       )
-      .map((meeting) => ({
-        id: meeting.id,
-        sectionId: section.id,
-        courseId: section.courseId,
-        dayOfWeek: meeting.dayOfWeek,
-        startTime: meeting.startTime,
-        endTime: meeting.endTime,
-        title: getSectionScheduleTitle(section, course),
-        sectionCode: section.sectionCode,
-        classroom: meeting.classroom,
-        teacherName: section.teacherName,
-        teacherEmail: section.teacherEmail,
-        teacherId: section.teacherId,
-        academicPeriodId: section.academicPeriodId,
-        hasConflict: conflictSectionIds.has(section.id),
-        conflictDetails: conflictsBySectionId.get(section.id) ?? [],
-      }))
+      .map((meeting) => {
+        const conflictDetails = getMeetingConflictDetails(
+          section.id,
+          meeting.dayOfWeek,
+          meeting.startTime,
+          meeting.endTime,
+          conflicts,
+        )
+        return {
+          id: meeting.id,
+          sectionId: section.id,
+          courseId: section.courseId,
+          dayOfWeek: meeting.dayOfWeek,
+          startTime: meeting.startTime,
+          endTime: meeting.endTime,
+          title: getSectionScheduleTitle(section, course),
+          sectionCode: section.sectionCode,
+          classroom: meeting.classroom,
+          teacherName: section.teacherName,
+          teacherEmail: section.teacherEmail,
+          teacherId: section.teacherId,
+          academicPeriodId: section.academicPeriodId,
+          hasConflict: conflictDetails.length > 0,
+          conflictDetails,
+        }
+      })
   })
 
   const previewBlocks = useMemo(
@@ -186,29 +189,29 @@ export function WeeklyScheduleGrid({
 
   return (
     <div className="relative flex h-full flex-col overflow-hidden bg-background">
-      {activeBlock && (
-        <div className="absolute inset-0 z-50 flex items-start justify-center px-4 pt-12">
-          <ClassBlockDetail
-            block={activeBlock}
-            sectionsById={sectionsById}
-            coursesById={coursesById}
-            onClose={() => setActiveBlock(null)}
-            onRemove={(id) => {
-              onRemoveSection(id)
-              setActiveBlock(null)
-            }}
-            onViewAlternatives={
-              onViewAlternatives
-                ? (courseId) => {
-                    setActiveBlock(null)
-                    onViewAlternatives(courseId)
-                  }
-                : undefined
-            }
-            removingId={removingId}
-          />
-        </div>
-      )}
+      <ClassBlockPopoverLayer
+        activeBlock={activeBlock}
+        anchorRef={anchorRef}
+        popoverRef={popoverRef}
+        sectionsById={sectionsById}
+        coursesById={coursesById}
+        removingId={removingId}
+        onClose={closePopover}
+        onRemove={(id) => {
+          onRemoveSection(id)
+          closePopover()
+        }}
+        onViewAlternatives={
+          onViewAlternatives
+            ? (courseId) => {
+                closePopover()
+                onViewAlternatives(courseId)
+              }
+            : undefined
+        }
+        onPopoverMouseEnter={handlePopoverMouseEnter}
+        onPopoverMouseLeave={handlePopoverMouseLeave}
+      />
 
       <div
         className={`grid shrink-0 bg-surface/80 transition-opacity duration-300 ${
@@ -310,7 +313,9 @@ export function WeeklyScheduleGrid({
                             block.hasConflict || isPreviewOverlap ? undefined : color.bg,
                           color: block.hasConflict || isPreviewOverlap ? '#B91C1C' : color.text,
                         }}
-                        onClick={() => setActiveBlock(block)}
+                        onClick={(event) => handleBlockClick(block, event)}
+                        onMouseEnter={(event) => handleBlockMouseEnter(block, event)}
+                        onMouseLeave={handleBlockMouseLeave}
                         aria-label={`${block.title} — ${formatTimeRange(block.startTime, block.endTime)}${block.hasConflict || isPreviewOverlap ? ' — conflicto' : ''}`}
                       >
                         {(block.hasConflict || isPreviewOverlap) && height >= 40 && (

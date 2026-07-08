@@ -1,5 +1,9 @@
 import { stripAccents } from '@/utils/courseMatching'
-import { getSectionSearchLabel } from '@/utils/electiveCourses'
+import {
+  getSectionSearchLabel,
+  resolveCourseSlotName,
+  resolveSectionElectiveName,
+} from '@/utils/electiveCourses'
 import type { CourseSection } from '@/types/academic'
 
 export function normalizeSearchText(value: string): string {
@@ -70,7 +74,7 @@ function scoreToken(queryToken: string, text: string, textTokens: string[]): num
   }
 
   if (isSubsequence(queryToken, text)) {
-    best = Math.max(best, 62)
+    best = Math.max(best, 55)
   }
 
   const wholeDistance = levenshteinDistance(queryToken, text)
@@ -121,6 +125,61 @@ export function filterAndRankByFuzzySearch<T>(
     .filter(({ score }) => score >= minScore)
     .sort((a, b) => b.score - a.score || getText(a.item).localeCompare(getText(b.item)))
     .map(({ item }) => item)
+}
+
+export function filterAndRankBySearchScore<T>(
+  items: T[],
+  query: string,
+  getScore: (item: T) => number,
+  minScore = 45,
+): T[] {
+  const trimmedQuery = query.trim()
+  if (!trimmedQuery) return items
+
+  return items
+    .map((item) => ({ item, score: getScore(item) }))
+    .filter(({ score }) => score >= minScore)
+    .sort((a, b) => b.score - a.score)
+    .map(({ item }) => item)
+}
+
+/** Prioriza coincidencias en nombre/código de materia; evita falsos positivos por subsecuencia en metadatos. */
+export function scoreSectionSearchMatch(
+  query: string,
+  section: Pick<CourseSection, 'specificElectiveName' | 'sectionCode' | 'teacherName'>,
+  course?: { name: string; code?: string | null } | null,
+): number {
+  const slotName = resolveCourseSlotName(course)
+  const electiveName = resolveSectionElectiveName(section, course) ?? ''
+
+  const primaryScore = Math.max(
+    scoreFuzzyMatch(query, course?.name ?? ''),
+    course?.code ? scoreFuzzyMatch(query, course.code) : 0,
+    slotName ? scoreFuzzyMatch(query, slotName) : 0,
+    electiveName ? scoreFuzzyMatch(query, electiveName) : 0,
+  )
+
+  if (primaryScore >= 45) {
+    return primaryScore
+  }
+
+  const secondaryScore = Math.max(
+    scoreFuzzyMatch(query, section.sectionCode),
+    section.teacherName ? scoreFuzzyMatch(query, section.teacherName) : 0,
+  )
+
+  return secondaryScore >= 78 ? Math.round(secondaryScore * 0.85) : 0
+}
+
+export function filterAndRankSections(
+  sections: CourseSection[],
+  query: string,
+  coursesById: Map<string, { name: string; code?: string | null }>,
+  minScore = 45,
+): CourseSection[] {
+  return filterAndRankBySearchScore(sections, query, (section) =>
+    scoreSectionSearchMatch(query, section, coursesById.get(section.courseId)),
+  minScore)
 }
 
 export function buildSectionSearchText(

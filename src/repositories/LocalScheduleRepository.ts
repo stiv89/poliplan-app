@@ -497,9 +497,25 @@ export class LocalScheduleRepository implements ScheduleRepository {
   }
 
   async getSelectedSectionEntities(scheduleId: string): Promise<CourseSection[]> {
+    const schedule = await db.savedSchedules.get(scheduleId)
+    if (!schedule || schedule.deletedAt) {
+      return []
+    }
+
     const selected = await this.getSelectedSections(scheduleId)
+    const matching = selected.filter(
+      (item) => item.academicPeriodId === schedule.academicPeriodId,
+    )
+    const mismatched = selected.filter(
+      (item) => item.academicPeriodId !== schedule.academicPeriodId,
+    )
+
+    if (mismatched.length > 0) {
+      await db.selectedSections.bulkDelete(mismatched.map((item) => item.id))
+    }
+
     const sections = await Promise.all(
-      selected.map((item) => this.getSectionById(item.sectionId)),
+      matching.map((item) => this.getSectionById(item.sectionId)),
     )
     return sections.filter((section): section is CourseSection => section !== null)
   }

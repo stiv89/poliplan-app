@@ -218,11 +218,17 @@ export function HomePage() {
     [coursesById, openSearch, settings?.selectedCareerId, setSelectedCareer],
   )
 
+  const periodLabelsById = useMemo(
+    () => Object.fromEntries(academicPeriods.map((period) => [period.id, period.name])),
+    [academicPeriods],
+  )
+
   const schedulePickerProps = {
     activeSchedule,
     schedules: savedSchedules,
     deletedSchedules,
     periodName: activePeriod?.name ?? null,
+    periodLabelsById,
     onSelect: (scheduleId: string) => void switchSchedule(scheduleId),
     onCreate: (name: string, copyFromScheduleId?: string | null) =>
       void createSchedule(name, copyFromScheduleId),

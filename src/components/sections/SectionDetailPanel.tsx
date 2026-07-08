@@ -6,6 +6,7 @@ import { CourseFootnoteNotice } from '@/components/schedule/CourseFootnoteNotice
 import type { CourseSection, ScheduleConflict } from '@/types/academic'
 import { getCourseFootnote } from '@/utils/courseFootnotes'
 import { formatDate } from '@/utils/dates'
+import { formatExamTypeLabel } from '@/utils/exams'
 import {
   formatScheduleCompact,
   getSectionConflictMessages,
@@ -124,7 +125,7 @@ export function SectionDetailPanel({
             <ul className="mt-2 space-y-2">
               {section.exams.map((exam) => (
                 <li key={exam.id} className="text-sm text-text">
-                  <span className="font-medium">{exam.examType}</span>
+                  <span className="font-medium">{formatExamTypeLabel(exam.examType)}</span>
                   {exam.examDate && (
                     <span className="text-muted"> · {formatDate(exam.examDate)}</span>
                   )}

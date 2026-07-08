@@ -81,3 +81,24 @@ export function getOverlapRange(
     overlapEnd: minutesToTime(overlapEndMinutes),
   }
 }
+
+export function getOverlapDurationMinutes(
+  overlapStart: string,
+  overlapEnd: string,
+): number {
+  return Math.max(0, timeToMinutes(overlapEnd) - timeToMinutes(overlapStart))
+}
+
+/** Ej: 45 → "45 min", 90 → "1 h 30 min", 120 → "2 h" */
+export function formatOverlapDuration(totalMinutes: number): string {
+  if (totalMinutes <= 0) return '0 min'
+
+  const hours = Math.floor(totalMinutes / 60)
+  const minutes = totalMinutes % 60
+
+  if (hours === 0) return `${minutes} min`
+  if (minutes === 0) return hours === 1 ? '1 h' : `${hours} h`
+
+  const hourLabel = hours === 1 ? '1 h' : `${hours} h`
+  return `${hourLabel} ${minutes} min`
+}

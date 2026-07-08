@@ -271,11 +271,10 @@ export function ScheduleProvider({ children }: ScheduleProviderProps) {
           localScheduleRepository.getSelectedSectionEntities(schedule.id),
           scheduleRepository.getActiveScheduleVersion(period.id),
           scheduleRepository.getCoursesForPeriod(period.id),
-          localScheduleRepository.getSavedSchedules({ academicPeriodId: period.id }),
-          localScheduleRepository.getSavedSchedules({
-            academicPeriodId: period.id,
-            includeDeleted: true,
-          }).then((items) => items.filter((item) => item.deletedAt != null)),
+          localScheduleRepository.getSavedSchedules(),
+          localScheduleRepository
+            .getSavedSchedules({ includeDeleted: true })
+            .then((items) => items.filter((item) => item.deletedAt != null)),
         ])
 
       setActiveSchedule(schedule)
@@ -362,15 +361,15 @@ export function ScheduleProvider({ children }: ScheduleProviderProps) {
     if (!settings || initialSyncDoneRef.current) return
     initialSyncDoneRef.current = true
     if (settings.syncOnOpen) {
-      void scheduleSyncService.syncActivePeriod()
+      void scheduleSyncService.syncPeriod(settings.selectedAcademicPeriodId)
     }
   }, [settings])
 
   useEffect(() => {
     if (isOnline && wasOffline) {
-      void scheduleSyncService.syncActivePeriod(true)
+      void scheduleSyncService.syncPeriod(settings?.selectedAcademicPeriodId ?? null, true)
     }
-  }, [isOnline, wasOffline])
+  }, [isOnline, wasOffline, settings?.selectedAcademicPeriodId])
 
   const setSelectedCareer = async (careerId: string | null) => {
     if (careerId !== settings?.selectedCareerId) {
@@ -387,18 +386,34 @@ export function ScheduleProvider({ children }: ScheduleProviderProps) {
   const setSelectedPeriod = async (periodId: string | null) => {
     if (!periodId) return
 
-    if (periodId !== settings?.selectedAcademicPeriodId) {
-      clearCatalogSnapshot()
+    if (activeSchedule?.academicPeriodId === periodId) {
+      if (settings?.selectedAcademicPeriodId !== periodId) {
+        const next = await localScheduleRepository.updateSettings({
+          selectedAcademicPeriodId: periodId,
+        })
+        setSettings(next)
+      }
+      return
     }
 
-    if (activeSchedule) {
-      await localScheduleRepository.setSavedScheduleAcademicPeriod(activeSchedule.id, periodId)
-    }
+    clearCatalogSnapshot()
+
+    const careerId =
+      activeSchedule?.selectedCareerId ?? settings?.selectedCareerId ?? null
+    const schedule = await localScheduleRepository.resolveActiveSchedule(
+      periodId,
+      null,
+      careerId,
+    )
 
     const next = await localScheduleRepository.updateSettings({
+      activeScheduleId: schedule.id,
       selectedAcademicPeriodId: periodId,
+      selectedCareerId: schedule.selectedCareerId ?? careerId,
     })
     setSettings(next)
+
+    void scheduleSyncService.syncPeriod(periodId, false)
     await loadData().catch(() => undefined)
   }
 
@@ -467,6 +482,7 @@ export function ScheduleProvider({ children }: ScheduleProviderProps) {
     const next = await localScheduleRepository.updateSettings({
       activeScheduleId: schedule.id,
       selectedCareerId: schedule.selectedCareerId,
+      selectedAcademicPeriodId: schedule.academicPeriodId,
     })
     setSettings(next)
     await loadData().catch(() => undefined)
@@ -613,7 +629,11 @@ export function ScheduleProvider({ children }: ScheduleProviderProps) {
     wasOffline,
     acknowledgeReconnected,
     refreshAll: loadData,
-    syncNow: (force = true) => scheduleSyncService.syncActivePeriod(force),
+    syncNow: (force = true) =>
+      scheduleSyncService.syncPeriod(
+        activePeriod?.id ?? settings?.selectedAcademicPeriodId ?? null,
+        force,
+      ),
     setSelectedCareer,
     setSelectedPeriod,
     updateAppSettings,

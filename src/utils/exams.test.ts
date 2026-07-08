@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   categorizeExamType,
   filterExamItems,
+  formatExamTypeLabel,
   getNextExam,
   groupExamsByDate,
   todayKey,
@@ -29,6 +30,19 @@ describe('exams utils', () => {
     expect(categorizeExamType('Primer parcial')).toBe('parcial')
     expect(categorizeExamType('Primera final')).toBe('final')
     expect(categorizeExamType('Recuperatorio')).toBe('recuperatorio')
+    expect(categorizeExamType('partial2')).toBe('parcial')
+    expect(categorizeExamType('final1')).toBe('final')
+    expect(categorizeExamType('revision1')).toBe('recuperatorio')
+  })
+
+  it('formatea claves internas del importador en español', () => {
+    expect(formatExamTypeLabel('partial2')).toBe('2do parcial')
+    expect(formatExamTypeLabel('Partial2')).toBe('2do parcial')
+    expect(formatExamTypeLabel('final1')).toBe('1er final')
+    expect(formatExamTypeLabel('revision1')).toBe('Revisión')
+    expect(formatExamTypeLabel('board')).toBe('Mesa examinadora')
+    expect(formatExamTypeLabel('Primer parcial')).toBe('Primer parcial')
+    expect(formatExamTypeLabel('Parcial 1')).toBe('1er parcial')
   })
 
   it('filtra por tipo', () => {

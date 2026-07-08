@@ -1,6 +1,6 @@
 import type { Course, CourseSection } from '@/types/academic'
-import { getCourseFootnote } from '@/utils/courseFootnotes'
-import type { SectionCourseInfo } from '@/utils/sectionDisplay'
+import { getCourseFootnote } from './courseFootnotes'
+import type { SectionCourseInfo } from './sectionDisplay'
 
 const ELECTIVE_PAREN = /^(electiva|optativa)\s*(\d+)\s*\(\s*(.+?)\s*\)$/i
 const ELECTIVE_DASH = /^(electiva|optativa)\s*(\d+)\s*-\s*(.+)$/i

@@ -13,6 +13,23 @@ export const DEFAULT_EXAM_FILTERS: ExamFilters = {
   type: 'all',
 }
 
+/** Claves internas del importador → etiquetas en español para la UI. */
+export const EXAM_TYPE_LABELS: Record<string, string> = {
+  partial1: '1er parcial',
+  parcial1: '1er parcial',
+  partial2: '2do parcial',
+  parcial2: '2do parcial',
+  final1: '1er final',
+  final2: '2do final',
+  revision1: 'Revisión',
+  revision2: '2da revisión',
+  board: 'Mesa examinadora',
+}
+
+function normalizeExamTypeKey(examType: string): string {
+  return examType.trim().toLowerCase().replace(/[\s._-]/g, '')
+}
+
 export interface ExamItem extends Exam {
   courseId: string
   courseName: string
@@ -46,16 +63,31 @@ export function collectExamItems(
 }
 
 export function categorizeExamType(examType: string): ExamFilterType | 'other' {
-  const normalized = examType.toLowerCase()
-  if (normalized.includes('recuper')) return 'recuperatorio'
-  if (normalized.includes('final')) return 'final'
-  if (normalized.includes('parcial')) return 'parcial'
+  const key = normalizeExamTypeKey(examType)
+
+  if (key.startsWith('revision') || key.includes('recuper') || key.includes('revisi')) {
+    return 'recuperatorio'
+  }
+  if (key.startsWith('partial') || key.includes('parcial')) {
+    return 'parcial'
+  }
+  if (key.startsWith('final') || key.includes('final')) {
+    return 'final'
+  }
   return 'other'
 }
 
 export function formatExamTypeLabel(examType: string): string {
   const trimmed = examType.trim()
   if (!trimmed) return 'Otro'
+
+  const mapped = EXAM_TYPE_LABELS[normalizeExamTypeKey(trimmed)]
+  if (mapped) return mapped
+
+  if (/parcial|final|revisi|recuper|mesa/i.test(trimmed)) {
+    return trimmed.charAt(0).toUpperCase() + trimmed.slice(1)
+  }
+
   return trimmed.charAt(0).toUpperCase() + trimmed.slice(1)
 }
 

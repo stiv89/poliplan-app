@@ -18,7 +18,7 @@ import { useAcademicHistory } from '@/hooks/useAcademicHistory'
 import type { Career, CourseSection, ScheduleConflict } from '@/types/academic'
 import { getCourseProgressLabel } from '@/utils/academicProgressLabels'
 import { getCourseFootnote, type CourseFootnoteKind } from '@/utils/courseFootnotes'
-import { buildSectionSearchText, filterAndRankByFuzzySearch } from '@/utils/fuzzySearch'
+import { filterAndRankSections } from '@/utils/fuzzySearch'
 import { resolveSectionShift } from '@/utils/sectionCode'
 import { DEFAULT_SCHEDULE_VIEW_FILTERS, type ScheduleViewFilters } from '@/types/scheduleFilters'
 import {
@@ -91,9 +91,7 @@ export function SectionsExplorer({
     if (!hasCareer) return []
 
     const query = search.trim()
-    const searchResults = filterAndRankByFuzzySearch(allSections, query, (section) =>
-      buildSectionSearchText(section, coursesById.get(section.courseId)),
-    )
+    const searchResults = filterAndRankSections(allSections, query, coursesById)
 
     return searchResults
       .filter((section) => {

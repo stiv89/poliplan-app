@@ -1,16 +1,16 @@
 /**
  * DayScheduleView — Vista diaria para móvil
  */
-import { useState } from 'react'
 import { AlertTriangle } from 'lucide-react'
 import { getCourseColor } from '@/config/constants'
+import { ClassBlockPopoverLayer } from '@/components/schedule/ClassBlockPopoverLayer'
 import {
-  ClassBlockDetail,
   shortCourseLabel,
-  type ClassBlockConflict,
   type ClassBlockInfo,
 } from '@/components/schedule/ClassBlockDetail'
+import { useClassBlockPopover } from '@/components/schedule/useClassBlockPopover'
 import { formatTimeRange } from '@/utils/times'
+import { getMeetingConflictDetails } from '@/utils/conflicts'
 import type { CourseSection, ScheduleConflict } from '@/types/academic'
 import { getSectionScheduleTitle } from '@/utils/electiveCourses'
 
@@ -33,50 +33,51 @@ export function DayScheduleView({
   onViewAlternatives,
   removingId,
 }: DayScheduleViewProps) {
-  const [activeBlock, setActiveBlock] = useState<ClassBlockInfo | null>(null)
+  const {
+    activeBlock,
+    anchorRef,
+    popoverRef,
+    handleBlockClick,
+    handleBlockMouseEnter,
+    handleBlockMouseLeave,
+    handlePopoverMouseEnter,
+    handlePopoverMouseLeave,
+    close: closePopover,
+  } = useClassBlockPopover()
 
   const sectionsById = new Map(selectedSections.map((s) => [s.id, s]))
-
-  const conflictSectionIds = new Set<string>()
-  for (const c of conflicts) {
-    conflictSectionIds.add(c.firstSectionId)
-    conflictSectionIds.add(c.secondSectionId)
-  }
-
-  const conflictsBySectionId = new Map<string, ClassBlockConflict[]>()
-  for (const c of conflicts) {
-    if (c.dayOfWeek !== day) continue
-    const add = (id: string, other: string) => {
-      const existing = conflictsBySectionId.get(id) ?? []
-      existing.push({ overlapStart: c.overlapStart, overlapEnd: c.overlapEnd, otherSectionId: other })
-      conflictsBySectionId.set(id, existing)
-    }
-    add(c.firstSectionId, c.secondSectionId)
-    add(c.secondSectionId, c.firstSectionId)
-  }
 
   const dayBlocks: ClassBlockInfo[] = selectedSections
     .flatMap((section) => {
       const course = coursesById.get(section.courseId)
       return section.meetings
         .filter((m) => m.dayOfWeek === day)
-        .map((meeting) => ({
-          id: meeting.id,
-          sectionId: section.id,
-          courseId: section.courseId,
-          dayOfWeek: meeting.dayOfWeek,
-          startTime: meeting.startTime,
-          endTime: meeting.endTime,
-          title: getSectionScheduleTitle(section, course),
-          sectionCode: section.sectionCode,
-          classroom: meeting.classroom,
-          teacherName: section.teacherName,
-          teacherEmail: section.teacherEmail,
-          teacherId: section.teacherId,
-          academicPeriodId: section.academicPeriodId,
-          hasConflict: conflictSectionIds.has(section.id),
-          conflictDetails: conflictsBySectionId.get(section.id) ?? [],
-        }))
+        .map((meeting) => {
+          const conflictDetails = getMeetingConflictDetails(
+            section.id,
+            meeting.dayOfWeek,
+            meeting.startTime,
+            meeting.endTime,
+            conflicts,
+          )
+          return {
+            id: meeting.id,
+            sectionId: section.id,
+            courseId: section.courseId,
+            dayOfWeek: meeting.dayOfWeek,
+            startTime: meeting.startTime,
+            endTime: meeting.endTime,
+            title: getSectionScheduleTitle(section, course),
+            sectionCode: section.sectionCode,
+            classroom: meeting.classroom,
+            teacherName: section.teacherName,
+            teacherEmail: section.teacherEmail,
+            teacherId: section.teacherId,
+            academicPeriodId: section.academicPeriodId,
+            hasConflict: conflictDetails.length > 0,
+            conflictDetails,
+          }
+        })
     })
     .sort((a, b) => a.startTime.localeCompare(b.startTime))
 
@@ -92,6 +93,29 @@ export function DayScheduleView({
 
   return (
     <div className="relative space-y-2 px-4 py-3 pb-28">
+      <ClassBlockPopoverLayer
+        activeBlock={activeBlock}
+        anchorRef={anchorRef}
+        popoverRef={popoverRef}
+        sectionsById={sectionsById}
+        coursesById={coursesById}
+        removingId={removingId}
+        onClose={closePopover}
+        onRemove={(id) => {
+          onRemoveSection(id)
+          closePopover()
+        }}
+        onViewAlternatives={
+          onViewAlternatives
+            ? (courseId) => {
+                closePopover()
+                onViewAlternatives(courseId)
+              }
+            : undefined
+        }
+        onPopoverMouseEnter={handlePopoverMouseEnter}
+        onPopoverMouseLeave={handlePopoverMouseLeave}
+      />
       {dayConflicts.length > 0 && (
         <div className="rounded-xl border border-danger/30 bg-danger/5 px-3 py-2.5">
           <p className="flex items-center gap-1.5 text-xs font-medium text-danger">
@@ -120,7 +144,9 @@ export function DayScheduleView({
                 ? undefined
                 : { backgroundColor: color.bg, borderColor: `${color.border}80` }
             }
-            onClick={() => setActiveBlock(block)}
+            onClick={(event) => handleBlockClick(block, event)}
+            onMouseEnter={(event) => handleBlockMouseEnter(block, event)}
+            onMouseLeave={handleBlockMouseLeave}
           >
             <div className="min-w-[52px] pt-0.5 text-right">
               <p
@@ -151,30 +177,6 @@ export function DayScheduleView({
           </button>
         )
       })}
-
-      {activeBlock && (
-        <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/20 p-4 pb-24">
-          <ClassBlockDetail
-            block={activeBlock}
-            sectionsById={sectionsById}
-            coursesById={coursesById}
-            onClose={() => setActiveBlock(null)}
-            onRemove={(id) => {
-              onRemoveSection(id)
-              setActiveBlock(null)
-            }}
-            onViewAlternatives={
-              onViewAlternatives
-                ? (courseId) => {
-                    setActiveBlock(null)
-                    onViewAlternatives(courseId)
-                  }
-                : undefined
-            }
-            removingId={removingId}
-          />
-        </div>
-      )}
     </div>
   )
 }

@@ -37,7 +37,7 @@ class ScheduleSyncService {
   startAutoSync(intervalMs: number) {
     this.stopAutoSync()
     this.intervalId = window.setInterval(() => {
-      void this.syncActivePeriod()
+      void this.syncPeriod()
     }, intervalMs)
   }
 
@@ -48,7 +48,8 @@ class ScheduleSyncService {
     }
   }
 
-  async syncActivePeriod(force = false): Promise<void> {
+  /** Sincroniza el periodo del horario activo (o el periodo oficial si no hay uno elegido). */
+  async syncPeriod(periodId?: string | null, force = false): Promise<void> {
     if (this.syncing) {
       return
     }
@@ -63,7 +64,23 @@ class ScheduleSyncService {
       }
 
       this.setStatus('checking')
-      const period = await this.repository.getActiveAcademicPeriod()
+
+      let targetPeriodId = periodId ?? null
+      if (!targetPeriodId) {
+        const settings = await localScheduleRepository.getSettings()
+        targetPeriodId = settings.selectedAcademicPeriodId
+      }
+      if (!targetPeriodId) {
+        const fallback = await this.repository.getActiveAcademicPeriod()
+        targetPeriodId = fallback?.id ?? null
+      }
+      if (!targetPeriodId) {
+        this.setStatus('idle')
+        return
+      }
+
+      const periods = await this.repository.getAcademicPeriods()
+      const period = periods.find((item) => item.id === targetPeriodId)
       if (!period) {
         this.setStatus('idle')
         return
@@ -100,6 +117,11 @@ class ScheduleSyncService {
         window.setTimeout(() => this.setStatus('idle'), 3000)
       }
     }
+  }
+
+  /** @deprecated usar syncPeriod */
+  async syncActivePeriod(force = false): Promise<void> {
+    return this.syncPeriod(undefined, force)
   }
 }
 

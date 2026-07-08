@@ -9,6 +9,7 @@ export interface SchedulePickerPanelProps {
   schedules: SavedScheduleRecord[]
   deletedSchedules: SavedScheduleRecord[]
   periodName: string | null
+  periodLabelsById?: Record<string, string>
   onSelect: (scheduleId: string) => void
   onCreate: (name: string, copyFromScheduleId?: string | null) => void
   onRename: (scheduleId: string, name: string) => void
@@ -23,7 +24,7 @@ export function SchedulePickerPanel({
   activeSchedule,
   schedules,
   deletedSchedules,
-  periodName,
+  periodLabelsById = {},
   onSelect,
   onCreate,
   onRename,
@@ -68,11 +69,7 @@ export function SchedulePickerPanel({
       <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-100 px-3 py-2">
         {mode === 'list' && (
           <>
-            {periodName ? (
-              <p className="min-w-0 truncate text-sm text-text">{periodName}</p>
-            ) : (
-              <span className="text-sm text-text">Tus horarios</span>
-            )}
+            <p className="min-w-0 truncate text-sm text-text">Tus horarios</p>
             <button
               type="button"
               onClick={() => setMode('create')}
@@ -115,6 +112,7 @@ export function SchedulePickerPanel({
             {schedules.map((schedule) => {
               const isActive = schedule.id === activeSchedule?.id
               const isEditing = editingId === schedule.id
+              const periodLabel = periodLabelsById[schedule.academicPeriodId]
 
               return (
                 <div
@@ -170,7 +168,10 @@ export function SchedulePickerPanel({
                             </span>
                           )}
                         </div>
-                        {!isActive && (
+                        {periodLabel && (
+                          <p className="mt-0.5 truncate text-[11px] text-muted">{periodLabel}</p>
+                        )}
+                        {!isActive && !periodLabel && (
                           <p className="mt-0.5 text-[11px] text-muted/80">Tocá para cambiar</p>
                         )}
                       </button>

@@ -8,6 +8,7 @@ import { DataTrustFooter } from '@/components/ui/DataTrustBanner'
 import { ROUTES } from '@/config/constants'
 import { useChanges } from '@/hooks/useChanges'
 import { formatDate } from '@/utils/dates'
+import { formatExamTypeLabel } from '@/utils/exams'
 import { formatTimeRange } from '@/utils/times'
 import type {
   AcademicPeriod,
@@ -190,7 +191,7 @@ function ExamCard({ exam, compact = false }: { exam: ExamItem; compact?: boolean
       </p>
       {(exam.classroom || exam.examType) && (
         <p className="mt-0.5 text-xs text-muted">
-          {[exam.examType, exam.classroom].filter(Boolean).join(' · ')}
+          {[formatExamTypeLabel(exam.examType), exam.classroom].filter(Boolean).join(' · ')}
         </p>
       )}
     </article>

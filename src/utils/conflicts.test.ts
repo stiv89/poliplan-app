@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { CourseSection } from '@/types/academic'
-import { detectScheduleConflicts } from '@/utils/conflicts'
+import { detectScheduleConflicts, getMeetingConflictDetails } from '@/utils/conflicts'
 
 function createSection(
   id: string,
@@ -115,5 +115,90 @@ describe('detectScheduleConflicts', () => {
     ]
 
     expect(detectScheduleConflicts(sections)).toHaveLength(0)
+  })
+})
+
+describe('getMeetingConflictDetails', () => {
+  it('solo incluye conflictos del día y horario de la reunión', () => {
+    const sections = [
+      createSection('gestion', [
+        { id: 'g-mon', dayOfWeek: 1, startTime: '17:15:00', endTime: '19:30:00' },
+        { id: 'g-wed', dayOfWeek: 3, startTime: '17:15:00', endTime: '19:30:00' },
+      ]),
+      createSection('compiladores', [
+        { id: 'c-mon', dayOfWeek: 1, startTime: '16:00:00', endTime: '19:00:00' },
+        { id: 'c-wed', dayOfWeek: 3, startTime: '16:00:00', endTime: '19:00:00' },
+      ]),
+    ]
+
+    const conflicts = detectScheduleConflicts(sections)
+    expect(conflicts).toHaveLength(2)
+
+    const mondayDetails = getMeetingConflictDetails(
+      'gestion',
+      1,
+      '17:15:00',
+      '19:30:00',
+      conflicts,
+    )
+    expect(mondayDetails).toHaveLength(1)
+    expect(mondayDetails[0]?.otherSectionId).toBe('compiladores')
+
+    const wednesdayDetails = getMeetingConflictDetails(
+      'gestion',
+      3,
+      '17:15:00',
+      '19:30:00',
+      conflicts,
+    )
+    expect(wednesdayDetails).toHaveLength(1)
+    expect(wednesdayDetails[0]?.otherSectionId).toBe('compiladores')
+  })
+
+  it('no incluye conflictos de otras reuniones de la misma sección', () => {
+    const sections = [
+      createSection('gestion', [
+        { id: 'g-mon', dayOfWeek: 1, startTime: '17:15:00', endTime: '19:30:00' },
+        { id: 'g-wed', dayOfWeek: 3, startTime: '17:15:00', endTime: '19:30:00' },
+      ]),
+      createSection('compiladores', [
+        { id: 'c-mon', dayOfWeek: 1, startTime: '16:00:00', endTime: '19:00:00' },
+      ]),
+    ]
+
+    const conflicts = detectScheduleConflicts(sections)
+    const wednesdayDetails = getMeetingConflictDetails(
+      'gestion',
+      3,
+      '17:15:00',
+      '19:30:00',
+      conflicts,
+    )
+    expect(wednesdayDetails).toHaveLength(0)
+  })
+
+  it('agrupa varios choques con la misma materia en una sola entrada', () => {
+    const sections = [
+      createSection('gestion', [
+        { id: 'g1', dayOfWeek: 1, startTime: '17:15:00', endTime: '19:30:00' },
+      ]),
+      createSection('compiladores', [
+        { id: 'c1', dayOfWeek: 1, startTime: '16:00:00', endTime: '19:00:00' },
+        { id: 'c2', dayOfWeek: 1, startTime: '17:30:00', endTime: '19:30:00' },
+      ]),
+    ]
+
+    const conflicts = detectScheduleConflicts(sections)
+    expect(conflicts.length).toBeGreaterThan(1)
+
+    const details = getMeetingConflictDetails(
+      'gestion',
+      1,
+      '17:15:00',
+      '19:30:00',
+      conflicts,
+    )
+    expect(details).toHaveLength(1)
+    expect(details[0]?.otherSectionId).toBe('compiladores')
   })
 })

@@ -43,12 +43,17 @@ export interface CourseSectionGroup {
 export function groupSectionsByCourse(
   sections: CourseSection[],
   coursesById: Map<string, SectionCourseInfo>,
+  options?: { preserveOrder?: boolean },
 ): CourseSectionGroup[] {
   const map = new Map<string, CourseSectionGroup>()
+  const groupOrder = new Map<string, number>()
 
-  for (const section of sections) {
+  for (const [index, section] of sections.entries()) {
     const course = coursesById.get(section.courseId)
     const groupKey = getCourseGroupingKey(section.courseId, course)
+    if (options?.preserveOrder && !groupOrder.has(groupKey)) {
+      groupOrder.set(groupKey, index)
+    }
     let group = map.get(groupKey)
     if (!group) {
       const slotName = resolveCourseSlotName(course)
@@ -77,11 +82,18 @@ export function groupSectionsByCourse(
     })
   }
 
-  return [...map.values()].sort(
-    (a, b) =>
+  return [...map.values()].sort((a, b) => {
+    if (options?.preserveOrder) {
+      const aOrder = groupOrder.get(a.groupKey) ?? Number.MAX_SAFE_INTEGER
+      const bOrder = groupOrder.get(b.groupKey) ?? Number.MAX_SAFE_INTEGER
+      if (aOrder !== bOrder) return aOrder - bOrder
+    }
+
+    return (
       a.courseName.localeCompare(b.courseName) ||
-      (a.courseCode ?? '').localeCompare(b.courseCode ?? ''),
-  )
+      (a.courseCode ?? '').localeCompare(b.courseCode ?? '')
+    )
+  })
 }
 
 export function formatScheduleCompact(

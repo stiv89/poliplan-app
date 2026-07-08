@@ -126,6 +126,71 @@ export function getConflictsForSection(
   )
 }
 
+export interface MeetingConflictDetail {
+  overlapStart: string
+  overlapEnd: string
+  otherSectionId: string
+}
+
+/** Conflictos que aplican a una reunión concreta (mismo día + superposición horaria). */
+export function getMeetingConflictDetails(
+  sectionId: string,
+  dayOfWeek: number,
+  startTime: string,
+  endTime: string,
+  conflicts: ScheduleConflict[],
+): MeetingConflictDetail[] {
+  const byOtherSection = new Map<string, MeetingConflictDetail>()
+
+  for (const conflict of conflicts) {
+    if (conflict.dayOfWeek !== dayOfWeek) continue
+
+    const otherSectionId =
+      conflict.firstSectionId === sectionId
+        ? conflict.secondSectionId
+        : conflict.secondSectionId === sectionId
+          ? conflict.firstSectionId
+          : null
+
+    if (!otherSectionId || otherSectionId === sectionId) continue
+
+    if (
+      !doTimesOverlap(
+        startTime,
+        endTime,
+        conflict.overlapStart,
+        conflict.overlapEnd,
+      )
+    ) {
+      continue
+    }
+
+    const existing = byOtherSection.get(otherSectionId)
+    if (!existing) {
+      byOtherSection.set(otherSectionId, {
+        overlapStart: conflict.overlapStart,
+        overlapEnd: conflict.overlapEnd,
+        otherSectionId,
+      })
+      continue
+    }
+
+    byOtherSection.set(otherSectionId, {
+      otherSectionId,
+      overlapStart:
+        conflict.overlapStart < existing.overlapStart
+          ? conflict.overlapStart
+          : existing.overlapStart,
+      overlapEnd:
+        conflict.overlapEnd > existing.overlapEnd
+          ? conflict.overlapEnd
+          : existing.overlapEnd,
+    })
+  }
+
+  return [...byOtherSection.values()]
+}
+
 export function sectionsHaveTimeOverlap(
   first: CourseSection,
   second: CourseSection,
