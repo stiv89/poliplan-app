@@ -1,0 +1,20 @@
+User-agent: *
+Allow: /presentacion
+Allow: /horarios-fpuna
+Allow: /examenes-fpuna
+Allow: /calculadora-notas-fpuna
+Allow: /como-funciona
+Allow: /fuentes
+Allow: /aviso-legal
+
+Disallow: /secciones
+Disallow: /configuracion
+Disallow: /examenes$
+Disallow: /calculadora$
+Disallow: /progreso
+Disallow: /novedades
+Disallow: /offline
+Disallow: /horario
+Disallow: /app/
+
+Sitemap: https://poliplan.app/sitemap.xml

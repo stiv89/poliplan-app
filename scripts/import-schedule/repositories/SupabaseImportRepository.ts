@@ -179,6 +179,7 @@ export class SupabaseImportRepository implements ScheduleImportRepository {
           shift: section.shift,
           teacher_name: section.teacherName,
           teacher_email: section.teacherEmail,
+          specific_elective_name: section.specificElectiveName ?? null,
           teacher_id: resolveTeacherIdForSection(
             teacherKeyToId,
             section.teacherName,

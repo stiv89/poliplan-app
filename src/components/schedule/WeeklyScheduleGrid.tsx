@@ -18,6 +18,7 @@ import {
   type ClassBlockConflict,
   type ClassBlockInfo,
 } from '@/components/schedule/ClassBlockDetail'
+import { getSectionScheduleTitle } from '@/utils/electiveCourses'
 import type { CourseSection, ScheduleConflict } from '@/types/academic'
 
 const HOUR_HEIGHT = 56
@@ -121,7 +122,7 @@ export function WeeklyScheduleGrid({
         dayOfWeek: meeting.dayOfWeek,
         startTime: meeting.startTime,
         endTime: meeting.endTime,
-        title: course?.name ?? 'Materia',
+        title: getSectionScheduleTitle(section, course),
         sectionCode: section.sectionCode,
         classroom: meeting.classroom,
         teacherName: section.teacherName,

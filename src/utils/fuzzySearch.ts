@@ -1,4 +1,6 @@
 import { stripAccents } from '@/utils/courseMatching'
+import { getSectionSearchLabel } from '@/utils/electiveCourses'
+import type { CourseSection } from '@/types/academic'
 
 export function normalizeSearchText(value: string): string {
   return stripAccents(value)
@@ -122,8 +124,8 @@ export function filterAndRankByFuzzySearch<T>(
 }
 
 export function buildSectionSearchText(
-  section: { sectionCode: string; teacherName?: string | null },
+  section: Pick<CourseSection, 'sectionCode' | 'teacherName' | 'specificElectiveName'>,
   course?: { name: string; code: string | null } | null,
 ): string {
-  return `${course?.name ?? ''} ${course?.code ?? ''} ${section.sectionCode} ${section.teacherName ?? ''}`
+  return getSectionSearchLabel(section, course)
 }

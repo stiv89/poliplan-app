@@ -12,6 +12,7 @@ import {
 } from '@/components/schedule/ClassBlockDetail'
 import { formatTimeRange } from '@/utils/times'
 import type { CourseSection, ScheduleConflict } from '@/types/academic'
+import { getSectionScheduleTitle } from '@/utils/electiveCourses'
 
 interface DayScheduleViewProps {
   day: number
@@ -66,7 +67,7 @@ export function DayScheduleView({
           dayOfWeek: meeting.dayOfWeek,
           startTime: meeting.startTime,
           endTime: meeting.endTime,
-          title: course?.name ?? 'Materia',
+          title: getSectionScheduleTitle(section, course),
           sectionCode: section.sectionCode,
           classroom: meeting.classroom,
           teacherName: section.teacherName,

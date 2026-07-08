@@ -267,7 +267,7 @@ export function SidebarNav() {
       </NavLink>
 
       <div className="flex min-h-0 flex-1 flex-col px-2">
-        <nav className="min-h-0 flex-1" aria-label="Navegación principal">
+        <nav className="min-h-0 flex-1" aria-label="Navegación principal" data-tour="app-nav">
           <NavRail
             items={mainItems}
             footerItems={[SETTINGS_ITEM]}
@@ -301,6 +301,7 @@ export function BottomNav() {
     <nav
       className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-surface/95 backdrop-blur md:hidden"
       aria-label="Navegación móvil"
+      data-tour="app-nav"
     >
       <div className="mx-auto max-w-lg px-1 py-1">
         <NavRail items={mobileItems} layout="horizontal" />

@@ -11,6 +11,7 @@ import type {
   RejectedRow,
 } from '../types'
 import { stableUuid } from '../sources/LocalFileSource'
+import { parseElectiveCourseName } from '../../../src/utils/electiveCourses'
 import {
   buildCourseNaturalKey,
   buildSectionNaturalKey,
@@ -102,13 +103,16 @@ export function normalizeWorkbookRows(input: {
     }
 
     const levelValue = row.level.rawValue.match(/\d+/)?.[0] ?? null
-    const courseNaturalKey = buildCourseNaturalKey(careerCode, row.courseName.rawValue, levelValue)
+    const rawCourseName = row.courseName.rawValue.trim()
+    const elective = parseElectiveCourseName(rawCourseName)
+    const canonicalCourseName = elective.slot ?? rawCourseName
+    const courseNaturalKey = buildCourseNaturalKey(careerCode, canonicalCourseName, levelValue)
     const courseId = stableUuid('course', courseNaturalKey)
     if (!courses.has(courseNaturalKey)) {
       courses.set(courseNaturalKey, {
         id: courseId,
         code: null,
-        name: row.courseName.rawValue.trim(),
+        name: canonicalCourseName,
         careerId,
         level: levelValue ? Number(levelValue) : null,
         semester: row.semesterGroup.rawValue.match(/\d+/)
@@ -122,9 +126,10 @@ export function normalizeWorkbookRows(input: {
     const sectionNaturalKey = buildSectionNaturalKey(
       periodKey,
       careerCode,
-      row.courseName.rawValue,
+      canonicalCourseName,
       row.sectionCode.rawValue,
       row.shift.rawValue,
+      elective.specificName,
     )
     const sectionId = stableUuid('section', sectionNaturalKey)
 
@@ -150,6 +155,7 @@ export function normalizeWorkbookRows(input: {
         null,
       teacherName: row.teacherName.rawValue.trim() || null,
       teacherEmail: row.teacherEmail.rawValue.trim() || null,
+      specificElectiveName: elective.specificName,
       naturalKey: sectionNaturalKey,
       sourceSheet: row.sheetName,
       sourceRow: row.rowNumber,

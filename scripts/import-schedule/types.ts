@@ -112,6 +112,7 @@ export interface NormalizedSection {
   shift: string | null
   teacherName: string | null
   teacherEmail: string | null
+  specificElectiveName?: string | null
   naturalKey: string
   sourceSheet: string
   sourceRow: number

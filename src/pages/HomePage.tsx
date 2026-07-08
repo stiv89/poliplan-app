@@ -11,7 +11,7 @@
  *   - Detalle de clase → popover inline.
  *   - Conflictos → etiqueta + intervalo exacto.
  */
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   Plus,
   Bell,
@@ -27,6 +27,7 @@ import { useChanges } from '@/hooks/useChanges'
 import { useSchedule } from '@/hooks/useSchedule'
 import { SectionSearchPanel } from '@/components/schedule/SectionSearchPanel'
 import { ScheduleContextBar } from '@/components/schedule/ScheduleContextBar'
+import { ScheduleOnboardingTour } from '@/components/onboarding/ScheduleOnboardingTour'
 import {
   ScheduleUndoToast,
   type SchedulePickerPanelProps,
@@ -71,6 +72,8 @@ export function HomePage() {
     isOnline,
     syncStatus,
     localSaveState,
+    startupMode,
+    updateAppSettings,
   } = useSchedule()
 
   const { user } = useAuth()
@@ -93,6 +96,28 @@ export function HomePage() {
     DEFAULT_SCHEDULE_VIEW_FILTERS,
   )
   const [academicPeriods, setAcademicPeriods] = useState<AcademicPeriod[]>([])
+  const [tourOpen, setTourOpen] = useState(false)
+  const tourTriggeredRef = useRef(false)
+
+  useEffect(() => {
+    if (
+      tourTriggeredRef.current ||
+      startupMode !== 'ready' ||
+      !settings ||
+      settings.scheduleTourCompletedAt
+    ) {
+      return
+    }
+
+    tourTriggeredRef.current = true
+    const timeout = window.setTimeout(() => setTourOpen(true), 700)
+    return () => window.clearTimeout(timeout)
+  }, [settings, startupMode])
+
+  const finishTour = useCallback(() => {
+    setTourOpen(false)
+    void updateAppSettings({ scheduleTourCompletedAt: new Date().toISOString() })
+  }, [updateAppSettings])
 
   useEffect(() => {
     void scheduleRepository.getAcademicPeriods().then(setAcademicPeriods)
@@ -247,7 +272,10 @@ export function HomePage() {
       {/* ── DESKTOP ─────────────────────────────────────────────────── */}
       <div className="hidden flex-1 overflow-hidden md:flex">
         {/* Panel de materias — permanente, al lado del sidebar */}
-        <aside className="flex h-full min-h-0 w-[min(360px,30vw)] max-w-[400px] shrink-0 flex-col overflow-hidden border-r border-slate-100/80 bg-surface">
+        <aside
+          className="flex h-full min-h-0 w-[min(360px,30vw)] max-w-[400px] shrink-0 flex-col overflow-hidden border-r border-slate-100/80 bg-surface"
+          data-tour="course-panel"
+        >
           <SectionSearchPanel key={searchPrefill} {...searchPanelProps} />
         </aside>
 
@@ -274,7 +302,7 @@ export function HomePage() {
             onSync={requestScheduleSync}
           />
 
-          <div className="relative min-h-0 flex-1 overflow-hidden">
+          <div className="relative min-h-0 flex-1 overflow-hidden" data-tour="schedule-grid">
             <WeeklyScheduleGrid
               selectedSections={selectedSections}
               conflicts={conflicts}
@@ -348,7 +376,7 @@ export function HomePage() {
         />
 
         {/* Selector de días */}
-        <div className="shrink-0 border-b border-slate-100 bg-surface">
+        <div className="shrink-0 border-b border-slate-100 bg-surface" data-tour="day-selector">
           <div className="flex gap-1 overflow-x-auto px-3 py-2">
             {DAYS_OF_WEEK.map((day) => {
               const hasMeetings = selectedSections.some((s) =>
@@ -396,6 +424,7 @@ export function HomePage() {
           {/* FAB: Agregar materia */}
           <button
             onClick={() => openSearch()}
+            data-tour="add-course-fab"
             className="fixed bottom-20 right-4 z-30 flex min-h-11 items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-medium text-white shadow-lg hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
             aria-label="Agregar materia"
           >
@@ -442,6 +471,8 @@ export function HomePage() {
           onDismiss={dismissPendingDelete}
         />
       )}
+
+      <ScheduleOnboardingTour open={tourOpen} onComplete={finishTour} onDismiss={finishTour} />
     </div>
   )
 }
@@ -459,6 +490,7 @@ function SummaryInfoButton({
     <button
       type="button"
       onClick={onClick}
+      data-tour="schedule-summary"
       className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted/60 transition hover:bg-slate-100 hover:text-muted"
       aria-label="Ver resumen del horario"
     >

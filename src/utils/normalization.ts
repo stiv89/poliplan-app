@@ -100,6 +100,7 @@ export function mapDbSection(
     teacherName: normalizeText(row.teacher_name as string | null),
     teacherEmail: normalizeText(row.teacher_email as string | null),
     teacherId: row.teacher_id ? String(row.teacher_id) : null,
+    specificElectiveName: normalizeText(row.specific_elective_name as string | null),
     meetings,
     exams,
   }

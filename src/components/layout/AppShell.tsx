@@ -1,6 +1,7 @@
 import { Outlet } from 'react-router-dom'
 import { OnlineStatusBanner } from '@/components/feedback/OnlineStatusBanner'
 import { BottomNav, SidebarNav } from '@/components/layout/Navigation'
+import { AppSeoHead } from '@/components/seo/SeoHead'
 import { GuestExperienceProvider } from '@/features/guest/GuestExperienceContext'
 import { TeacherProfileProvider } from '@/features/teachers/TeacherProfileContext'
 
@@ -8,6 +9,7 @@ export function AppShell() {
   return (
     <TeacherProfileProvider>
       <GuestExperienceProvider>
+      <AppSeoHead />
       <div className="flex h-dvh flex-col overflow-hidden bg-background text-text">
         <div className="shrink-0">
           <OnlineStatusBanner />

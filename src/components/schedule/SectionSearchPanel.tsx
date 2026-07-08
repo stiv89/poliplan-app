@@ -21,6 +21,7 @@ import { getConflictsForSection } from '@/utils/conflicts'
 import { buildSectionSearchText, filterAndRankByFuzzySearch } from '@/utils/fuzzySearch'
 import { getCourseFootnote } from '@/utils/courseFootnotes'
 import { formatScheduleCompact, getCourseSemesterNumber, groupSectionsByCourse, type SectionCourseInfo } from '@/utils/sectionDisplay'
+import { resolveSectionElectiveName } from '@/utils/electiveCourses'
 import { sectionMatchesViewFilters } from '@/utils/scheduleFilters'
 import type { AcademicPeriod, Career, CourseSection, ScheduleConflict } from '@/types/academic'
 import type { ScheduleViewFilters } from '@/types/scheduleFilters'
@@ -324,17 +325,18 @@ export function SectionSearchPanel({
               })
             ) : (
               courseGroups.map((group) => {
-                const expanded = expandedGroups.has(group.courseId)
+                const expanded = expandedGroups.has(group.groupKey)
                 const collapsible = group.sections.length >= GROUP_COLLAPSE_THRESHOLD
                 const showSections = !collapsible || expanded
 
                 return (
                   <CourseGroupCard
-                    key={group.courseId}
+                    key={group.groupKey}
                     group={group}
+                    coursesById={coursesById}
                     expanded={showSections}
                     collapsible={collapsible}
-                    onToggleExpanded={() => toggleGroupExpanded(group.courseId)}
+                    onToggleExpanded={() => toggleGroupExpanded(group.groupKey)}
                     conflicts={conflicts}
                     isSectionSelected={isSectionSelected}
                     toggleLoading={toggleLoading}
@@ -498,6 +500,7 @@ function getGroupShifts(sections: CourseSection[]): string[] {
 
 function CourseGroupCard({
   group,
+  coursesById,
   expanded,
   collapsible,
   onToggleExpanded,
@@ -509,6 +512,7 @@ function CourseGroupCard({
   previewSectionId,
 }: {
   group: ReturnType<typeof groupSectionsByCourse>[number]
+  coursesById: Map<string, SectionCourseInfo>
   expanded: boolean
   collapsible: boolean
   onToggleExpanded: () => void
@@ -623,6 +627,7 @@ function CourseGroupCard({
             <SectionGroupRow
               key={section.id}
               section={section}
+              course={coursesById.get(section.courseId)}
               isFinalExamOnly={group.courseFootnote === 'final_exam_only'}
               selected={isSectionSelected(section.id)}
               conflicts={conflicts}
@@ -647,6 +652,7 @@ function SectionGroupRow({
   onToggle,
   onPreview,
   previewSectionId,
+  course,
 }: {
   section: CourseSection
   isFinalExamOnly: boolean
@@ -656,11 +662,14 @@ function SectionGroupRow({
   onToggle: () => void
   onPreview?: (section: CourseSection | null) => void
   previewSectionId?: string | null
+  course?: SectionCourseInfo | null
 }) {
   const sectionConflicts = getConflictsForSection(section.id, conflicts)
   const hasConflict = sectionConflicts.length > 0
   const isPreviewTarget = previewSectionId === section.id
   const shift = resolveSectionShift(section)
+  const specificName = resolveSectionElectiveName(section, course)
+  const sectionLabel = specificName ?? section.sectionCode
 
   return (
     <li
@@ -681,7 +690,10 @@ function SectionGroupRow({
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5">
-            <span className="text-sm font-semibold text-slate-900">{section.sectionCode}</span>
+            <span className="text-sm font-semibold text-slate-900">{sectionLabel}</span>
+            {specificName && (
+              <span className="text-[11px] font-medium text-slate-500">Sec. {section.sectionCode}</span>
+            )}
             {shift && (
               <span className="text-[11px] font-medium text-slate-500">{shift}</span>
             )}

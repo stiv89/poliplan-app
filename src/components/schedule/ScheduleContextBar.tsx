@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
-import { Check, ChevronDown, Search } from 'lucide-react'
+import { Check, ChevronDown, GraduationCap, Search } from 'lucide-react'
 import type { AcademicPeriod, Career } from '@/types/academic'
 import {
   SchedulePickerMenu,
@@ -72,7 +72,7 @@ export function ScheduleContextBar({
   )
 
   return (
-    <div className="min-w-0 flex-1">
+    <div className="min-w-0 flex-1" data-tour="career-picker">
       <div className="flex min-w-0 flex-wrap items-center gap-2">
         <div className="flex min-h-10 min-w-0 max-w-full items-center gap-1.5 overflow-hidden rounded-lg border border-slate-200 bg-white px-2 py-1 shadow-sm">
           <SchedulePickerMenu
@@ -99,6 +99,7 @@ export function ScheduleContextBar({
               open={openMenu === 'career'}
               onClick={() => setOpenMenu((value) => (value === 'career' ? null : 'career'))}
               ariaLabel="Elegir carrera del horario activo"
+              highlight={!selectedCareerId}
             />
 
             {periodName && (
@@ -119,6 +120,17 @@ export function ScheduleContextBar({
             )}
           </div>
         </div>
+
+        {!selectedCareerId && (
+          <button
+            type="button"
+            onClick={() => setOpenMenu('career')}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90 active:scale-[0.98]"
+          >
+            <GraduationCap className="h-4 w-4" aria-hidden="true" />
+            Elegir carrera
+          </button>
+        )}
       </div>
 
       <AnimatedPopover
@@ -280,6 +292,7 @@ function ContextInlineSelect({
   onClick,
   ariaLabel,
   className = '',
+  highlight = false,
 }: {
   buttonRef: RefObject<HTMLButtonElement | null>
   label: string
@@ -288,6 +301,7 @@ function ContextInlineSelect({
   onClick: () => void
   ariaLabel: string
   className?: string
+  highlight?: boolean
 }) {
   return (
     <button
@@ -302,8 +316,14 @@ function ContextInlineSelect({
       <span className="shrink-0 text-[10px] font-medium leading-none text-slate-400">
         {label}:
       </span>
-      <span className="inline-flex min-w-0 items-center gap-0.5 text-[13px] font-medium leading-tight text-slate-600 transition group-hover:text-slate-800">
-        <span className="truncate">{value}</span>
+      <span
+        className={`inline-flex min-w-0 items-center gap-0.5 text-[13px] font-medium leading-tight transition ${
+          highlight
+            ? 'text-primary group-hover:text-primary/90'
+            : 'text-slate-600 group-hover:text-slate-800'
+        }`}
+      >
+        <span className={`truncate ${highlight ? 'font-semibold' : ''}`}>{value}</span>
         <ChevronDown
           className={`h-3 w-3 shrink-0 text-slate-400 transition-transform group-hover:text-slate-500 ${open ? 'rotate-180' : ''}`}
           aria-hidden="true"

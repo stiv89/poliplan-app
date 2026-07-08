@@ -1,5 +1,10 @@
 import type { ClassMeeting, CourseSection, ScheduleConflict } from '@/types/academic'
 import { getCourseFootnote, type CourseFootnoteKind } from '@/utils/courseFootnotes'
+import {
+  getCourseGroupingKey,
+  resolveCourseSlotName,
+  resolveSectionElectiveName,
+} from '@/utils/electiveCourses'
 import { formatTimeRange } from '@/utils/times'
 import { getConflictsForSection, getPreviewConflicts } from '@/utils/conflicts'
 
@@ -25,6 +30,7 @@ export function getCourseInitial(name: string, code: string | null): string {
 }
 
 export interface CourseSectionGroup {
+  groupKey: string
   courseId: string
   courseName: string
   courseDisplayName: string
@@ -42,25 +48,33 @@ export function groupSectionsByCourse(
 
   for (const section of sections) {
     const course = coursesById.get(section.courseId)
-    let group = map.get(section.courseId)
+    const groupKey = getCourseGroupingKey(section.courseId, course)
+    let group = map.get(groupKey)
     if (!group) {
-      const footnote = getCourseFootnote(course?.name ?? 'Materia')
+      const slotName = resolveCourseSlotName(course)
+      const baseName = slotName ?? course?.name ?? 'Materia'
+      const footnote = getCourseFootnote(baseName)
       group = {
+        groupKey,
         courseId: section.courseId,
-        courseName: course?.name ?? 'Materia',
+        courseName: footnote.displayName,
         courseDisplayName: footnote.displayName,
         courseFootnote: footnote.kind,
         courseCode: course?.code ?? null,
         courseSemester: course ? getCourseSemesterNumber(course) : null,
         sections: [],
       }
-      map.set(section.courseId, group)
+      map.set(groupKey, group)
     }
     group.sections.push(section)
   }
 
   for (const group of map.values()) {
-    group.sections.sort((a, b) => a.sectionCode.localeCompare(b.sectionCode))
+    group.sections.sort((a, b) => {
+      const aName = resolveSectionElectiveName(a, coursesById.get(a.courseId)) ?? a.sectionCode
+      const bName = resolveSectionElectiveName(b, coursesById.get(b.courseId)) ?? b.sectionCode
+      return aName.localeCompare(bName) || a.sectionCode.localeCompare(b.sectionCode)
+    })
   }
 
   return [...map.values()].sort(

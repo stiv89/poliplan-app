@@ -54,6 +54,8 @@ export interface CourseSection {
   teacherName: string | null
   teacherEmail: string | null
   teacherId: string | null
+  /** Materia concreta dentro del slot (ej. "Big Data" en Electiva 1). */
+  specificElectiveName?: string | null
   meetings: ClassMeeting[]
   exams: Exam[]
 }

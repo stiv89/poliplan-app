@@ -32,6 +32,8 @@ export interface AppSettings {
   syncPromptDismissedAt: string | null
   /** ISO timestamp — cuándo el usuario descartó el prompt de notificaciones */
   notificationPromptDismissedAt: string | null
+  /** ISO timestamp — cuándo completó el tour de bienvenida del horario */
+  scheduleTourCompletedAt: string | null
   /** ISO timestamp — última sincronización del horario personal a la nube */
   lastUserScheduleSyncAt: string | null
   /** Mapeo localScheduleId → remote user_schedules.id */

@@ -1,4 +1,5 @@
 import type { CurriculumCourse, MatchConfidence } from '@/types/academicHistory'
+import { parseElectiveCourseName } from '@/utils/electiveCourses'
 
 const ROMAN_MAP: Record<string, number> = {
   I: 1,
@@ -41,14 +42,7 @@ export function parseElectiveSlot(name: string): {
   slot: string | null
   specificName: string | null
 } {
-  const match = name.match(
-    /^(ELECTIVA|OPTATIVA)\s*(\d+)\s*\(\s*(.+?)\s*\)/i,
-  )
-  if (!match) return { slot: null, specificName: null }
-  return {
-    slot: `${match[1]![0]!.toUpperCase()}${match[1]!.slice(1).toLowerCase()} ${match[2]}`,
-    specificName: match[3]!.trim(),
-  }
+  return parseElectiveCourseName(name)
 }
 
 function tokenOverlap(a: string, b: string): number {

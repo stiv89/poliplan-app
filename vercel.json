@@ -1,5 +1,17 @@
 {
-  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+  "redirects": [
+    {
+      "source": "/:path*",
+      "has": [{ "type": "host", "value": "www.poliplan.app" }],
+      "destination": "https://poliplan.app/:path*",
+      "permanent": true
+    },
+    { "source": "/app", "destination": "/", "permanent": true },
+    { "source": "/app/:path*", "destination": "/:path*", "permanent": true }
+  ],
+  "rewrites": [
+    { "source": "/((?!assets|email|data|presentacion|horarios-fpuna|examenes-fpuna|calculadora-notas-fpuna|como-funciona|fuentes|aviso-legal|.*\\..*).*)", "destination": "/index.html" }
+  ],
   "headers": [
     {
       "source": "/sw.js",

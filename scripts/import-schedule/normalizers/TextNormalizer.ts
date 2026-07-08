@@ -68,8 +68,16 @@ export function buildSectionNaturalKey(
   courseName: string,
   sectionCode: string,
   shift: string | null,
+  specificElectiveName?: string | null,
 ): string {
-  return [periodId, careerCode, normalizeComparable(courseName), sectionCode, shift ?? '']
+  return [
+    periodId,
+    careerCode,
+    normalizeComparable(courseName),
+    specificElectiveName ? normalizeComparable(specificElectiveName) : '',
+    sectionCode,
+    shift ?? '',
+  ]
     .join('|')
     .toLowerCase()
 }
