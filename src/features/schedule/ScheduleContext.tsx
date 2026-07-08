@@ -198,14 +198,29 @@ export function ScheduleProvider({ children }: ScheduleProviderProps) {
       const currentSettings = await localScheduleRepository.getSettings()
       setSettings(currentSettings)
 
-      const period =
-        (currentSettings.selectedAcademicPeriodId
-          ? await scheduleRepository
-              .getAcademicPeriods()
-              .then((periods) =>
-                periods.find((item) => item.id === currentSettings.selectedAcademicPeriodId),
-              )
-          : null) ?? (await scheduleRepository.getActiveAcademicPeriod())
+      const allPeriods = await scheduleRepository.getAcademicPeriods()
+
+      let period: AcademicPeriod | null | undefined
+      let schedule: SavedScheduleRecord | null = null
+
+      if (currentSettings.activeScheduleId) {
+        const preferred = await localScheduleRepository.getSavedScheduleById(
+          currentSettings.activeScheduleId,
+        )
+        if (preferred && preferred.deletedAt == null) {
+          period = allPeriods.find((item) => item.id === preferred.academicPeriodId)
+          if (period) {
+            schedule = preferred
+          }
+        }
+      }
+
+      if (!period) {
+        period =
+          (currentSettings.selectedAcademicPeriodId
+            ? allPeriods.find((item) => item.id === currentSettings.selectedAcademicPeriodId)
+            : null) ?? allPeriods.find((item) => item.isActive) ?? null
+      }
 
       setActivePeriod(period ?? null)
 
@@ -221,16 +236,21 @@ export function ScheduleProvider({ children }: ScheduleProviderProps) {
         return
       }
 
-      const schedule = await localScheduleRepository.resolveActiveSchedule(
-        period.id,
-        currentSettings.activeScheduleId,
-        currentSettings.selectedCareerId,
-      )
+      if (!schedule) {
+        schedule = await localScheduleRepository.resolveActiveSchedule(
+          period.id,
+          currentSettings.activeScheduleId,
+          currentSettings.selectedCareerId,
+        )
+      }
 
       const careerId = schedule.selectedCareerId ?? currentSettings.selectedCareerId ?? undefined
       const settingsPatch: Partial<AppSettings> = {}
       if (currentSettings.activeScheduleId !== schedule.id) {
         settingsPatch.activeScheduleId = schedule.id
+      }
+      if (currentSettings.selectedAcademicPeriodId !== period.id) {
+        settingsPatch.selectedAcademicPeriodId = period.id
       }
       if (careerId && currentSettings.selectedCareerId !== careerId) {
         settingsPatch.selectedCareerId = careerId
@@ -364,12 +384,18 @@ export function ScheduleProvider({ children }: ScheduleProviderProps) {
   }
 
   const setSelectedPeriod = async (periodId: string | null) => {
+    if (!periodId) return
+
     if (periodId !== settings?.selectedAcademicPeriodId) {
       clearCatalogSnapshot()
     }
+
+    if (activeSchedule) {
+      await localScheduleRepository.setSavedScheduleAcademicPeriod(activeSchedule.id, periodId)
+    }
+
     const next = await localScheduleRepository.updateSettings({
       selectedAcademicPeriodId: periodId,
-      activeScheduleId: null,
     })
     setSettings(next)
     await loadData().catch(() => undefined)
@@ -410,13 +436,17 @@ export function ScheduleProvider({ children }: ScheduleProviderProps) {
     const schedule = await localScheduleRepository.getSavedScheduleById(scheduleId)
     if (!schedule || schedule.deletedAt) return
 
-    if (schedule.selectedCareerId !== settings?.selectedCareerId) {
+    if (
+      schedule.selectedCareerId !== settings?.selectedCareerId ||
+      schedule.academicPeriodId !== settings?.selectedAcademicPeriodId
+    ) {
       clearCatalogSnapshot()
     }
 
     const next = await localScheduleRepository.updateSettings({
       activeScheduleId: schedule.id,
       selectedCareerId: schedule.selectedCareerId,
+      selectedAcademicPeriodId: schedule.academicPeriodId,
     })
     setSettings(next)
     await loadData().catch(() => undefined)

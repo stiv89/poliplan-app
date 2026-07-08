@@ -20,6 +20,9 @@
     "admin:fresh-start": "tsx scripts/admin/fresh-start.ts",
     "admin:fresh-start:dry": "tsx scripts/admin/fresh-start.ts --dry-run",
     "admin:verify-careers": "tsx scripts/admin/verify-careers.ts",
+    "admin:import-2025-periods": "tsx scripts/admin/import-2025-periods.ts",
+    "admin:import-2025-periods:dry": "tsx scripts/admin/import-2025-periods.ts --dry-run",
+    "admin:notify-schedule": "tsx scripts/admin/notify-schedule-update.ts",
     "import:grading-scale": "node scripts/import-grading-scale.mjs"
   },
   "dependencies": {

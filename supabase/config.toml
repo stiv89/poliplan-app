@@ -20,3 +20,12 @@ port = 54323
 [auth]
 enabled = true
 site_url = "http://localhost:5173"
+
+# Correos de Auth vía Brevo (Edge Function auth-send-email).
+# En producción: Dashboard → Authentication → Hooks → Send Email
+# Secrets: BREVO_API_KEY, APP_URL, EMAIL_FROM, SEND_EMAIL_HOOK_SECRET
+#
+# [auth.hook.send_email]
+# enabled = true
+# uri = "http://host.docker.internal:54321/functions/v1/auth-send-email"
+# secrets = "SEND_EMAIL_HOOK_SECRET"

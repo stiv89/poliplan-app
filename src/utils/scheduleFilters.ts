@@ -64,6 +64,9 @@ export function sectionMatchesViewFilters(
 ): boolean {
   if (filters.days.length === 0) return false
 
+  // Materias con (*) no tienen clases; deben seguir visibles en el catálogo.
+  if (section.meetings.length === 0) return true
+
   return section.meetings.some((meeting) => {
     if (!filters.days.includes(meeting.dayOfWeek)) return false
     const start = timeToMinutes(meeting.startTime)

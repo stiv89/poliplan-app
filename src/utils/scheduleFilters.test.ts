@@ -68,4 +68,19 @@ describe('scheduleFilters', () => {
       }),
     ).toBe(false)
   })
+
+  it('mantiene visibles las secciones sin clases (materias con *)', () => {
+    const section = {
+      id: 's-def',
+      meetings: [],
+    } as CourseSection
+
+    expect(sectionMatchesViewFilters(section, DEFAULT_SCHEDULE_VIEW_FILTERS)).toBe(true)
+    expect(
+      sectionMatchesViewFilters(section, {
+        ...DEFAULT_SCHEDULE_VIEW_FILTERS,
+        days: [1],
+      }),
+    ).toBe(true)
+  })
 })

@@ -1,6 +1,6 @@
 import { resolve } from 'node:path'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
-import { loadAdminEnv, DEFAULT_ACADEMIC_PERIOD_ID } from './load-env.ts'
+import { loadAdminEnv, DEFAULT_ACADEMIC_PERIOD_ID, ACADEMIC_PERIODS } from './load-env.ts'
 import { createImportService } from '../import-schedule/services/ImportService'
 import { stableUuid } from '../import-schedule/sources/LocalFileSource'
 import type { ImportCliOptions } from '../import-schedule/types'
@@ -67,15 +67,17 @@ export async function resetAcademicData(client = getAdminClient()): Promise<void
     console.log(`  ✓ ${table}`)
   }
 
-  const { error: periodError } = await client.from('academic_periods').insert({
-    id: DEFAULT_ACADEMIC_PERIOD_ID,
-    name: 'Primer Periodo 2026',
-    year: 2026,
-    term: 1,
-    starts_at: '2026-03-01',
-    ends_at: '2026-07-31',
-    is_active: true,
-  })
+  const { error: periodError } = await client.from('academic_periods').insert(
+    ACADEMIC_PERIODS.map((period) => ({
+      id: period.id,
+      name: period.name,
+      year: period.year,
+      term: period.term,
+      starts_at: period.starts_at,
+      ends_at: period.ends_at,
+      is_active: period.is_active,
+    })),
+  )
 
   if (periodError) {
     throw new Error(`No se pudo crear el periodo: ${periodError.message}`)

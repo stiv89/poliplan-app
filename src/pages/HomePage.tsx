@@ -225,6 +225,7 @@ export function HomePage() {
     selectedPeriodId: activePeriod?.id ?? settings?.selectedAcademicPeriodId ?? null,
     onPeriodChange: (periodId: string) => void setSelectedPeriod(periodId),
     catalogLoading,
+    selectedSectionIds: selectedSections.map((section) => section.id),
   }
 
   return (
@@ -512,7 +513,7 @@ function ScheduleHeader({
   onSync: () => void
 }) {
   return (
-    <header className="shrink-0 border-b border-slate-100/70 px-6 py-3.5">
+    <header className="shrink-0 border-b border-slate-100/70 px-6 py-2.5">
       <div className="flex items-start justify-between gap-4">
         <ScheduleContextBar
           scheduleName={scheduleName}
@@ -528,7 +529,7 @@ function ScheduleHeader({
         />
         <SummaryInfoButton onClick={onSummary} hasConflict={conflictCount > 0} />
       </div>
-      <div className="mt-2">
+      <div className="mt-1.5">
         <ScheduleSaveStatus
           isOnline={isOnline}
           isAuthenticated={isAuthenticated}
@@ -582,7 +583,7 @@ function MobileHeader({
   onSync: () => void
 }) {
   return (
-    <header className="shrink-0 border-b border-slate-100/70 px-4 py-3">
+    <header className="shrink-0 border-b border-slate-100/70 px-4 py-2">
       <div className="flex items-start justify-between gap-3">
         <ScheduleContextBar
           scheduleName={scheduleName}
@@ -595,11 +596,10 @@ function MobileHeader({
           onCareerChange={onCareerChange}
           scheduleCareers={scheduleCareers}
           schedulePicker={schedulePicker}
-          titleClassName="text-base"
         />
         <SummaryInfoButton onClick={onSummary} hasConflict={conflictCount > 0} />
       </div>
-      <div className="mt-2">
+      <div className="mt-1.5">
         <ScheduleSaveStatus
           isOnline={isOnline}
           isAuthenticated={isAuthenticated}

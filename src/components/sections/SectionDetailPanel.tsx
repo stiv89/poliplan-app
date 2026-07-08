@@ -2,7 +2,9 @@ import type { ReactNode } from 'react'
 import { AlertTriangle, Check, X } from 'lucide-react'
 import { TeacherNameButton } from '@/components/teachers/TeacherNameButton'
 import { Button } from '@/components/ui/Button'
+import { CourseFootnoteNotice } from '@/components/schedule/CourseFootnoteNotice'
 import type { CourseSection, ScheduleConflict } from '@/types/academic'
+import { getCourseFootnote } from '@/utils/courseFootnotes'
 import { formatDate } from '@/utils/dates'
 import {
   formatScheduleCompact,
@@ -43,7 +45,10 @@ export function SectionDetailPanel({
   onClose,
   progressLabel,
 }: SectionDetailPanelProps) {
-  const schedule = formatScheduleCompact(section.meetings)
+  const footnote = getCourseFootnote(courseName)
+  const schedule = formatScheduleCompact(section.meetings, {
+    isFinalExamOnly: footnote.kind === 'final_exam_only',
+  })
   const classrooms = [
     ...new Set(section.meetings.map((meeting) => meeting.classroom).filter(Boolean)),
   ].join(', ')
@@ -62,10 +67,22 @@ export function SectionDetailPanel({
     <div className="flex h-full flex-col">
       <div className="flex shrink-0 items-start justify-between gap-3 border-b border-slate-100 px-4 py-3">
         <div className="min-w-0">
-          <h2 className="text-base font-semibold text-text">{courseName}</h2>
+          <h2 className="text-base font-semibold text-text">
+            {footnote.displayName}
+            {footnote.kind === 'final_exam_only' && (
+              <span className="ml-1 font-bold text-amber-700" aria-hidden="true">
+                *
+              </span>
+            )}
+          </h2>
           <p className="mt-0.5 text-xs text-muted">
             {[courseCode, `Sección ${section.sectionCode}`, shift].filter(Boolean).join(' · ')}
           </p>
+          {footnote.kind && (
+            <div className="mt-2">
+              <CourseFootnoteNotice kind={footnote.kind} compact />
+            </div>
+          )}
           {progressLabel && (
             <p className="mt-1 text-xs text-muted">{progressLabel}</p>
           )}

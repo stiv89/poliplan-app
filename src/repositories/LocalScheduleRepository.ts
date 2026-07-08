@@ -396,6 +396,24 @@ export class LocalScheduleRepository implements ScheduleRepository {
     return next
   }
 
+  async setSavedScheduleAcademicPeriod(
+    scheduleId: string,
+    academicPeriodId: string,
+  ): Promise<SavedScheduleRecord> {
+    const schedule = await db.savedSchedules.get(scheduleId)
+    if (!schedule || schedule.deletedAt) {
+      throw new Error('Horario no encontrado')
+    }
+
+    const next = {
+      ...schedule,
+      academicPeriodId,
+      updatedAt: new Date().toISOString(),
+    }
+    await db.savedSchedules.put(next)
+    return next
+  }
+
   async softDeleteSavedSchedule(scheduleId: string): Promise<SavedScheduleRecord> {
     const schedule = await db.savedSchedules.get(scheduleId)
     if (!schedule || schedule.deletedAt) {

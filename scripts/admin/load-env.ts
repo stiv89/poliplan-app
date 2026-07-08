@@ -29,3 +29,36 @@ export function loadAdminEnv(): void {
 }
 
 export const DEFAULT_ACADEMIC_PERIOD_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1'
+
+export const ACADEMIC_PERIODS = [
+  {
+    id: DEFAULT_ACADEMIC_PERIOD_ID,
+    name: 'Primer Periodo 2026',
+    year: 2026,
+    term: 1,
+    starts_at: '2026-03-01',
+    ends_at: '2026-07-31',
+    is_active: true,
+  },
+  {
+    id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2',
+    name: 'Primer Periodo Académico 2025 – Carreras de Grado',
+    year: 2025,
+    term: 1,
+    starts_at: '2025-03-01',
+    ends_at: '2025-07-31',
+    is_active: false,
+  },
+  {
+    id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa3',
+    name: 'Segundo Periodo Académico 2025 – Carreras de Grado',
+    year: 2025,
+    term: 2,
+    starts_at: '2025-08-01',
+    ends_at: '2025-12-31',
+    is_active: false,
+  },
+] as const
+
+export const SECOND_PERIOD_2025_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa3'
+export const FIRST_PERIOD_2025_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa2'

@@ -240,6 +240,21 @@ export class SupabaseImportRepository implements ScheduleImportRepository {
         throw activateError
       }
 
+      try {
+        const { notifyScheduleUpdate } = await import('../../email/notifyScheduleUpdate.ts')
+        const notifyResult = await notifyScheduleUpdate({ periodId: input.academicPeriodId })
+        if (notifyResult && notifyResult.sent > 0) {
+          console.log(
+            `  ✉ Avisos de horario enviados: ${notifyResult.sent}/${notifyResult.recipients}`,
+          )
+        }
+      } catch (notifyError) {
+        console.warn(
+          '  ⚠ No se pudieron enviar avisos por correo:',
+          notifyError instanceof Error ? notifyError.message : notifyError,
+        )
+      }
+
       return { version: nextVersion, importId: importRow.id }
     } catch (error) {
       await this.client

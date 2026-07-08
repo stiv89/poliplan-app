@@ -390,6 +390,7 @@ interface SchedulePickerMenuProps extends Omit<SchedulePickerPanelProps, 'onClos
   scheduleName: string
   titleClassName?: string
   embedded?: boolean
+  embeddedCapsule?: boolean
 }
 
 export function SchedulePickerMenu({
@@ -397,6 +398,7 @@ export function SchedulePickerMenu({
   periodName,
   titleClassName = 'text-xl',
   embedded = false,
+  embeddedCapsule = false,
   ...panelProps
 }: SchedulePickerMenuProps) {
   const [open, setOpen] = useState(false)
@@ -432,18 +434,26 @@ export function SchedulePickerMenu({
         ref={buttonRef}
         type="button"
         onClick={() => setOpen((value) => !value)}
-        className="group flex max-w-full items-center gap-1 text-left"
+        className={`group flex max-w-full items-center gap-1 text-left ${
+          embeddedCapsule
+            ? 'rounded-md bg-slate-100 px-2 py-1 transition hover:bg-slate-200/70'
+            : ''
+        }`}
         aria-label="Cambiar horario"
         aria-expanded={open}
         aria-haspopup="dialog"
       >
-        <h1 className={`truncate font-semibold tracking-tight text-text ${titleClassName}`}>
+        <h1
+          className={`truncate font-semibold tracking-tight ${
+            embedded ? 'text-slate-900' : 'text-text'
+          } ${titleClassName}`}
+        >
           {scheduleName}
         </h1>
         <ChevronDown
-          className={`h-3.5 w-3.5 shrink-0 text-muted/70 transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:text-muted ${
-            open ? 'rotate-180' : 'rotate-0'
-          }`}
+          className={`shrink-0 text-slate-400/80 transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:text-slate-500 ${
+            embedded ? 'h-3 w-3' : 'h-3.5 w-3.5 text-muted/70 group-hover:text-muted'
+          } ${open ? 'rotate-180' : 'rotate-0'}`}
           aria-hidden="true"
         />
       </button>

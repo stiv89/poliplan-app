@@ -21,6 +21,7 @@ import {
 import { Button } from '@/components/ui/Button'
 import { useDataTrustInfo } from '@/components/ui/DataTrustBanner'
 import { useInstallPrompt } from '@/hooks/useInstallPrompt'
+import { useProfileEmailPrefs } from '@/hooks/useProfileEmailPrefs'
 import { useSchedule } from '@/hooks/useSchedule'
 import { scheduleRepository } from '@/repositories/SupabaseScheduleRepository'
 import type { AcademicPeriod, SyncStatus } from '@/types/academic'
@@ -83,6 +84,13 @@ export function SettingsPage() {
   } = useSchedule()
 
   const trustInfo = useDataTrustInfo()
+  const {
+    notifyScheduleUpdates,
+    setNotifyScheduleUpdates,
+    loading: emailPrefsLoading,
+    saving: emailPrefsSaving,
+    canEdit: canEditEmailPrefs,
+  } = useProfileEmailPrefs()
   const { canInstall, isInstalled, install } = useInstallPrompt()
   const [periods, setPeriods] = useState<AcademicPeriod[]>([])
   const [activeCategory, setActiveCategory] = useState<SettingsCategoryId>('account')
@@ -236,6 +244,17 @@ export function SettingsPage() {
                 description="Comprueba si la Facultad publicó una versión nueva."
                 checked={settings?.syncOnOpen ?? true}
                 onChange={(checked) => void updateAppSettings({ syncOnOpen: checked })}
+              />
+              <SettingsToggleRow
+                label="Avisarme por correo cuando se actualice mi horario"
+                description={
+                  canEditEmailPrefs
+                    ? 'Te escribimos si la Facultad publica una versión nueva del periodo de alguno de tus horarios.'
+                    : 'Iniciá sesión para recibir avisos por correo.'
+                }
+                checked={notifyScheduleUpdates}
+                disabled={!canEditEmailPrefs || emailPrefsLoading || emailPrefsSaving}
+                onChange={(checked) => void setNotifyScheduleUpdates(checked)}
               />
             </SettingsSection>
           </SettingsPanel>

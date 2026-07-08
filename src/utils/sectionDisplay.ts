@@ -1,4 +1,5 @@
 import type { ClassMeeting, CourseSection, ScheduleConflict } from '@/types/academic'
+import { getCourseFootnote, type CourseFootnoteKind } from '@/utils/courseFootnotes'
 import { formatTimeRange } from '@/utils/times'
 import { getConflictsForSection, getPreviewConflicts } from '@/utils/conflicts'
 
@@ -23,8 +24,61 @@ export function getCourseInitial(name: string, code: string | null): string {
   return name.trim().charAt(0).toUpperCase() || '?'
 }
 
-export function formatScheduleCompact(meetings: ClassMeeting[]): string {
-  if (meetings.length === 0) return 'Horario por confirmar'
+export interface CourseSectionGroup {
+  courseId: string
+  courseName: string
+  courseDisplayName: string
+  courseFootnote: CourseFootnoteKind | null
+  courseCode: string | null
+  courseSemester: number | null
+  sections: CourseSection[]
+}
+
+export function groupSectionsByCourse(
+  sections: CourseSection[],
+  coursesById: Map<string, SectionCourseInfo>,
+): CourseSectionGroup[] {
+  const map = new Map<string, CourseSectionGroup>()
+
+  for (const section of sections) {
+    const course = coursesById.get(section.courseId)
+    let group = map.get(section.courseId)
+    if (!group) {
+      const footnote = getCourseFootnote(course?.name ?? 'Materia')
+      group = {
+        courseId: section.courseId,
+        courseName: course?.name ?? 'Materia',
+        courseDisplayName: footnote.displayName,
+        courseFootnote: footnote.kind,
+        courseCode: course?.code ?? null,
+        courseSemester: course ? getCourseSemesterNumber(course) : null,
+        sections: [],
+      }
+      map.set(section.courseId, group)
+    }
+    group.sections.push(section)
+  }
+
+  for (const group of map.values()) {
+    group.sections.sort((a, b) => a.sectionCode.localeCompare(b.sectionCode))
+  }
+
+  return [...map.values()].sort(
+    (a, b) =>
+      a.courseName.localeCompare(b.courseName) ||
+      (a.courseCode ?? '').localeCompare(b.courseCode ?? ''),
+  )
+}
+
+export function formatScheduleCompact(
+  meetings: ClassMeeting[],
+  options?: { isFinalExamOnly?: boolean },
+): string {
+  if (meetings.length === 0) {
+    return options?.isFinalExamOnly
+      ? 'Sin clases · solo examen final'
+      : 'Horario por confirmar'
+  }
 
   const groups = new Map<string, number[]>()
   for (const meeting of meetings) {

@@ -4,6 +4,7 @@
 import { useMemo, useState } from 'react'
 import { AlertTriangle, Check, GraduationCap, Search } from 'lucide-react'
 import { CompactCareerSelect } from '@/components/schedule/CompactCareerSelect'
+import { CourseFootnoteNotice } from '@/components/schedule/CourseFootnoteNotice'
 import { SectionListSkeleton } from '@/components/schedule/SectionListSkeleton'
 import { SectionDetailPanel } from '@/components/sections/SectionDetailPanel'
 import {
@@ -16,6 +17,7 @@ import { TeacherNameButton } from '@/components/teachers/TeacherNameButton'
 import { useAcademicHistory } from '@/hooks/useAcademicHistory'
 import type { Career, CourseSection, ScheduleConflict } from '@/types/academic'
 import { getCourseProgressLabel } from '@/utils/academicProgressLabels'
+import { getCourseFootnote, type CourseFootnoteKind } from '@/utils/courseFootnotes'
 import { buildSectionSearchText, filterAndRankByFuzzySearch } from '@/utils/fuzzySearch'
 import { resolveSectionShift } from '@/utils/sectionCode'
 import { DEFAULT_SCHEDULE_VIEW_FILTERS, type ScheduleViewFilters } from '@/types/scheduleFilters'
@@ -49,6 +51,7 @@ interface SectionsExplorerProps {
 interface CourseGroup {
   courseId: string
   courseName: string
+  courseFootnote: CourseFootnoteKind | null
   courseCode: string | null
   sections: CourseSection[]
 }
@@ -143,13 +146,15 @@ export function SectionsExplorer({
     const map = new Map<string, CourseGroup>()
     for (const section of filteredSections) {
       const course = coursesById.get(section.courseId)
+      const footnote = getCourseFootnote(course?.name ?? 'Materia')
       const existing = map.get(section.courseId)
       if (existing) {
         existing.sections.push(section)
       } else {
         map.set(section.courseId, {
           courseId: section.courseId,
-          courseName: course?.name ?? 'Materia',
+          courseName: footnote.displayName,
+          courseFootnote: footnote.kind,
           courseCode: course?.code ?? null,
           sections: [section],
         })
@@ -354,7 +359,19 @@ function CourseGroupBlock({
       {compactHeader ? (
         <div className="flex items-baseline justify-between gap-2 py-2.5">
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-text">{group.courseName}</p>
+            <p className="truncate text-sm font-semibold text-text">
+              {group.courseName}
+              {group.courseFootnote === 'final_exam_only' && (
+                <span className="ml-1 font-bold text-amber-700" aria-hidden="true">
+                  *
+                </span>
+              )}
+            </p>
+            {group.courseFootnote && (
+              <div className="mt-1">
+                <CourseFootnoteNotice kind={group.courseFootnote} compact />
+              </div>
+            )}
             {group.courseCode && (
               <p className="text-xs text-muted">{group.courseCode}</p>
             )}
@@ -371,6 +388,7 @@ function CourseGroupBlock({
             key={section.id}
             section={section}
             courseName={group.courseName}
+            courseFootnote={group.courseFootnote}
             courseCode={group.courseCode}
             courseInitial={initial}
             showCourseName={!compactHeader}
@@ -392,6 +410,7 @@ function CourseGroupBlock({
 function SectionCompactRow({
   section,
   courseName,
+  courseFootnote,
   courseCode,
   courseInitial,
   showCourseName,
@@ -406,6 +425,7 @@ function SectionCompactRow({
 }: {
   section: CourseSection
   courseName: string
+  courseFootnote: CourseFootnoteKind | null
   courseCode: string | null
   courseInitial: string
   showCourseName: boolean
@@ -418,7 +438,9 @@ function SectionCompactRow({
   onToggle: () => void
   onOpenDetail: () => void
 }) {
-  const schedule = formatScheduleCompact(section.meetings)
+  const schedule = formatScheduleCompact(section.meetings, {
+    isFinalExamOnly: courseFootnote === 'final_exam_only',
+  })
   const conflictMessages = getSectionConflictMessages(
     section,
     selected,
@@ -450,7 +472,21 @@ function SectionCompactRow({
 
           <span className="min-w-0 flex-1">
             {showCourseName && (
-              <span className="block truncate text-sm font-semibold text-text">{courseName}</span>
+              <>
+                <span className="block truncate text-sm font-semibold text-text">
+                  {courseName}
+                  {courseFootnote === 'final_exam_only' && (
+                    <span className="ml-1 font-bold text-amber-700" aria-hidden="true">
+                      *
+                    </span>
+                  )}
+                </span>
+                {courseFootnote && (
+                  <span className="mt-1 block">
+                    <CourseFootnoteNotice kind={courseFootnote} compact />
+                  </span>
+                )}
+              </>
             )}
             {!showCourseName && (
               <span className="block text-sm font-medium text-text">
