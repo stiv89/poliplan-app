@@ -13,6 +13,7 @@ import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { scheduleRepository } from '@/repositories/SupabaseScheduleRepository'
 import { localScheduleRepository } from '@/repositories/LocalScheduleRepository'
 import { scheduleSyncService } from '@/services/scheduleSyncService'
+import { buildSharedScheduleUrl, publishSharedSchedule } from '@/services/sharedScheduleService'
 import type {
   AcademicPeriod,
   Career,
@@ -22,6 +23,7 @@ import type {
   SyncStatus,
 } from '@/types/academic'
 import type { AppSettings, SavedScheduleRecord } from '@/types/schedule'
+import type { SharedScheduleSnapshot } from '@/types/sharedSchedule'
 import { detectScheduleConflicts } from '@/utils/conflicts'
 import type { LocalSaveState } from '@/utils/scheduleSaveStatus'
 
@@ -81,6 +83,8 @@ export interface ScheduleContextValue {
   clearSchedule: () => Promise<void>
   switchSchedule: (scheduleId: string) => Promise<void>
   createSchedule: (name: string, copyFromScheduleId?: string | null) => Promise<void>
+  shareSchedule: (scheduleId: string) => Promise<string>
+  importSharedSchedule: (snapshot: SharedScheduleSnapshot) => Promise<void>
   renameSchedule: (scheduleId: string, name: string) => Promise<void>
   deleteSchedule: (scheduleId: string) => Promise<void>
   restoreSchedule: (scheduleId: string) => Promise<void>
@@ -488,6 +492,71 @@ export function ScheduleProvider({ children }: ScheduleProviderProps) {
     await loadData().catch(() => undefined)
   }
 
+  const shareSchedule = async (scheduleId: string) => {
+    const schedule = await localScheduleRepository.getSavedScheduleById(scheduleId)
+    if (!schedule || schedule.deletedAt) {
+      throw new Error('not-found')
+    }
+
+    const sections = await localScheduleRepository.getSelectedSectionEntities(scheduleId)
+    if (sections.length === 0) {
+      throw new Error('empty')
+    }
+
+    const ref = await publishSharedSchedule({
+      name: schedule.name,
+      academicPeriodId: schedule.academicPeriodId,
+      selectedCareerId: schedule.selectedCareerId,
+      sectionIds: sections.map((section) => section.id),
+    })
+
+    return buildSharedScheduleUrl(ref)
+  }
+
+  const importSharedSchedule = async (snapshot: SharedScheduleSnapshot) => {
+    const resolvedSections = (
+      await Promise.all(snapshot.sectionIds.map((id) => scheduleRepository.getSectionById(id)))
+    ).filter(
+      (section): section is CourseSection =>
+        section != null && section.academicPeriodId === snapshot.academicPeriodId,
+    )
+
+    if (resolvedSections.length === 0) {
+      throw new Error('missing-sections')
+    }
+
+    const schedule = await localScheduleRepository.createSavedScheduleFromSections({
+      name: `${snapshot.name} (copia)`,
+      academicPeriodId: snapshot.academicPeriodId,
+      selectedCareerId: snapshot.selectedCareerId,
+      sections: resolvedSections.map((section) => ({
+        sectionId: section.id,
+        courseId: section.courseId,
+        academicPeriodId: section.academicPeriodId,
+      })),
+    })
+
+    if (
+      snapshot.selectedCareerId !== settings?.selectedCareerId ||
+      snapshot.academicPeriodId !== settings?.selectedAcademicPeriodId
+    ) {
+      clearCatalogSnapshot()
+    }
+
+    const next = await localScheduleRepository.updateSettings({
+      activeScheduleId: schedule.id,
+      selectedCareerId: schedule.selectedCareerId,
+      selectedAcademicPeriodId: schedule.academicPeriodId,
+    })
+    setSettings(next)
+
+    if (snapshot.academicPeriodId !== activePeriod?.id) {
+      void scheduleSyncService.syncPeriod(snapshot.academicPeriodId, false)
+    }
+
+    await loadData().catch(() => undefined)
+  }
+
   const renameSchedule = async (scheduleId: string, name: string) => {
     await localScheduleRepository.renameSavedSchedule(scheduleId, name)
     await loadData().catch(() => undefined)
@@ -642,6 +711,8 @@ export function ScheduleProvider({ children }: ScheduleProviderProps) {
     clearSchedule,
     switchSchedule,
     createSchedule,
+    shareSchedule,
+    importSharedSchedule,
     renameSchedule,
     deleteSchedule,
     restoreSchedule,

@@ -50,7 +50,7 @@ describe('exams utils', () => {
       sampleExam({ id: '1', examType: 'Primer parcial' }),
       sampleExam({ id: '2', examType: 'Primera final' }),
     ]
-    const filtered = filterExamItems(exams, { scope: 'mine', type: 'parcial' })
+    const filtered = filterExamItems(exams, { type: 'parcial' })
     expect(filtered).toHaveLength(1)
     expect(filtered[0]?.id).toBe('1')
   })

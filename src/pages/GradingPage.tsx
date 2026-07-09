@@ -1,15 +1,15 @@
 import { useMemo, useState } from 'react'
-import type { LucideIcon } from 'lucide-react'
-import { Layers, TrendingUp } from 'lucide-react'
 import { BuildPpCalculator } from '@/components/grading/BuildPpCalculator'
 import { HavePpCalculator, ResultCard } from '@/components/grading/HavePpCalculator'
 import { GradingScalePopover } from '@/components/grading/GradingScalePopover'
+import { LandingDoodleBackground } from '@/components/public/LandingDoodleBackground'
 import { useGradingHistory } from '@/hooks/useGradingHistory'
 import scaleJson from '@/data/grading-scales/fpuna-default-scale.json'
+import havePpIllustration from '../../logos/PP.png'
+import buildPpIllustration from '../../logos/armarpp.png'
 import type { GradingScale } from '@/utils/grading'
 import {
   createWeightedEvaluation,
-  calculateWeightedPp,
   getFinalGrade,
   type GradeResult,
   type WeightedEvaluation,
@@ -24,10 +24,8 @@ export function GradingPage() {
   const [mode, setMode] = useState<CalculatorMode>('select')
   const [pp, setPp] = useState('')
   const [ef, setEf] = useState('')
-  const [targetGrade, setTargetGrade] = useState(4)
   const [evaluations, setEvaluations] = useState<WeightedEvaluation[]>([
     createWeightedEvaluation('Parcial 1'),
-    createWeightedEvaluation('Parcial 2'),
   ])
 
   const { entries, saveEntry } = useGradingHistory()
@@ -49,22 +47,26 @@ export function GradingPage() {
   }
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col">
-      <header className="shrink-0 border-b border-slate-200/50 bg-white px-4 py-4 md:px-8">
-        <h1 className="text-xl font-bold tracking-tight text-text md:text-2xl">
-          Calculadora de notas
-        </h1>
-        {mode === 'select' && (
-          <p className="mt-1 text-sm text-muted">Elegí qué querés calcular</p>
-        )}
-        <div className="mt-2">
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-[#f4f7fb]">
+      <LandingDoodleBackground className="opacity-70" />
+
+      <header className="relative z-10 shrink-0 border-b border-slate-200/40 bg-white/75 px-4 py-2 backdrop-blur-md md:px-6">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="min-w-0">
+            <h1 className="text-base font-bold tracking-tight text-text md:text-lg">
+              Calculadora de notas
+            </h1>
+            {mode === 'select' && (
+              <p className="text-xs text-muted">Elegí qué querés calcular</p>
+            )}
+          </div>
           <GradingScalePopover scale={scale} />
         </div>
       </header>
 
-      <div className="flex min-h-0 flex-1 overflow-hidden">
-        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5 pb-28 md:px-8 md:pb-8">
-          <div className="mx-auto max-w-lg">
+      <div className="relative z-10 flex min-h-0 flex-1 overflow-hidden">
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 py-4 pb-28 md:px-6 md:py-5 md:pb-8">
+          <div className={`mx-auto max-w-2xl ${mode === 'select' ? 'flex min-h-full items-center justify-center py-6' : ''}`}>
             {mode === 'select' && (
               <ModeSelect
                 onSelectHavePp={() => setMode('have-pp')}
@@ -73,26 +75,28 @@ export function GradingPage() {
             )}
 
             {mode === 'have-pp' && (
-              <HavePpCalculator
+              <div className="rounded-2xl border border-slate-200/60 bg-white/88 p-4 backdrop-blur-sm sm:p-5">
+                <HavePpCalculator
                 scale={scale}
                 pp={pp}
                 ef={ef}
-                targetGrade={targetGrade}
                 onPpChange={setPp}
                 onEfChange={setEf}
-                onTargetGradeChange={setTargetGrade}
                 onBack={() => setMode('select')}
                 onResult={handleFinalResult}
-              />
+                />
+              </div>
             )}
 
             {mode === 'build-pp' && (
-              <BuildPpCalculator
+              <div className="rounded-2xl border border-slate-200/60 bg-white/88 p-4 backdrop-blur-sm sm:p-5">
+                <BuildPpCalculator
                 evaluations={evaluations}
                 onChange={setEvaluations}
                 onUsePp={handleUsePp}
                 onBack={() => setMode('select')}
-              />
+                />
+              </div>
             )}
 
             {entries.length > 0 && mode !== 'select' && (
@@ -105,8 +109,8 @@ export function GradingPage() {
           </div>
         </div>
 
-        {mode === 'have-pp' && (
-          <aside className="hidden w-[min(320px,30vw)] shrink-0 border-l border-slate-100 bg-surface p-6 md:block">
+        {mode === 'have-pp' && ef.trim() && (
+          <aside className="relative z-10 hidden w-[min(320px,30vw)] shrink-0 border-l border-slate-200/40 bg-white/80 p-6 backdrop-blur-md md:block">
             <p className="text-sm font-medium text-muted">Resultado</p>
             <div className="mt-4">
               <ResultCard result={finalResult} pp={pp} ef={ef} />
@@ -129,9 +133,6 @@ export function GradingPage() {
         </div>
       )}
 
-      {mode === 'build-pp' && (
-        <BuildPpStickyBar evaluations={evaluations} />
-      )}
     </div>
   )
 }
@@ -144,17 +145,19 @@ function ModeSelect({
   onSelectBuildPp: () => void
 }) {
   return (
-    <div className="grid gap-3 sm:grid-cols-2">
+    <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-stretch sm:justify-center sm:gap-6">
       <ModeCard
-        title="Ya tengo mi PP"
-        description="Ingresá tu promedio ponderado y calculá tu nota final."
-        icon={TrendingUp}
+        title="Calcular mi nota final"
+        description="Ya conozco mi promedio ponderado."
+        illustration={havePpIllustration}
+        illustrationAlt="Promedio ponderado que lleva a una calificación final"
         onClick={onSelectHavePp}
       />
       <ModeCard
-        title="Quiero calcular mi PP"
+        title="Calcular mi promedio"
         description="Sumá parciales, trabajos y laboratorio."
-        icon={Layers}
+        illustration={buildPpIllustration}
+        illustrationAlt="Varias evaluaciones que se combinan en un promedio"
         onClick={onSelectBuildPp}
       />
     </div>
@@ -164,25 +167,34 @@ function ModeSelect({
 function ModeCard({
   title,
   description,
-  icon: Icon,
+  illustration,
+  illustrationAlt,
   onClick,
 }: {
   title: string
   description: string
-  icon: LucideIcon
+  illustration: string
+  illustrationAlt: string
   onClick: () => void
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className="rounded-2xl border border-slate-100 bg-surface px-4 py-5 text-left shadow-sm transition hover:border-primary/20 hover:bg-primary/[0.02]"
+      className="group flex min-h-[15.5rem] w-full max-w-[19.5rem] flex-col items-center rounded-2xl border border-slate-200/70 bg-white/90 px-6 pb-6 pt-5 text-center shadow-[0_1px_2px_rgba(15,23,42,0.04)] backdrop-blur-sm transition duration-200 hover:-translate-y-1 hover:border-primary/20 hover:bg-white hover:shadow-[0_10px_28px_rgba(11,59,143,0.08)] active:translate-y-0"
     >
-      <span className="inline-flex rounded-xl bg-primary/10 p-2 text-primary">
-        <Icon className="h-5 w-5" aria-hidden="true" />
+      <span className="flex h-[7.5rem] w-[7.5rem] items-center justify-center">
+        <img
+          src={illustration}
+          alt={illustrationAlt}
+          width={120}
+          height={120}
+          className="h-[7.25rem] w-[7.25rem] object-contain transition duration-200 group-hover:scale-[1.03]"
+          draggable={false}
+        />
       </span>
-      <span className="mt-3 block text-base font-semibold text-text">{title}</span>
-      <span className="mt-1 block text-sm leading-relaxed text-muted">{description}</span>
+      <span className="mt-1 block text-[15px] font-semibold leading-snug text-text">{title}</span>
+      <span className="mt-1.5 block max-w-[14rem] text-sm leading-snug text-muted">{description}</span>
     </button>
   )
 }
@@ -216,20 +228,5 @@ function RecentHistory({
         ))}
       </ul>
     </section>
-  )
-}
-
-function BuildPpStickyBar({ evaluations }: { evaluations: WeightedEvaluation[] }) {
-  const result = calculateWeightedPp(evaluations)
-
-  if (result.status !== 'success' || result.pp == null) return null
-
-  return (
-    <div className="bottom-above-dock fixed inset-x-0 z-30 border-t border-slate-200 bg-surface/95 px-4 py-3 backdrop-blur md:hidden">
-      <div className="mx-auto max-w-lg">
-        <p className="text-xs text-muted">PP estimado</p>
-        <p className="text-2xl font-bold tabular-nums text-primary">{result.pp}</p>
-      </div>
-    </div>
   )
 }

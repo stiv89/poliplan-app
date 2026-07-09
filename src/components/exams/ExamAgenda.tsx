@@ -10,6 +10,7 @@ import type { ScheduleChange } from '@/types/academic'
 interface ExamAgendaProps {
   groups: Array<{ date: string; exams: ExamItem[] }>
   nextExamId: string | null
+  selectedExamId?: string | null
   changes: ScheduleChange[]
   isOnline: boolean
   dataIsStale: boolean
@@ -19,6 +20,7 @@ interface ExamAgendaProps {
 export function ExamAgenda({
   groups,
   nextExamId,
+  selectedExamId = null,
   changes,
   isOnline,
   dataIsStale,
@@ -41,6 +43,7 @@ export function ExamAgenda({
                 key={exam.id}
                 exam={exam}
                 isNext={exam.id === nextExamId}
+                isSelected={exam.id === selectedExamId}
                 changes={changes}
                 isOnline={isOnline}
                 dataIsStale={dataIsStale}
@@ -57,6 +60,7 @@ export function ExamAgenda({
 function ExamAgendaRow({
   exam,
   isNext,
+  isSelected,
   changes,
   isOnline,
   dataIsStale,
@@ -64,6 +68,7 @@ function ExamAgendaRow({
 }: {
   exam: ExamItem
   isNext: boolean
+  isSelected: boolean
   changes: ScheduleChange[]
   isOnline: boolean
   dataIsStale: boolean
@@ -77,8 +82,13 @@ function ExamAgendaRow({
       <button
         type="button"
         onClick={onSelect}
-        className={`flex w-full gap-3 py-3 text-left transition hover:bg-slate-50/80 ${
-          isNext ? 'border-l-2 border-l-primary pl-2' : ''
+        aria-current={isSelected ? 'true' : undefined}
+        className={`flex w-full gap-3 rounded-lg py-3 pl-2 pr-2 text-left transition ${
+          isSelected
+            ? 'bg-primary/10 ring-1 ring-inset ring-primary/20'
+            : isNext
+              ? 'border-l-2 border-l-primary hover:bg-slate-50/80'
+              : 'hover:bg-slate-50/80'
         }`}
       >
         <span className="w-14 shrink-0 pt-0.5 text-sm font-semibold tabular-nums text-text">
@@ -114,45 +124,32 @@ function ExamAgendaRow({
 }
 
 export function ExamAgendaEmpty({
-  filtersScopeMine,
-  onShowAll,
+  hasScheduleCourses,
   onSync,
   syncing,
 }: {
-  filtersScopeMine: boolean
-  onShowAll?: () => void
+  hasScheduleCourses: boolean
   onSync?: () => void
   syncing?: boolean
 }) {
   return (
-    <div className="py-10 text-center">
+    <div className="py-8 text-left">
       <p className="text-sm font-medium text-text">No hay exámenes programados</p>
-      <p className="mx-auto mt-2 max-w-sm text-sm text-muted">
-        {filtersScopeMine
+      <p className="mt-2 max-w-sm text-sm text-muted">
+        {hasScheduleCourses
           ? 'Cuando se publiquen fechas oficiales para tus materias, aparecerán acá.'
-          : 'No encontramos exámenes para este periodo con los filtros actuales.'}
+          : 'Agregá materias a tu horario para ver sus exámenes acá.'}
       </p>
-      <div className="mt-4 flex flex-wrap justify-center gap-2">
-        {filtersScopeMine && onShowAll && (
-          <button
-            type="button"
-            onClick={onShowAll}
-            className="rounded-lg border border-slate-200 px-3 py-2 text-xs font-medium text-text hover:bg-slate-50"
-          >
-            Ver todos los exámenes
-          </button>
-        )}
-        {onSync && (
-          <button
-            type="button"
-            onClick={onSync}
-            disabled={syncing}
-            className="rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white hover:bg-primary/90 disabled:opacity-50"
-          >
-            {syncing ? 'Buscando…' : 'Buscar actualizaciones'}
-          </button>
-        )}
-      </div>
+      {hasScheduleCourses && onSync && (
+        <button
+          type="button"
+          onClick={onSync}
+          disabled={syncing}
+          className="mt-4 rounded-lg bg-primary px-3 py-2 text-xs font-medium text-white hover:bg-primary/90 disabled:opacity-50"
+        >
+          {syncing ? 'Buscando…' : 'Buscar actualizaciones'}
+        </button>
+      )}
     </div>
   )
 }

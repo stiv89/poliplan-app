@@ -195,10 +195,7 @@ export function SettingsPage() {
     switch (category) {
       case 'account':
         return (
-          <SettingsPanel
-            title="Cuenta"
-            description="Iniciá sesión para sincronizar tu experiencia entre dispositivos."
-          >
+          <SettingsPanel title="Cuenta">
             <SettingsAccountPanel />
           </SettingsPanel>
         )

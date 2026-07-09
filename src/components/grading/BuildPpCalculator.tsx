@@ -1,5 +1,5 @@
+import { useMemo } from 'react'
 import { Plus, Trash2 } from 'lucide-react'
-import { Button } from '@/components/ui/Button'
 import {
   calculateWeightedPp,
   createWeightedEvaluation,
@@ -7,6 +7,7 @@ import {
   parseEvaluationScore,
   parseEvaluationWeight,
   type WeightedEvaluation,
+  type WeightedPpResult,
 } from '@/utils/grading'
 
 interface BuildPpCalculatorProps {
@@ -16,13 +17,33 @@ interface BuildPpCalculatorProps {
   onBack: () => void
 }
 
+const EMPTY_RESULT: WeightedPpResult = {
+  status: 'empty',
+  totalWeight: 0,
+  pp: null,
+  rawAverage: null,
+  message: 'Completá puntaje y peso de al menos una evaluación.',
+}
+
 export function BuildPpCalculator({
   evaluations,
   onChange,
   onUsePp,
   onBack,
 }: BuildPpCalculatorProps) {
-  const result = calculateWeightedPp(evaluations)
+  const completeEvaluations = useMemo(
+    () =>
+      evaluations.filter(
+        (evaluation) =>
+          evaluation.name.trim() && evaluation.score.trim() && evaluation.weight.trim(),
+      ),
+    [evaluations],
+  )
+
+  const result = useMemo(() => {
+    if (completeEvaluations.length === 0) return EMPTY_RESULT
+    return calculateWeightedPp(completeEvaluations)
+  }, [completeEvaluations])
 
   const updateEvaluation = (id: string, patch: Partial<WeightedEvaluation>) => {
     onChange(evaluations.map((item) => (item.id === id ? { ...item, ...patch } : item)))
@@ -37,6 +58,8 @@ export function BuildPpCalculator({
     onChange([...evaluations, createWeightedEvaluation(`Evaluación ${evaluations.length + 1}`)])
   }
 
+  const showProgress = result.totalWeight > 0
+
   return (
     <div className="space-y-5">
       <button
@@ -48,157 +71,173 @@ export function BuildPpCalculator({
       </button>
 
       <div>
-        <h2 className="text-lg font-semibold text-text">Calcular mi PP</h2>
+        <h2 className="text-lg font-semibold text-text">Calcular mi promedio</h2>
         <p className="mt-1 text-sm text-muted">
-          Sumá parciales, trabajos y laboratorio con sus pesos.
+          Ingresá el puntaje y el peso de cada evaluación. Los pesos deben sumar 100%.
         </p>
       </div>
 
-      <div className="space-y-3">
-        {evaluations.map((evaluation) => {
-          const nameError = !evaluation.name.trim() ? 'Nombre requerido' : null
-          const duplicateError = getDuplicateEvaluationName(evaluations, evaluation.id)
-          const scoreError = evaluation.score
-            ? parseEvaluationScore(evaluation.score).error
-            : null
-          const weightError = evaluation.weight
-            ? parseEvaluationWeight(evaluation.weight).error
-            : null
+      <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+        <div className="grid grid-cols-[minmax(0,1fr)_4.5rem_3.5rem_2rem] gap-2 border-b border-slate-100 bg-slate-50/80 px-3 py-2 text-[11px] font-medium uppercase tracking-wide text-muted sm:grid-cols-[minmax(0,1fr)_5rem_4rem_2rem]">
+          <span>Evaluación</span>
+          <span className="text-center">Puntaje</span>
+          <span className="text-center">Peso</span>
+          <span className="sr-only">Eliminar</span>
+        </div>
 
-          return (
-            <div
+        <div className="divide-y divide-slate-100">
+          {evaluations.map((evaluation) => (
+            <EvaluationRow
               key={evaluation.id}
-              className="rounded-xl border border-slate-100 bg-surface px-3 py-3"
-            >
-              <div className="flex items-start gap-2">
-                <div className="min-w-0 flex-1 space-y-2">
-                  <Field
-                    label="Nombre"
-                    value={evaluation.name}
-                    onChange={(value) => updateEvaluation(evaluation.id, { name: value })}
-                    error={duplicateError ?? nameError}
-                    placeholder="Ej. Parcial 1"
-                  />
-                  <div className="grid grid-cols-2 gap-2">
-                    <Field
-                      label="Puntaje"
-                      value={evaluation.score}
-                      onChange={(value) => updateEvaluation(evaluation.id, { score: value })}
-                      error={scoreError}
-                      inputMode="numeric"
-                      placeholder="75"
-                    />
-                    <Field
-                      label="Peso %"
-                      value={evaluation.weight}
-                      onChange={(value) => updateEvaluation(evaluation.id, { weight: value })}
-                      error={weightError}
-                      inputMode="numeric"
-                      placeholder="30"
-                    />
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => removeEvaluation(evaluation.id)}
-                  disabled={evaluations.length <= 1}
-                  className="rounded-lg p-2 text-muted hover:bg-slate-100 disabled:opacity-30"
-                  aria-label={`Eliminar ${evaluation.name || 'evaluación'}`}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          )
-        })}
+              evaluation={evaluation}
+              evaluations={evaluations}
+              canRemove={evaluations.length > 1}
+              onChange={(patch) => updateEvaluation(evaluation.id, patch)}
+              onRemove={() => removeEvaluation(evaluation.id)}
+            />
+          ))}
+        </div>
       </div>
 
-      <Button variant="secondary" className="w-full justify-center gap-2" onClick={addEvaluation}>
+      <button
+        type="button"
+        onClick={addEvaluation}
+        className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-slate-200 px-4 py-2.5 text-sm font-medium text-muted transition hover:border-primary/30 hover:bg-primary/5 hover:text-primary"
+      >
         <Plus className="h-4 w-4" aria-hidden="true" />
         Agregar evaluación
-      </Button>
+      </button>
 
-      <WeightSummary totalWeight={result.totalWeight} message={result.message} status={result.status} />
+      {showProgress && (
+        <WeightProgress result={result} />
+      )}
 
       {result.status === 'success' && result.pp != null && (
-        <div className="rounded-xl border border-primary/20 bg-primary/5 px-4 py-4">
-          <p className="text-sm text-muted">Tu PP estimado es</p>
-          <p className="mt-1 text-4xl font-bold tabular-nums text-primary">{result.pp}</p>
-          {result.rawAverage != null && result.pp !== result.rawAverage && (
-            <p className="mt-1 text-xs text-muted">
-              Promedio ponderado: {result.rawAverage.toFixed(1)}
-            </p>
-          )}
-          <Button className="mt-4 w-full justify-center" onClick={() => onUsePp(result.pp!)}>
-            Usar este PP para calcular mi nota final
-          </Button>
-        </div>
+        <section
+          className="space-y-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-4 transition-all duration-300 ease-out"
+          aria-live="polite"
+        >
+          <div>
+            <p className="text-sm text-muted">Tu PP estimado es</p>
+            <p className="text-4xl font-bold tabular-nums text-primary">{result.pp}</p>
+            {result.rawAverage != null && result.pp !== result.rawAverage && (
+              <p className="mt-1 text-xs text-muted">
+                Promedio ponderado: {result.rawAverage.toFixed(1)}
+              </p>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={() => onUsePp(result.pp!)}
+            className="text-sm font-medium text-primary hover:underline"
+          >
+            Calcular mi nota final con este PP →
+          </button>
+        </section>
       )}
     </div>
   )
 }
 
-function Field({
-  label,
-  value,
+function EvaluationRow({
+  evaluation,
+  evaluations,
+  canRemove,
   onChange,
-  error,
-  placeholder,
-  inputMode,
+  onRemove,
 }: {
-  label: string
-  value: string
-  onChange: (value: string) => void
-  error?: string | null
-  placeholder?: string
-  inputMode?: 'numeric' | 'text'
+  evaluation: WeightedEvaluation
+  evaluations: WeightedEvaluation[]
+  canRemove: boolean
+  onChange: (patch: Partial<WeightedEvaluation>) => void
+  onRemove: () => void
 }) {
+  const touched = !!(evaluation.score.trim() || evaluation.weight.trim())
+  const duplicateError = touched ? getDuplicateEvaluationName(evaluations, evaluation.id) : null
+  const scoreError =
+    touched && evaluation.score.trim()
+      ? parseEvaluationScore(evaluation.score).error
+      : null
+  const weightError =
+    touched && evaluation.weight.trim()
+      ? parseEvaluationWeight(evaluation.weight).error
+      : null
+  const rowError = duplicateError ?? scoreError ?? weightError
+
   return (
-    <label className="block">
-      <span className="text-xs text-muted">{label}</span>
-      <input
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        placeholder={placeholder}
-        inputMode={inputMode}
-        className={`mt-1 w-full rounded-lg border bg-white px-3 py-2.5 text-base outline-none transition focus:border-primary-light ${
-          error ? 'border-danger/40' : 'border-slate-200'
-        }`}
-      />
-      {error && <span className="mt-1 block text-[11px] text-danger">{error}</span>}
-    </label>
+    <div className="px-3 py-2.5">
+      <div className="grid grid-cols-[minmax(0,1fr)_4.5rem_3.5rem_2rem] items-center gap-2 sm:grid-cols-[minmax(0,1fr)_5rem_4rem_2rem]">
+        <input
+          value={evaluation.name}
+          onChange={(event) => onChange({ name: event.target.value })}
+          placeholder="Ej. Parcial 1"
+          className="min-w-0 rounded-lg border border-transparent bg-transparent px-2 py-2 text-sm text-text outline-none transition placeholder:text-muted/70 focus:border-slate-200 focus:bg-white"
+          aria-label="Nombre de la evaluación"
+        />
+        <input
+          value={evaluation.score}
+          onChange={(event) => onChange({ score: event.target.value })}
+          inputMode="numeric"
+          placeholder="75"
+          className={`rounded-lg border bg-white px-2 py-2 text-center text-sm tabular-nums outline-none transition focus:border-primary-light ${
+            scoreError ? 'border-danger/40' : 'border-slate-200'
+          }`}
+          aria-label={`Puntaje de ${evaluation.name || 'evaluación'}`}
+        />
+        <input
+          value={evaluation.weight}
+          onChange={(event) => onChange({ weight: event.target.value })}
+          inputMode="numeric"
+          placeholder="30"
+          className={`rounded-lg border bg-white px-2 py-2 text-center text-sm tabular-nums outline-none transition focus:border-primary-light ${
+            weightError ? 'border-danger/40' : 'border-slate-200'
+          }`}
+          aria-label={`Peso de ${evaluation.name || 'evaluación'}`}
+        />
+        <button
+          type="button"
+          onClick={onRemove}
+          disabled={!canRemove}
+          className="flex h-8 w-8 items-center justify-center rounded-lg text-muted transition hover:bg-slate-100 disabled:opacity-20"
+          aria-label={`Eliminar ${evaluation.name || 'evaluación'}`}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
+      {rowError && (
+        <p className="mt-1.5 text-[11px] text-danger">{rowError}</p>
+      )}
+    </div>
   )
 }
 
-function WeightSummary({
-  totalWeight,
-  message,
-  status,
-}: {
-  totalWeight: number
-  message: string
-  status: string
-}) {
+function WeightProgress({ result }: { result: WeightedPpResult }) {
   const barColor =
-    status === 'overflow'
+    result.status === 'overflow'
       ? 'bg-danger'
-      : status === 'success'
+      : result.status === 'success'
         ? 'bg-success'
         : 'bg-primary'
 
   return (
-    <div className="rounded-xl border border-slate-100 bg-slate-50/80 px-4 py-3">
-      <div className="flex items-center justify-between text-sm">
-        <span className="text-text">Peso acumulado</span>
-        <span className="font-semibold tabular-nums text-text">{totalWeight}% de 100%</span>
+    <div className="rounded-xl border border-slate-100 bg-slate-50/60 px-4 py-3">
+      <div className="flex items-center justify-between text-xs">
+        <span className="text-muted">Peso acumulado</span>
+        <span className="font-semibold tabular-nums text-text">{result.totalWeight}%</span>
       </div>
-      <div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-200">
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-slate-200">
         <div
-          className={`h-full rounded-full transition-all ${barColor}`}
-          style={{ width: `${Math.min(totalWeight, 100)}%` }}
+          className={`h-full rounded-full transition-all duration-300 ${barColor}`}
+          style={{ width: `${Math.min(result.totalWeight, 100)}%` }}
         />
       </div>
-      <p className="mt-2 text-xs text-muted">{message}</p>
+      <p
+        className={`mt-2 text-xs ${
+          result.status === 'overflow' ? 'text-danger' : 'text-muted'
+        }`}
+      >
+        {result.message}
+      </p>
     </div>
   )
 }

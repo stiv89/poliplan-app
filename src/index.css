@@ -746,6 +746,34 @@ select {
   animation: check-pop 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
+@keyframes exam-detail-sheet-in {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+@keyframes exam-detail-drawer-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.exam-detail-panel-enter {
+  animation: exam-detail-sheet-in 260ms ease-out;
+}
+
+@media (min-width: 768px) {
+  .exam-detail-panel-enter {
+    animation: exam-detail-drawer-in 260ms ease-out;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .expandable-details,
   .course-card-details,
@@ -770,6 +798,10 @@ select {
   }
 
   .check-pop {
+    animation: none;
+  }
+
+  .exam-detail-panel-enter {
     animation: none;
   }
 }

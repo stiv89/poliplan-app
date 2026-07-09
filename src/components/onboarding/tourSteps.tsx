@@ -99,31 +99,11 @@ export function ScheduleGridMock() {
   )
 }
 
-export function SummaryMock() {
-  return (
-    <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-      <div className="border-b border-slate-100 px-3 py-2 text-xs font-semibold text-text">Resumen</div>
-      <div className="space-y-2 p-3 text-[11px]">
-        <div className="flex justify-between">
-          <span className="text-muted">Materias</span>
-          <span className="font-semibold text-text">4</span>
-        </div>
-        <div className="flex justify-between">
-          <span className="text-muted">Conflictos</span>
-          <span className="font-semibold text-emerald-600">0</span>
-        </div>
-        <div className="rounded-lg bg-amber-50 px-2 py-1.5 text-amber-800">Próximo examen: MAT120 · Vie 14:00</div>
-      </div>
-    </div>
-  )
-}
-
 export function NavMock({ mobile = false }: { mobile?: boolean }) {
   const items = [
     { label: 'Horario', active: true },
     { label: 'Exámenes', active: false },
     { label: 'Notas', active: false },
-    { label: 'Progreso', active: false },
   ]
   return (
     <div
@@ -226,17 +206,10 @@ export const DESKTOP_TOUR_STEPS: TourStep[] = [
     visual: <ScheduleGridMock />,
   },
   {
-    id: 'summary',
-    target: '[data-tour="schedule-summary"]',
-    title: 'Resumen y exámenes',
-    description: 'Abrí el panel de info para ver materias cargadas, conflictos y fechas de examen.',
-    visual: <SummaryMock />,
-  },
-  {
     id: 'nav',
     target: '[data-tour="app-nav"]',
     title: 'Explorá el resto de la app',
-    description: 'Desde acá accedés a exámenes, calculadora de notas, progreso académico y novedades.',
+    description: 'Desde acá accedés a exámenes y calculadora de notas.',
     visual: <NavMock />,
   },
 ]
@@ -274,7 +247,7 @@ export const MOBILE_TOUR_STEPS: TourStep[] = [
     id: 'nav',
     target: '[data-tour="app-nav"]',
     title: 'Menú inferior',
-    description: 'Exámenes, notas, progreso y novedades están en la barra de abajo.',
+    description: 'Exámenes y notas están en la barra de abajo.',
     visual: <NavMock mobile />,
   },
 ]

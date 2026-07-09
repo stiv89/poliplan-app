@@ -1,5 +1,5 @@
 import { createBrowserRouter, Navigate, useLocation } from 'react-router-dom'
-import { AppShell } from '@/components/layout/AppShell'
+import { ScheduleAppShell } from '@/app/providers'
 import { PublicLayout } from '@/components/public/PublicLayout'
 import { ROUTES } from '@/config/constants'
 import { PUBLIC_ROUTES } from '@/config/seo'
@@ -18,6 +18,7 @@ import { HorariosFpunaPage } from '@/pages/public/HorariosFpunaPage'
 import { LandingPage } from '@/pages/public/LandingPage'
 import { SectionsPage } from '@/pages/SectionsPage'
 import { ProgressPage } from '@/pages/ProgressPage'
+import { SharedSchedulePage } from '@/pages/SharedSchedulePage'
 import { SettingsPage } from '@/pages/SettingsPage'
 
 function LegacyAppRedirect() {
@@ -41,9 +42,10 @@ export const router = createBrowserRouter([
     ],
   },
   {
-    element: <AppShell />,
+    element: <ScheduleAppShell />,
     children: [
       { path: ROUTES.home.slice(1), element: <HomePage /> },
+      { path: ROUTES.sharedSchedule.slice(1), element: <SharedSchedulePage /> },
       { path: ROUTES.sections.slice(1), element: <SectionsPage /> },
       { path: ROUTES.exams.slice(1), element: <ExamsPage /> },
       { path: ROUTES.grading.slice(1), element: <GradingPage /> },

@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
-import { ChevronDown, ChevronLeft, Plus, X } from 'lucide-react'
+import { ChevronDown, ChevronLeft, Plus, Share2, X } from 'lucide-react'
 import type { AcademicPeriod, Career } from '@/types/academic'
 import { AnimatedPopover } from '@/components/ui/AnimatedPopover'
 import { ScheduleContextPanel } from '@/components/schedule/ScheduleContextSheet'
@@ -26,6 +26,7 @@ export interface ScheduleContextSelectorProps {
   leading?: ReactNode
   className?: string
   triggerClassName?: string
+  onShareSchedule?: () => void
 }
 
 export function buildContextPillLabel(
@@ -52,6 +53,7 @@ export function ScheduleContextSelector({
   leading,
   className = '',
   triggerClassName = '',
+  onShareSchedule,
 }: ScheduleContextSelectorProps) {
   const [open, setOpen] = useState(false)
   const [view, setView] = useState<ScheduleContextView>('list')
@@ -154,6 +156,17 @@ export function ScheduleContextSelector({
             aria-hidden="true"
           />
         </button>
+        {onShareSchedule && (
+          <button
+            type="button"
+            onClick={onShareSchedule}
+            className="inline-flex shrink-0 items-center gap-1.5 self-stretch rounded-lg border border-slate-200/80 bg-white/90 px-2.5 py-1.5 text-[12px] font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-50/70 hover:text-slate-800"
+            aria-label="Compartir horario"
+          >
+            <Share2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+            <span>Compartir</span>
+          </button>
+        )}
       </div>
 
       {isSheet ? (
@@ -328,6 +341,7 @@ function ScheduleContextNavigator({
               schedulePicker.onCreate(`${baseName} (copia)`, scheduleId)
               onClose()
             }}
+            onShare={schedulePicker.onShare}
             showManageFooter={isList && showManage}
             manageLabel={
               deletedCount > 0 ? `Administrar horarios · ${deletedCount}` : 'Administrar horarios'

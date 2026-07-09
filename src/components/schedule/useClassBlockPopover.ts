@@ -8,7 +8,7 @@ import {
 } from 'react'
 import type { ClassBlockInfo } from '@/components/schedule/ClassBlockDetail'
 
-function useSupportsHover() {
+export function useSupportsHover() {
   const [supports, setSupports] = useState(() =>
     typeof window !== 'undefined'
       ? window.matchMedia('(hover: hover) and (pointer: fine)').matches
@@ -59,9 +59,11 @@ export function useClassBlockPopover() {
 
   const handleBlockClick = (block: ClassBlockInfo, event: ReactMouseEvent<HTMLButtonElement>) => {
     event.stopPropagation()
-    if (activeBlock?.id === block.id) {
-      close()
-      return
+    if (!supportsHover) {
+      if (activeBlock?.id === block.id) {
+        close()
+        return
+      }
     }
     openBlock(block, event.currentTarget)
   }

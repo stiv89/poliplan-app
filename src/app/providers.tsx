@@ -4,8 +4,12 @@ import { useRegisterSW } from 'virtual:pwa-register/react'
 import { Button } from '@/components/ui/Button'
 import { ScheduleProvider } from '@/features/schedule/ScheduleContext'
 import { AuthProvider } from '@/features/auth/AuthContext'
+import { AppShell } from '@/components/layout/AppShell'
 import { useSchedule } from '@/hooks/useSchedule'
+import type { StartupMode } from '@/features/schedule/ScheduleContext'
 import loaderGif from '../../logos/loader.gif'
+
+const BLOCKING_STARTUP_MODES = new Set<StartupMode>(['offline-no-cache', 'updating-app'])
 
 function PwaUpdatePrompt() {
   const {
@@ -49,39 +53,15 @@ function PwaUpdatePrompt() {
 
 function StartupOverlay() {
   const { startupMode, retryStartup } = useSchedule()
-  const [visible, setVisible] = useState(false)
 
-  useEffect(() => {
-    if (startupMode === 'ready') {
-      setVisible(false)
-      return
-    }
-
-    if (startupMode === 'offline-no-cache') {
-      setVisible(true)
-      return
-    }
-
-    const timeout = window.setTimeout(() => setVisible(true), 360)
-    return () => window.clearTimeout(timeout)
-  }, [startupMode])
-
-  if (startupMode === 'ready' || (!visible && startupMode !== 'offline-no-cache')) {
+  if (startupMode === 'ready' || !BLOCKING_STARTUP_MODES.has(startupMode)) {
     return null
   }
 
   const message =
     startupMode === 'offline-no-cache'
       ? 'Conectate a internet para descargar los horarios.'
-      : startupMode === 'updating-app'
-        ? 'Actualizando PoliPlan…'
-        : startupMode === 'updating-data'
-          ? 'Hay horarios nuevos, un momentito.'
-          : startupMode === 'downloading'
-            ? 'Descargando horarios oficiales…'
-            : startupMode === 'restoring'
-              ? 'Cargando tu horario guardado…'
-              : 'Abriendo PoliPlan…'
+      : 'Actualizando PoliPlan…'
 
   return (
     <div
@@ -113,8 +93,13 @@ function StartupOverlay() {
   )
 }
 
-function OnlineBanner({ children }: { children: ReactNode }) {
-  return <>{children}</>
+export function ScheduleAppShell() {
+  return (
+    <ScheduleProvider>
+      <StartupOverlay />
+      <AppShell />
+    </ScheduleProvider>
+  )
 }
 
 export function AppProviders({ children }: { children: ReactNode }) {
@@ -130,11 +115,8 @@ export function AppProviders({ children }: { children: ReactNode }) {
 
   return (
     <AuthProvider>
-      <ScheduleProvider>
-        <OnlineBanner>{children}</OnlineBanner>
-        <StartupOverlay />
-        <PwaUpdatePrompt />
-      </ScheduleProvider>
+      {children}
+      <PwaUpdatePrompt />
     </AuthProvider>
   )
 }

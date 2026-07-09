@@ -7,6 +7,7 @@ interface AuthContextValue {
   loading: boolean
   isConfigured: boolean
   signInWithEmail: (email: string) => Promise<{ error: string | null }>
+  signInWithGoogle: () => Promise<{ error: string | null }>
   signOut: () => Promise<void>
 }
 
@@ -68,6 +69,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           email: trimmed,
           options: {
             emailRedirectTo: `${window.location.origin}/`,
+          },
+        })
+
+        return { error: error?.message ?? null }
+      },
+      signInWithGoogle: async () => {
+        if (!client) {
+          return { error: 'Supabase no está configurado.' }
+        }
+
+        const { error } = await client.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: `${window.location.origin}/configuracion`,
           },
         })
 

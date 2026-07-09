@@ -21,6 +21,7 @@ import { SectionExplorerFilterMenu } from '@/components/schedule/SectionExplorer
 import { CompactCareerSelect } from '@/components/schedule/CompactCareerSelect'
 import { SectionListSkeleton } from '@/components/schedule/SectionListSkeleton'
 import { AnimatedPopover } from '@/components/ui/AnimatedPopover'
+import { useSupportsHover } from '@/components/schedule/useClassBlockPopover'
 import { resolveSectionShift } from '@/utils/sectionCode'
 import { getConflictsForSection } from '@/utils/conflicts'
 import { filterAndRankSections } from '@/utils/fuzzySearch'
@@ -41,6 +42,8 @@ import type { AcademicPeriod, Career, CourseSection, ScheduleConflict } from '@/
 import type { ScheduleViewFilters } from '@/types/scheduleFilters'
 
 const OTHER_SEMESTER_KEY = 0
+const HOVER_OPEN_DELAY_MS = 450
+const HOVER_CLOSE_DELAY_MS = 120
 
 const BROWSE_MODE_OPTIONS: {
   id: ExplorerBrowseMode
@@ -102,6 +105,10 @@ export function SectionSearchPanel({
   const [semesterFilter, setSemesterFilter] = useState<number | null>(null)
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => new Set())
   const [expandedSemesters, setExpandedSemesters] = useState<Set<number>>(() => new Set())
+  const [hoveredGroupKey, setHoveredGroupKey] = useState<string | null>(null)
+  const hoverOpenTimeoutRef = useRef<number | null>(null)
+  const hoverCloseTimeoutRef = useRef<number | null>(null)
+  const supportsHover = useSupportsHover()
   const [browseMode, setBrowseMode] = useState<ExplorerBrowseMode>(() => readExplorerBrowseMode())
 
   useEffect(() => {
@@ -113,6 +120,17 @@ export function SectionSearchPanel({
     setSemesterFilter(null)
     setExpandedSemesters(new Set())
   }, [selectedCareerId])
+
+  useEffect(() => {
+    return () => {
+      if (hoverOpenTimeoutRef.current != null) {
+        window.clearTimeout(hoverOpenTimeoutRef.current)
+      }
+      if (hoverCloseTimeoutRef.current != null) {
+        window.clearTimeout(hoverCloseTimeoutRef.current)
+      }
+    }
+  }, [])
 
   const hasCareer = Boolean(selectedCareerId)
   const hasSearch = search.trim().length > 0
@@ -256,6 +274,7 @@ export function SectionSearchPanel({
   }, [browseContextKey, showSemesterBlocks, isMobileSheet, semesterBlocks, hasSearch])
 
   const toggleGroupExpanded = (groupKey: string) => {
+    setHoveredGroupKey(null)
     setExpandedGroups((current) => {
       if (current.has(groupKey)) return new Set()
       if (isMobileSheet || showSemesterBlocks) return new Set([groupKey])
@@ -263,6 +282,49 @@ export function SectionSearchPanel({
       next.add(groupKey)
       return next
     })
+  }
+
+  const clearHoverOpenTimeout = () => {
+    if (hoverOpenTimeoutRef.current != null) {
+      window.clearTimeout(hoverOpenTimeoutRef.current)
+      hoverOpenTimeoutRef.current = null
+    }
+  }
+
+  const clearHoverCloseTimeout = () => {
+    if (hoverCloseTimeoutRef.current != null) {
+      window.clearTimeout(hoverCloseTimeoutRef.current)
+      hoverCloseTimeoutRef.current = null
+    }
+  }
+
+  const clearHoverPreview = () => {
+    clearHoverOpenTimeout()
+    clearHoverCloseTimeout()
+    setHoveredGroupKey(null)
+  }
+
+  const handleGroupHoverStart = (groupKey: string) => {
+    if (!supportsHover || isMobileSheet) return
+    clearHoverCloseTimeout()
+    clearHoverOpenTimeout()
+    hoverOpenTimeoutRef.current = window.setTimeout(() => {
+      setHoveredGroupKey(groupKey)
+    }, HOVER_OPEN_DELAY_MS)
+  }
+
+  const handleGroupHoverEnd = (groupKey: string) => {
+    if (!supportsHover || isMobileSheet) return
+    clearHoverOpenTimeout()
+    clearHoverCloseTimeout()
+    hoverCloseTimeoutRef.current = window.setTimeout(() => {
+      setHoveredGroupKey((current) => (current === groupKey ? null : current))
+    }, HOVER_CLOSE_DELAY_MS)
+  }
+
+  const handleExplorerScroll = () => {
+    if (!supportsHover || isMobileSheet) return
+    clearHoverPreview()
   }
 
   const toggleSemesterExpanded = (semester: number) => {
@@ -338,7 +400,8 @@ export function SectionSearchPanel({
   }
 
   function renderCourseGroup(group: (typeof courseGroups)[number]) {
-    const expanded = expandedGroups.has(group.groupKey)
+    const pinned = expandedGroups.has(group.groupKey)
+    const expanded = pinned || hoveredGroupKey === group.groupKey
 
     return (
       <CourseGroupCard
@@ -351,6 +414,8 @@ export function SectionSearchPanel({
         dense={!isMobileSheet}
         hideSemesterMeta={showSemesterBlocks}
         onToggleExpanded={() => toggleGroupExpanded(group.groupKey)}
+        onHoverStart={() => handleGroupHoverStart(group.groupKey)}
+        onHoverEnd={() => handleGroupHoverEnd(group.groupKey)}
         conflicts={conflicts}
         isSectionSelected={isSectionSelected}
         toggleLoading={toggleLoading}
@@ -453,6 +518,7 @@ export function SectionSearchPanel({
           className={`explorer-scroll flex-1 overflow-y-auto ${
             isMobileSheet ? 'px-3 py-2' : 'px-2.5 py-1.5'
           } course-explorer-list`}
+          onScroll={handleExplorerScroll}
         >
           {catalogLoading ? (
             <SectionListSkeleton />
@@ -804,6 +870,8 @@ function CourseGroupCard({
   onToggle,
   onPreview,
   previewSectionId,
+  onHoverStart,
+  onHoverEnd,
 }: {
   group: ReturnType<typeof groupSectionsByCourse>[number]
   coursesById: Map<string, SectionCourseInfo>
@@ -813,6 +881,8 @@ function CourseGroupCard({
   dense?: boolean
   hideSemesterMeta?: boolean
   onToggleExpanded: () => void
+  onHoverStart?: () => void
+  onHoverEnd?: () => void
   conflicts: ScheduleConflict[]
   isSectionSelected: (id: string) => boolean
   toggleLoading: boolean
@@ -951,6 +1021,8 @@ function CourseGroupCard({
       className={`${surfaceClass} overflow-hidden`}
       data-open={isOpen ? 'true' : 'false'}
       data-collapsible={collapsible ? 'true' : 'false'}
+      onMouseEnter={collapsible ? onHoverStart : undefined}
+      onMouseLeave={collapsible ? onHoverEnd : undefined}
     >
       {collapsible ? (
         <div

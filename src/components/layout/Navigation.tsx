@@ -1,9 +1,7 @@
 import {
-  Bell,
   BookOpen,
   Calculator,
   ClipboardList,
-  GraduationCap,
   Home,
   Settings,
 } from 'lucide-react'
@@ -17,46 +15,14 @@ import {
   type RefObject,
 } from 'react'
 import { NavLink, useLocation, matchPath } from 'react-router-dom'
-import { countUnseenChanges } from '@/services/changeDetectionService'
 import { ROUTES } from '@/config/constants'
 import logoMark from '../../../logos/logo-sidebar.png'
-
-function useUnseenCount(): number {
-  const [count, setCount] = useState(0)
-
-  useEffect(() => {
-    let cancelled = false
-
-    async function load() {
-      try {
-        const n = await countUnseenChanges()
-        if (!cancelled) setCount(n)
-      } catch {
-        // IndexedDB puede no estar lista todavía
-      }
-    }
-
-    void load()
-    const onChangesUpdated = () => void load()
-    window.addEventListener('poliplan:changes-updated', onChangesUpdated)
-    const id = window.setInterval(() => void load(), 60_000)
-    return () => {
-      cancelled = true
-      window.clearInterval(id)
-      window.removeEventListener('poliplan:changes-updated', onChangesUpdated)
-    }
-  }, [])
-
-  return count
-}
 
 const MAIN_NAV_ITEMS = [
   { to: ROUTES.home, label: 'Horario', icon: Home, end: true },
   { to: ROUTES.sections, label: 'Secciones', icon: BookOpen },
   { to: ROUTES.exams, label: 'Exámenes', icon: ClipboardList },
   { to: ROUTES.grading, label: 'Notas', icon: Calculator },
-  { to: ROUTES.progress, label: 'Progreso', icon: GraduationCap },
-  { to: ROUTES.changes, label: 'Novedades', icon: Bell, showBadge: true },
 ] as const
 
 const SETTINGS_ITEM = {
@@ -229,7 +195,13 @@ function NavRail({
         />
       )}
       {layout === 'horizontal' ? (
-        <div className="grid grid-cols-5 gap-0.5">{allItems.map(renderItem)}</div>
+        <div
+          className={`grid gap-0.5 ${
+            allItems.length === 4 ? 'grid-cols-4' : 'grid-cols-5'
+          }`}
+        >
+          {allItems.map(renderItem)}
+        </div>
       ) : footerItems ? (
         <>
           <div className="flex flex-col items-center gap-0.5">{items.map(renderItem)}</div>
@@ -243,12 +215,7 @@ function NavRail({
 }
 
 export function SidebarNav() {
-  const unseenCount = useUnseenCount()
-
-  const mainItems: NavItemConfig[] = MAIN_NAV_ITEMS.map((item) => ({
-    ...item,
-    badge: 'showBadge' in item && item.showBadge ? unseenCount : 0,
-  }))
+  const mainItems: NavItemConfig[] = [...MAIN_NAV_ITEMS]
 
   return (
     <aside className="liquid-glass-sidebar hidden h-full w-[76px] shrink-0 flex-col py-4 lg:w-20 md:flex">
@@ -281,8 +248,6 @@ export function SidebarNav() {
 }
 
 export function BottomNav() {
-  const unseenCount = useUnseenCount()
-
   const mobileItems: NavItemConfig[] = [
     {
       ...MAIN_NAV_ITEMS[0],
@@ -290,10 +255,6 @@ export function BottomNav() {
     },
     MAIN_NAV_ITEMS[2],
     MAIN_NAV_ITEMS[3],
-    {
-      ...MAIN_NAV_ITEMS[4],
-      badge: unseenCount,
-    },
     SETTINGS_ITEM,
   ]
 

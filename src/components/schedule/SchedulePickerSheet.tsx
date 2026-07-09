@@ -28,6 +28,7 @@ export interface SchedulePickerPanelProps {
   onModeChange?: (mode: SchedulePickerMode) => void
   onRequestCareerPeriod?: (scheduleId: string) => void
   onDuplicate?: (scheduleId: string) => void
+  onShare?: (scheduleId: string) => void
   showManageFooter?: boolean
   manageLabel?: string
   onManage?: () => void
@@ -53,6 +54,7 @@ export function SchedulePickerPanel({
   onModeChange,
   onRequestCareerPeriod,
   onDuplicate,
+  onShare,
   showManageFooter = false,
   manageLabel = 'Administrar horarios',
   onManage,
@@ -234,12 +236,17 @@ export function SchedulePickerPanel({
                           setOpenMenuId(null)
                           onDuplicate?.(schedule.id)
                         }}
+                        onShare={() => {
+                          setOpenMenuId(null)
+                          onShare?.(schedule.id)
+                        }}
                         onDelete={() => {
                           onDelete(schedule.id)
                           setOpenMenuId(null)
                         }}
                         showCareerPeriod={Boolean(onRequestCareerPeriod)}
                         showDuplicate={Boolean(onDuplicate)}
+                        showShare={Boolean(onShare)}
                       />
                     </div>
                   )}
@@ -375,9 +382,11 @@ function ScheduleItemMenu({
   onRename,
   onChangeCareerPeriod,
   onDuplicate,
+  onShare,
   onDelete,
   showCareerPeriod = false,
   showDuplicate = false,
+  showShare = false,
 }: {
   scheduleName: string
   open: boolean
@@ -385,9 +394,11 @@ function ScheduleItemMenu({
   onRename: () => void
   onChangeCareerPeriod?: () => void
   onDuplicate?: () => void
+  onShare?: () => void
   onDelete: () => void
   showCareerPeriod?: boolean
   showDuplicate?: boolean
+  showShare?: boolean
 }) {
   const buttonRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -456,6 +467,19 @@ function ScheduleItemMenu({
               }}
             >
               Duplicar horario
+            </button>
+          )}
+          {showShare && onShare && (
+            <button
+              type="button"
+              role="menuitem"
+              className="w-full px-3 py-1.5 text-left text-xs text-text hover:bg-slate-50"
+              onClick={(event) => {
+                event.stopPropagation()
+                onShare()
+              }}
+            >
+              Compartir link
             </button>
           )}
           <button

@@ -20,6 +20,7 @@ interface ScheduleContextBarProps {
   schedulePicker: Omit<SchedulePickerPanelProps, 'open' | 'onClose' | 'periodName'>
   titleClassName?: string
   compact?: boolean
+  onShareSchedule?: () => void
 }
 
 /** Desktop schedule context entry — unified two-line selector. */
@@ -34,6 +35,7 @@ export function ScheduleContextBar({
   onCareerChange,
   scheduleCareers,
   schedulePicker,
+  onShareSchedule,
 }: ScheduleContextBarProps) {
   return (
     <div className="min-w-0 flex-1">
@@ -48,6 +50,7 @@ export function ScheduleContextBar({
         selectedCareerId={selectedCareerId}
         onCareerChange={onCareerChange}
         schedulePicker={schedulePicker}
+        onShareSchedule={onShareSchedule}
       />
 
       {scheduleCareers.length > 1 && (

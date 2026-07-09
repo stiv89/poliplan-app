@@ -1,11 +1,13 @@
 import { useMemo, useState } from 'react'
 import { Search } from 'lucide-react'
 import { LandingAppPreview } from '@/components/public/LandingAppPreview'
+import { DonateDoodleButton } from '@/components/public/DonateDoodleButton'
+import { LandingDoodleBackground } from '@/components/public/LandingDoodleBackground'
 import { PublicFooter } from '@/components/public/PublicFooter'
-import { FaqSection, LANDING_FAQ } from '@/components/public/FaqSection'
+import { LANDING_FAQ } from '@/components/public/FaqSection'
 import { SeoHead } from '@/components/seo/SeoHead'
 import { ROUTES } from '@/config/constants'
-import { PUBLIC_PAGE_SEO, PUBLIC_ROUTES, SITE_NAME } from '@/config/seo'
+import { DONATE_URL, PUBLIC_PAGE_SEO, PUBLIC_ROUTES, SITE_NAME } from '@/config/seo'
 
 const meta = PUBLIC_PAGE_SEO[PUBLIC_ROUTES.presentacion]
 const LOGO_URL = '/email/poliplan-logo.png'
@@ -34,8 +36,10 @@ export function LandingPage() {
   return (
     <>
       <SeoHead meta={meta} faq={LANDING_FAQ} />
-      <div className="flex min-h-dvh flex-col bg-[#f4f7fb] text-slate-900">
-        <header className="px-5 py-4 sm:px-8">
+      <div className="relative flex min-h-dvh flex-col bg-[#f4f7fb] text-slate-900">
+        <LandingDoodleBackground />
+
+        <header className="relative z-10 flex items-center justify-between gap-4 px-5 py-4 sm:px-8">
           <a href={PUBLIC_ROUTES.presentacion} className="inline-flex items-center gap-3">
             <img
               src={LOGO_URL}
@@ -46,16 +50,29 @@ export function LandingPage() {
             />
             <span className="text-xl font-bold tracking-tight text-[#0B3B8F]">{SITE_NAME}</span>
           </a>
+
+          <nav aria-label="Acciones" className="flex items-center gap-2 sm:gap-3">
+            <a
+              href={PUBLIC_ROUTES.comoFunciona}
+              className="rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition hover:bg-white/70 hover:text-[#0B3B8F] sm:px-4"
+            >
+              Cómo usar
+            </a>
+            <DonateDoodleButton
+              href={DONATE_URL}
+              {...(DONATE_URL.startsWith('http') ? { rel: 'noopener noreferrer', target: '_blank' } : {})}
+            />
+          </nav>
         </header>
 
-        <main className="mx-auto flex w-full max-w-[1180px] flex-1 flex-col gap-10 px-5 pb-10 pt-2 lg:flex-row lg:items-center lg:gap-14 lg:px-8 lg:pb-16">
+        <main className="relative z-10 mx-auto flex w-full max-w-[1180px] flex-1 flex-col gap-10 px-5 pb-10 pt-2 lg:flex-row lg:items-center lg:gap-14 lg:px-8 lg:pb-16">
           <section className="flex min-w-0 flex-1 items-center justify-center lg:justify-end">
             <LandingAppPreview />
           </section>
 
           <section className="mx-auto w-full max-w-md shrink-0 lg:mx-0 lg:max-w-[360px]">
             <h1 className="text-[2rem] font-bold leading-[1.08] tracking-tight text-slate-900 sm:text-[2.35rem]">
-              Todo tu cuatrimestre
+              Todo tu semestre
               <span className="block text-slate-700">en un solo lugar</span>
             </h1>
             <p className="mt-3 text-sm leading-relaxed text-slate-500">
@@ -103,13 +120,9 @@ export function LandingPage() {
           </section>
         </main>
 
-        <div className="border-t border-slate-200/80 bg-white">
-          <div className="mx-auto max-w-[1180px] px-5 py-10 lg:px-8">
-            <FaqSection items={LANDING_FAQ} />
-          </div>
+        <div className="relative z-10">
+          <PublicFooter />
         </div>
-
-        <PublicFooter />
       </div>
     </>
   )

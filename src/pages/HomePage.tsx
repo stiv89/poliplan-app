@@ -8,7 +8,6 @@
  * Progressive disclosure:
  *   - Solo el calendario es permanente.
  *   - Agregar materia → drawer izquierdo.
- *   - Resumen/Exámenes/Cambios → drawer derecho.
  *   - Detalle de clase → popover inline.
  *   - Conflictos → etiqueta + intervalo exacto.
  */
@@ -17,7 +16,6 @@ import {
   Plus,
   Bell,
   X,
-  LayoutDashboard,
   Cloud,
   CircleHelp,
 } from 'lucide-react'
@@ -31,6 +29,7 @@ import { useGuestExperience } from '@/features/guest/GuestExperienceContext'
 import { useChanges } from '@/hooks/useChanges'
 import { useSchedule } from '@/hooks/useSchedule'
 import { SectionSearchPanel } from '@/components/schedule/SectionSearchPanel'
+import { ShareScheduleDialog } from '@/components/schedule/ShareScheduleDialog'
 import { ScheduleContextBar } from '@/components/schedule/ScheduleContextBar'
 import { ScheduleContextSelector } from '@/components/schedule/ScheduleContextSelector'
 import { ScheduleOnboardingTour } from '@/components/onboarding/ScheduleOnboardingTour'
@@ -40,7 +39,6 @@ import {
 } from '@/components/schedule/SchedulePickerSheet'
 import { WeeklyScheduleGrid } from '@/components/schedule/WeeklyScheduleGrid'
 import { DayScheduleView } from '@/components/schedule/DayScheduleView'
-import { ContextPanel } from '@/components/schedule/ContextPanel'
 import { scheduleRepository } from '@/repositories/SupabaseScheduleRepository'
 import { DEFAULT_SCHEDULE_VIEW_FILTERS } from '@/types/scheduleFilters'
 import type { ScheduleViewFilters } from '@/types/scheduleFilters'
@@ -66,9 +64,9 @@ export function HomePage() {
     toggleSection,
     setSelectedCareer,
     setSelectedPeriod,
-    lastUpdated,
     switchSchedule,
     createSchedule,
+    shareSchedule,
     renameSchedule,
     deleteSchedule,
     restoreSchedule,
@@ -88,20 +86,9 @@ export function HomePage() {
 
   // Drawer state
   const [searchOpen, setSearchOpen] = useState(false)
-  const [summaryOpen, setSummaryOpen] = useState(false)
   const [searchPrefill, setSearchPrefill] = useState('')
-  const [isDesktopLayout, setIsDesktopLayout] = useState(() =>
-    typeof window !== 'undefined' ? window.matchMedia('(min-width: 768px)').matches : true,
-  )
-  const summaryButtonRef = useRef<HTMLButtonElement>(null)
-
-  useEffect(() => {
-    const media = window.matchMedia('(min-width: 768px)')
-    const sync = () => setIsDesktopLayout(media.matches)
-    sync()
-    media.addEventListener('change', sync)
-    return () => media.removeEventListener('change', sync)
-  }, [])
+  const [shareDialogUrl, setShareDialogUrl] = useState<string | null>(null)
+  const [shareError, setShareError] = useState<string | null>(null)
 
   // Mobile state
   const [mobileDay, setMobileDay] = useState<number>(new Date().getDay() || 1)
@@ -142,7 +129,30 @@ export function HomePage() {
     void scheduleRepository.getAcademicPeriods().then(setAcademicPeriods)
   }, [activePeriod?.id])
 
-  const selectedCareer = careers.find((c) => c.id === settings?.selectedCareerId)
+  const openSearch = useCallback((prefill = '') => {
+    setSearchPrefill(prefill)
+    setSearchOpen(true)
+  }, [])
+
+  const handleShareSchedule = useCallback(
+    async (scheduleId: string) => {
+      setShareError(null)
+      try {
+        const url = await shareSchedule(scheduleId)
+        setShareDialogUrl(url)
+      } catch (error) {
+        const code = error instanceof Error ? error.message : 'unknown'
+        if (code === 'empty') {
+          setShareError('Agregá al menos una materia antes de compartir este horario.')
+        } else if (code === 'too-large') {
+          setShareError('Este horario es muy grande para compartir sin conexión. Probá con Supabase activo.')
+        } else {
+          setShareError('No pudimos generar el link. Intentá de nuevo.')
+        }
+      }
+    },
+    [shareSchedule],
+  )
 
   const handleRemove = useCallback(
     async (sectionId: string) => {
@@ -175,7 +185,6 @@ export function HomePage() {
     function onKey(e: KeyboardEvent) {
       if (e.key === 'Escape') {
         setSearchOpen(false)
-        setSummaryOpen(false)
       }
     }
     window.addEventListener('keydown', onKey)
@@ -218,12 +227,6 @@ export function HomePage() {
     return careers.filter((career) => careerIds.has(career.id))
   }, [careers, coursesById, selectedSections, settings?.selectedCareerId])
 
-  const openSearch = useCallback((prefill = '') => {
-    setSummaryOpen(false)
-    setSearchPrefill(prefill)
-    setSearchOpen(true)
-  }, [])
-
   const handleViewAlternatives = useCallback(
     (courseId: string) => {
       const course = coursesById.get(courseId)
@@ -264,6 +267,7 @@ export function HomePage() {
     onDelete: (scheduleId: string) => void deleteSchedule(scheduleId),
     onRestore: (scheduleId: string) => void restoreSchedule(scheduleId),
     onPermanentDelete: (scheduleId: string) => void permanentlyDeleteSchedule(scheduleId),
+    onShare: (scheduleId: string) => void handleShareSchedule(scheduleId),
   }
 
   const searchPanelProps = {
@@ -324,13 +328,10 @@ export function HomePage() {
             academicPeriods={academicPeriods}
             selectedPeriodId={activePeriod?.id ?? settings?.selectedAcademicPeriodId ?? null}
             onPeriodChange={(periodId) => void setSelectedPeriod(periodId)}
-            conflictCount={conflicts.length}
             careers={careers}
             selectedCareerId={settings?.selectedCareerId ?? null}
             onCareerChange={(careerId) => void setSelectedCareer(careerId)}
             scheduleCareers={scheduleCareers}
-            onSummary={() => setSummaryOpen((v) => !v)}
-            summaryButtonRef={summaryButtonRef}
             schedulePicker={schedulePickerProps}
             isOnline={isOnline}
             isAuthenticated={!!user}
@@ -338,6 +339,11 @@ export function HomePage() {
             userSyncAt={settings?.lastUserScheduleSyncAt ?? null}
             officialDataSyncing={syncStatus === 'downloading' || syncStatus === 'checking'}
             onSync={requestScheduleSync}
+            onShareSchedule={
+              activeSchedule?.id
+                ? () => void handleShareSchedule(activeSchedule.id)
+                : undefined
+            }
           />
 
           <div className="relative min-h-0 flex-1 overflow-hidden" data-tour="schedule-grid">
@@ -371,24 +377,6 @@ export function HomePage() {
               </div>
             )}
 
-            <SummaryDrawer
-              open={summaryOpen && isDesktopLayout}
-              onClose={() => setSummaryOpen(false)}
-              scheduleName={activeSchedule?.name ?? 'Mi horario'}
-              activePeriod={activePeriod}
-              selectedCareer={selectedCareer}
-              selectedSections={selectedSections}
-              conflicts={conflicts}
-              coursesById={coursesMeta}
-              lastUpdated={lastUpdated}
-              returnFocusRef={summaryButtonRef}
-              onAddFirstCourse={() => {
-                setSummaryOpen(false)
-                // Desktop explorer is always visible; focus search via prefill remount.
-                setSearchPrefill(` `)
-                requestAnimationFrame(() => setSearchPrefill(''))
-              }}
-            />
           </div>
         </div>
       </div>
@@ -401,15 +389,9 @@ export function HomePage() {
           academicPeriods={academicPeriods}
           selectedPeriodId={activePeriod?.id ?? settings?.selectedAcademicPeriodId ?? null}
           onPeriodChange={(periodId) => void setSelectedPeriod(periodId)}
-          conflictCount={conflicts.length}
           careers={careers}
           selectedCareerId={settings?.selectedCareerId ?? null}
           onCareerChange={(careerId) => void setSelectedCareer(careerId)}
-          onSummary={() => {
-            setSearchOpen(false)
-            setSummaryOpen((v) => !v)
-          }}
-          summaryButtonRef={summaryButtonRef}
           schedulePicker={schedulePickerProps}
           isOnline={isOnline}
           isAuthenticated={!!user}
@@ -417,6 +399,9 @@ export function HomePage() {
           userSyncAt={settings?.lastUserScheduleSyncAt ?? null}
           officialDataSyncing={syncStatus === 'downloading' || syncStatus === 'checking'}
           onSync={requestScheduleSync}
+          onShareSchedule={
+            activeSchedule?.id ? () => void handleShareSchedule(activeSchedule.id) : undefined
+          }
           isEmpty={!hasScheduleSections}
         />
 
@@ -496,28 +481,6 @@ export function HomePage() {
             onClose={() => setSearchOpen(false)}
           />
         </BottomSheet>
-
-        {/* Bottom sheet: Resumen */}
-        <BottomSheet
-          open={summaryOpen && !isDesktopLayout}
-          onClose={() => setSummaryOpen(false)}
-          minimal
-          tall
-        >
-          <ContextPanel
-            activePeriod={activePeriod}
-            selectedCareer={selectedCareer}
-            selectedSections={selectedSections}
-            conflicts={conflicts}
-            coursesById={coursesMeta}
-            lastUpdated={lastUpdated}
-            scheduleName={activeSchedule?.name ?? 'Mi horario'}
-            onClose={() => setSummaryOpen(false)}
-            onAddFirstCourse={() => openSearch()}
-            presentation="sheet"
-            returnFocusRef={summaryButtonRef}
-          />
-        </BottomSheet>
       </div>
 
       {pendingDeletedSchedule && (
@@ -529,42 +492,30 @@ export function HomePage() {
       )}
 
       <ScheduleOnboardingTour open={tourOpen} onComplete={finishTour} onDismiss={finishTour} />
+
+      <ShareScheduleDialog
+        open={Boolean(shareDialogUrl)}
+        url={shareDialogUrl ?? ''}
+        onClose={() => setShareDialogUrl(null)}
+      />
+
+      {shareError && (
+        <div className="fixed bottom-6 left-1/2 z-50 max-w-sm -translate-x-1/2 rounded-xl border border-red-200 bg-white px-4 py-3 text-sm text-red-700 shadow-lg">
+          {shareError}
+          <button
+            type="button"
+            className="ml-3 font-medium underline"
+            onClick={() => setShareError(null)}
+          >
+            Cerrar
+          </button>
+        </div>
+      )}
     </div>
   )
 }
 
 // ── Header compartido ─────────────────────────────────────────────────────────
-
-function SummaryButton({
-  onClick,
-  hasConflict,
-  buttonRef,
-}: {
-  onClick: () => void
-  hasConflict: boolean
-  buttonRef?: React.RefObject<HTMLButtonElement | null>
-}) {
-  return (
-    <button
-      ref={buttonRef}
-      type="button"
-      onClick={onClick}
-      data-tour="schedule-summary"
-      title="Abrir resumen del horario"
-      className="relative inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-slate-200/80 bg-white px-2.5 text-[13px] font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
-      aria-label="Abrir resumen del horario"
-    >
-      <LayoutDashboard className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
-      Resumen
-      {hasConflict && (
-        <span
-          className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-red-500 ring-2 ring-white"
-          aria-hidden="true"
-        />
-      )}
-    </button>
-  )
-}
 
 function ScheduleHeader({
   scheduleName,
@@ -572,13 +523,10 @@ function ScheduleHeader({
   academicPeriods,
   selectedPeriodId,
   onPeriodChange,
-  conflictCount,
   careers,
   selectedCareerId,
   onCareerChange,
   scheduleCareers,
-  onSummary,
-  summaryButtonRef,
   schedulePicker,
   isOnline,
   isAuthenticated,
@@ -586,19 +534,17 @@ function ScheduleHeader({
   userSyncAt,
   officialDataSyncing,
   onSync,
+  onShareSchedule,
 }: {
   scheduleName: string
   periodName: string | null
   academicPeriods: AcademicPeriod[]
   selectedPeriodId: string | null
   onPeriodChange: (periodId: string) => void
-  conflictCount: number
   careers: Career[]
   selectedCareerId: string | null
   onCareerChange: (careerId: string | null) => void
   scheduleCareers: Career[]
-  onSummary: () => void
-  summaryButtonRef?: React.RefObject<HTMLButtonElement | null>
   schedulePicker: Omit<SchedulePickerPanelProps, 'open' | 'onClose' | 'periodName'>
   isOnline: boolean
   isAuthenticated: boolean
@@ -606,28 +552,23 @@ function ScheduleHeader({
   userSyncAt: string | null
   officialDataSyncing: boolean
   onSync: () => void
+  onShareSchedule?: () => void
 }) {
   return (
     <header className="shrink-0 border-b border-slate-200/50 bg-slate-50/45 px-6 py-2">
-      <div className="flex items-start justify-between gap-4">
-        <ScheduleContextBar
-          scheduleName={scheduleName}
-          periodName={periodName}
-          academicPeriods={academicPeriods}
-          selectedPeriodId={selectedPeriodId}
-          onPeriodChange={onPeriodChange}
-          careers={careers}
-          selectedCareerId={selectedCareerId}
-          onCareerChange={onCareerChange}
-          scheduleCareers={scheduleCareers}
-          schedulePicker={schedulePicker}
-        />
-        <SummaryButton
-          onClick={onSummary}
-          hasConflict={conflictCount > 0}
-          buttonRef={summaryButtonRef}
-        />
-      </div>
+      <ScheduleContextBar
+        scheduleName={scheduleName}
+        periodName={periodName}
+        academicPeriods={academicPeriods}
+        selectedPeriodId={selectedPeriodId}
+        onPeriodChange={onPeriodChange}
+        careers={careers}
+        selectedCareerId={selectedCareerId}
+        onCareerChange={onCareerChange}
+        scheduleCareers={scheduleCareers}
+        schedulePicker={schedulePicker}
+        onShareSchedule={onShareSchedule}
+      />
       <div className="mt-1">
         <ScheduleSaveStatus
           isOnline={isOnline}
@@ -648,12 +589,9 @@ function MobileHeader({
   academicPeriods,
   selectedPeriodId,
   onPeriodChange,
-  conflictCount,
   careers,
   selectedCareerId,
   onCareerChange,
-  onSummary,
-  summaryButtonRef,
   schedulePicker,
   isOnline,
   isAuthenticated,
@@ -661,6 +599,7 @@ function MobileHeader({
   userSyncAt,
   officialDataSyncing,
   onSync,
+  onShareSchedule,
   isEmpty = false,
 }: {
   scheduleName: string
@@ -668,12 +607,9 @@ function MobileHeader({
   academicPeriods: AcademicPeriod[]
   selectedPeriodId: string | null
   onPeriodChange: (periodId: string) => void
-  conflictCount: number
   careers: Career[]
   selectedCareerId: string | null
   onCareerChange: (careerId: string | null) => void
-  onSummary: () => void
-  summaryButtonRef?: React.RefObject<HTMLButtonElement | null>
   schedulePicker: Omit<SchedulePickerPanelProps, 'open' | 'onClose' | 'periodName'>
   isOnline: boolean
   isAuthenticated: boolean
@@ -681,43 +617,36 @@ function MobileHeader({
   userSyncAt: string | null
   officialDataSyncing: boolean
   onSync: () => void
+  onShareSchedule?: () => void
   isEmpty?: boolean
 }) {
   return (
     <header className={`shrink-0 px-4 ${isEmpty ? 'pt-2.5 pb-3' : 'py-2'}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <div className="mb-1.5 flex items-center gap-2">
-            <img
-              src={logoMark}
-              alt=""
-              className={`shrink-0 select-none rounded-lg object-contain opacity-90 ${
-                isEmpty ? 'h-7 w-7' : 'h-8 w-8'
-              }`}
-              draggable={false}
-              aria-hidden="true"
-            />
-            <h1 className="text-lg font-bold tracking-tight text-text">PoliPlan</h1>
-          </div>
-          <ScheduleContextSelector
-            presentation="sheet"
-            scheduleName={scheduleName}
-            periodName={periodName}
-            academicPeriods={academicPeriods}
-            selectedPeriodId={selectedPeriodId}
-            onPeriodChange={onPeriodChange}
-            careers={careers}
-            selectedCareerId={selectedCareerId}
-            onCareerChange={onCareerChange}
-            schedulePicker={schedulePicker}
-          />
-        </div>
-        <SummaryButton
-          onClick={onSummary}
-          hasConflict={conflictCount > 0}
-          buttonRef={summaryButtonRef}
+      <div className="mb-1.5 flex items-center gap-2">
+        <img
+          src={logoMark}
+          alt=""
+          className={`shrink-0 select-none rounded-lg object-contain opacity-90 ${
+            isEmpty ? 'h-7 w-7' : 'h-8 w-8'
+          }`}
+          draggable={false}
+          aria-hidden="true"
         />
+        <h1 className="text-lg font-bold tracking-tight text-text">PoliPlan</h1>
       </div>
+      <ScheduleContextSelector
+        presentation="sheet"
+        scheduleName={scheduleName}
+        periodName={periodName}
+        academicPeriods={academicPeriods}
+        selectedPeriodId={selectedPeriodId}
+        onPeriodChange={onPeriodChange}
+        careers={careers}
+        selectedCareerId={selectedCareerId}
+        onCareerChange={onCareerChange}
+        schedulePicker={schedulePicker}
+        onShareSchedule={onShareSchedule}
+      />
 
       {!isEmpty && (
         <div className="mt-1.5">
@@ -734,58 +663,6 @@ function MobileHeader({
         </div>
       )}
     </header>
-  )
-}
-
-// ── Drawer resumen (desktop) ──────────────────────────────────────────────────
-
-function SummaryDrawer({
-  open,
-  onClose,
-  scheduleName,
-  onAddFirstCourse,
-  returnFocusRef,
-  ...panelProps
-}: {
-  open: boolean
-  onClose: () => void
-  scheduleName: string
-  onAddFirstCourse?: () => void
-  returnFocusRef?: React.RefObject<HTMLElement | null>
-  activePeriod: import('@/types/academic').AcademicPeriod | null
-  selectedCareer: import('@/types/academic').Career | undefined
-  selectedSections: CourseSection[]
-  conflicts: import('@/types/academic').ScheduleConflict[]
-  coursesById: Map<string, { name: string; code: string | null }>
-  lastUpdated: string | null
-}) {
-  return (
-    <>
-      <div
-        className={`absolute inset-0 z-20 bg-slate-900/25 transition-opacity duration-300 ${
-          open ? 'opacity-100' : 'pointer-events-none opacity-0'
-        }`}
-        onClick={onClose}
-        aria-hidden="true"
-      />
-      <div
-        className={`absolute right-0 top-0 z-30 flex h-full w-[396px] max-w-[calc(100%-1rem)] flex-col overflow-hidden rounded-l-[24px] bg-white shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
-          open ? 'translate-x-0' : 'pointer-events-none translate-x-full'
-        }`}
-        aria-hidden={!open}
-      >
-        {open && (
-          <ContextPanel
-            {...panelProps}
-            scheduleName={scheduleName}
-            onClose={onClose}
-            onAddFirstCourse={onAddFirstCourse}
-            presentation="drawer"
-            returnFocusRef={returnFocusRef}
-          />
-        )}
-      </div>
-    </>
   )
 }
 

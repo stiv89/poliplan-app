@@ -1,15 +1,12 @@
 import type { CourseSection, Exam, ScheduleChange } from '@/types/academic'
 
-export type ExamFilterScope = 'mine' | 'all'
 export type ExamFilterType = 'all' | 'parcial' | 'final' | 'recuperatorio'
 
 export interface ExamFilters {
-  scope: ExamFilterScope
   type: ExamFilterType
 }
 
 export const DEFAULT_EXAM_FILTERS: ExamFilters = {
-  scope: 'mine',
   type: 'all',
 }
 

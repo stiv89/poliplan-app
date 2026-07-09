@@ -10,6 +10,7 @@ export const ROUTES = {
   changes: '/novedades',
   settings: '/configuracion',
   offline: '/offline',
+  sharedSchedule: '/compartir/:shareRef',
 } as const
 
 export const SYNC_INTERVAL_MS = 30 * 60 * 1000

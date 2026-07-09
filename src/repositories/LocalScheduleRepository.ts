@@ -355,6 +355,43 @@ export class LocalScheduleRepository implements ScheduleRepository {
     return schedule
   }
 
+  async createSavedScheduleFromSections(input: {
+    name: string
+    academicPeriodId: string
+    selectedCareerId?: string | null
+    sections: Array<{ sectionId: string; courseId: string; academicPeriodId: string }>
+  }): Promise<SavedScheduleRecord> {
+    const now = new Date().toISOString()
+    const schedule: SavedScheduleRecord = {
+      id: crypto.randomUUID(),
+      name: input.name.trim() || 'Horario importado',
+      academicPeriodId: input.academicPeriodId,
+      selectedCareerId: input.selectedCareerId ?? null,
+      createdAt: now,
+      updatedAt: now,
+      deletedAt: null,
+    }
+
+    await db.transaction('rw', db.savedSchedules, db.selectedSections, async () => {
+      await db.savedSchedules.put(schedule)
+
+      if (input.sections.length > 0) {
+        await db.selectedSections.bulkPut(
+          input.sections.map((section) => ({
+            id: crypto.randomUUID(),
+            scheduleId: schedule.id,
+            sectionId: section.sectionId,
+            courseId: section.courseId,
+            academicPeriodId: section.academicPeriodId,
+            createdAt: now,
+          })),
+        )
+      }
+    })
+
+    return schedule
+  }
+
   async renameSavedSchedule(scheduleId: string, name: string): Promise<SavedScheduleRecord> {
     const schedule = await db.savedSchedules.get(scheduleId)
     if (!schedule || schedule.deletedAt) {

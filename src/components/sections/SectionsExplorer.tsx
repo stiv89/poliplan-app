@@ -1,43 +1,36 @@
 /**
- * SectionsExplorer — Lista compacta de materias y secciones
+ * SectionsExplorer — Materias del horario y sus secciones
  */
 import { useMemo, useState } from 'react'
-import { AlertTriangle, Check, GraduationCap, Search } from 'lucide-react'
-import { CompactCareerSelect } from '@/components/schedule/CompactCareerSelect'
+import { Link } from 'react-router-dom'
+import { AlertTriangle, Check, Search } from 'lucide-react'
+import sectionsEmptyIllustration from '../../../logos/empty.png'
 import { CourseFootnoteCardNote } from '@/components/schedule/CourseFootnoteNotice'
+import { LandingDoodleBackground } from '@/components/public/LandingDoodleBackground'
 import { SectionListSkeleton } from '@/components/schedule/SectionListSkeleton'
 import { SectionDetailPanel } from '@/components/sections/SectionDetailPanel'
-import {
-  DEFAULT_SECTIONS_EXTRA_FILTERS,
-  SectionsFilterMenu,
-  sectionMatchesViewFilters,
-  type SectionsExtraFilters,
-} from '@/components/sections/SectionsFilterSheet'
 import { TeacherNameButton } from '@/components/teachers/TeacherNameButton'
+import { ROUTES } from '@/config/constants'
 import { useAcademicHistory } from '@/hooks/useAcademicHistory'
 import type { Career, CourseSection, ScheduleConflict } from '@/types/academic'
 import { getCourseProgressLabel } from '@/utils/academicProgressLabels'
 import { getCourseFootnote, type CourseFootnoteKind } from '@/utils/courseFootnotes'
 import { filterAndRankSections } from '@/utils/fuzzySearch'
-import { resolveSectionShift } from '@/utils/sectionCode'
-import { DEFAULT_SCHEDULE_VIEW_FILTERS, type ScheduleViewFilters } from '@/types/scheduleFilters'
 import {
   formatScheduleCompact,
   getCourseInitial,
   getSectionConflictMessages,
-  sectionHasConflicts,
 } from '@/utils/sectionDisplay'
 
 interface CourseInfo {
   name: string
   code: string | null
   level: number | null
+  careerId: string
 }
 
 interface SectionsExplorerProps {
   careers: Career[]
-  selectedCareerId: string | null
-  onCareerChange: (careerId: string | null) => void
   allSections: CourseSection[]
   coursesById: Map<string, CourseInfo>
   selectedSections: CourseSection[]
@@ -53,13 +46,12 @@ interface CourseGroup {
   courseName: string
   courseFootnote: CourseFootnoteKind | null
   courseCode: string | null
+  careerLabel: string | null
   sections: CourseSection[]
 }
 
 export function SectionsExplorer({
   careers,
-  selectedCareerId,
-  onCareerChange,
   allSections,
   coursesById,
   selectedSections,
@@ -71,12 +63,38 @@ export function SectionsExplorer({
 }: SectionsExplorerProps) {
   const { curriculum, statuses } = useAcademicHistory()
   const [search, setSearch] = useState('')
-  const [viewFilters, setViewFilters] = useState<ScheduleViewFilters>(DEFAULT_SCHEDULE_VIEW_FILTERS)
-  const [extraFilters, setExtraFilters] =
-    useState<SectionsExtraFilters>(DEFAULT_SECTIONS_EXTRA_FILTERS)
   const [detailSection, setDetailSection] = useState<CourseSection | null>(null)
 
-  const hasCareer = Boolean(selectedCareerId)
+  const careerLabelsById = useMemo(
+    () =>
+      new Map(
+        careers.map((career) => [career.id, career.code?.trim() || career.name]),
+      ),
+    [careers],
+  )
+
+  const hasScheduleCourses = selectedSections.length > 0
+
+  const scheduleCourseIds = useMemo(
+    () => new Set(selectedSections.map((section) => section.courseId)),
+    [selectedSections],
+  )
+
+  const scheduleSections = useMemo(() => {
+    const byId = new Map<string, CourseSection>()
+    for (const section of allSections) {
+      if (scheduleCourseIds.has(section.courseId)) {
+        byId.set(section.id, section)
+      }
+    }
+    for (const section of selectedSections) {
+      if (scheduleCourseIds.has(section.courseId)) {
+        byId.set(section.id, section)
+      }
+    }
+    return [...byId.values()]
+  }, [allSections, scheduleCourseIds, selectedSections])
+
   const allSectionsById = useMemo(
     () => new Map(allSections.map((section) => [section.id, section])),
     [allSections],
@@ -88,63 +106,27 @@ export function SectionsExplorer({
   )
 
   const filteredSections = useMemo(() => {
-    if (!hasCareer) return []
+    if (!hasScheduleCourses) return []
 
     const query = search.trim()
-    const searchResults = filterAndRankSections(allSections, query, coursesById)
+    const searchResults = filterAndRankSections(scheduleSections, query, coursesById)
 
-    return searchResults
-      .filter((section) => {
-        if (extraFilters.shift && resolveSectionShift(section) !== extraFilters.shift) return false
-        if (!sectionMatchesViewFilters(section, viewFilters)) return false
-
-        if (extraFilters.teacherQuery.trim()) {
-          const teacher = section.teacherName?.toLowerCase() ?? ''
-          if (!teacher.includes(extraFilters.teacherQuery.trim().toLowerCase())) return false
-        }
-
-        const selected = isSectionSelected(section.id)
-        if (extraFilters.onlyUnselected && selected) return false
-
-        if (extraFilters.hideConflicting) {
-          const hasConflict = sectionHasConflicts(
-            section,
-            selected,
-            selectedSections,
-            conflicts,
-            conflictCourseMap,
-            allSectionsById,
-          )
-          if (hasConflict) return false
-        }
-
-        return true
-      })
-      .sort((a, b) => {
-        if (query) return 0
-        const aCourse = coursesById.get(a.courseId)?.name ?? ''
-        const bCourse = coursesById.get(b.courseId)?.name ?? ''
-        return aCourse.localeCompare(bCourse) || a.sectionCode.localeCompare(b.sectionCode)
-      })
-  }, [
-    allSections,
-    allSectionsById,
-    conflictCourseMap,
-    conflicts,
-    coursesById,
-    extraFilters,
-    hasCareer,
-    isSectionSelected,
-    search,
-    selectedSections,
-    viewFilters,
-  ])
+    return searchResults.sort((a, b) => {
+      if (query) return 0
+      const aCourse = coursesById.get(a.courseId)?.name ?? ''
+      const bCourse = coursesById.get(b.courseId)?.name ?? ''
+      return aCourse.localeCompare(bCourse) || a.sectionCode.localeCompare(b.sectionCode)
+    })
+  }, [scheduleSections, coursesById, hasScheduleCourses, search])
 
   const groupedSections = useMemo(() => {
     const map = new Map<string, CourseGroup>()
     for (const section of filteredSections) {
       const course = coursesById.get(section.courseId)
       const footnote = getCourseFootnote(course?.name ?? 'Materia')
+      const careerLabel = course?.careerId
+        ? (careerLabelsById.get(course.careerId) ?? null)
+        : null
       const existing = map.get(section.courseId)
       if (existing) {
         existing.sections.push(section)
@@ -154,12 +136,13 @@ export function SectionsExplorer({
           courseName: footnote.displayName,
           courseFootnote: footnote.kind,
           courseCode: course?.code ?? null,
+          careerLabel,
           sections: [section],
         })
       }
     }
     return [...map.values()]
-  }, [filteredSections, coursesById])
+  }, [filteredSections, coursesById, careerLabelsById])
 
   const detailCourse = detailSection ? coursesById.get(detailSection.courseId) : null
   const detailProgressLabel =
@@ -167,88 +150,65 @@ export function SectionsExplorer({
       ? getCourseProgressLabel(detailCourse.name, curriculum, statuses)
       : null
   const siblingSections = detailSection
-    ? allSections.filter((section) => section.courseId === detailSection.courseId)
+    ? scheduleSections.filter((section) => section.courseId === detailSection.courseId)
     : []
 
+  const countLabel = catalogLoading
+    ? 'Cargando materias…'
+    : !hasScheduleCourses
+      ? 'Sin materias en tu horario'
+      : filteredSections.length === 0
+        ? 'Sin resultados'
+        : `${groupedSections.length} materia${groupedSections.length !== 1 ? 's' : ''} · ${filteredSections.length} sección${filteredSections.length !== 1 ? 'es' : ''}`
+
   return (
-    <div className="flex min-h-0 flex-1 flex-col bg-background">
-      <header className="shrink-0 border-b border-slate-200/50 bg-white px-4 py-4 md:px-8">
-        <h1 className="text-xl font-bold tracking-tight text-text md:text-2xl">Secciones</h1>
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-[#f4f7fb]">
+      <LandingDoodleBackground className="opacity-70" />
 
-        {hasCareer && (
-          <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
-            <div className="relative min-w-0 flex-1">
-              <Search
-                className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
-                aria-hidden="true"
-              />
-              <input
-                type="search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Buscar materia o docente…"
-                className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm outline-none focus:border-primary-light"
-                aria-label="Buscar materia o docente"
-              />
-            </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <CompactCareerSelect
-                careers={careers}
-                selectedCareerId={selectedCareerId}
-                onCareerChange={onCareerChange}
-              />
-              <SectionsFilterMenu
-                viewFilters={viewFilters}
-                extraFilters={extraFilters}
-                onViewFiltersChange={setViewFilters}
-                onExtraFiltersChange={setExtraFilters}
-              />
-            </div>
+      <header className="relative z-10 shrink-0 border-b border-slate-200/40 bg-white/75 px-4 py-2 backdrop-blur-md md:px-6">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
+            <h1 className="text-base font-bold tracking-tight text-text md:text-lg">Secciones</h1>
+            <span className="text-xs text-muted">{countLabel}</span>
           </div>
-        )}
+        </div>
 
-        {hasCareer && (
-          <p className="mt-2 text-xs text-muted">
-            {catalogLoading
-              ? 'Cargando materias…'
-              : filteredSections.length === 0
-                ? 'Sin resultados'
-                : `${filteredSections.length} sección${filteredSections.length !== 1 ? 'es' : ''} disponible${filteredSections.length !== 1 ? 's' : ''}`}
-          </p>
+        {hasScheduleCourses && (
+          <div className="relative mt-1.5 min-w-0">
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted"
+              aria-hidden="true"
+            />
+            <input
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+              placeholder="Buscar materia o docente…"
+              className="w-full rounded-lg border border-slate-200 bg-white py-1.5 pl-9 pr-3 text-sm outline-none focus:border-primary-light"
+              aria-label="Buscar materia o docente"
+            />
+          </div>
         )}
       </header>
 
-      {!hasCareer ? (
-        <div className="flex flex-1 flex-col items-center justify-center px-6 py-12 text-center">
-          <div className="rounded-full bg-primary/8 p-4">
-            <GraduationCap className="h-8 w-8 text-primary/70" aria-hidden="true" />
-          </div>
-          <p className="mt-4 text-sm font-medium text-text">Elegí tu carrera</p>
-          <p className="mt-1 max-w-xs text-xs leading-relaxed text-muted">
-            Seleccioná una carrera arriba para ver las materias y secciones disponibles.
-          </p>
-          <div className="mt-4">
-            <CompactCareerSelect
-              careers={careers}
-              selectedCareerId={selectedCareerId}
-              onCareerChange={onCareerChange}
-            />
-          </div>
-        </div>
-      ) : (
-        <div className="flex min-h-0 flex-1 overflow-hidden">
-          <div className="min-h-0 flex-1 overflow-y-auto">
-            {catalogLoading ? (
-              <div className="px-4 py-4 md:px-8">
-                <SectionListSkeleton count={8} />
-              </div>
-            ) : groupedSections.length === 0 ? (
-              <p className="px-4 py-12 text-center text-sm text-muted md:px-8">
-                {allSections.length === 0
-                  ? 'No hay materias cargadas para esta carrera.'
-                  : 'No se encontraron secciones con estos filtros.'}
-              </p>
-            ) : (
+      <div className="relative z-10 flex min-h-0 flex-1 overflow-hidden">
+        <div
+          className={`min-h-0 flex-1 overflow-y-auto px-4 py-3 md:px-6 md:py-4 ${
+            !hasScheduleCourses ? 'flex items-center justify-center' : ''
+          }`}
+        >
+          {!hasScheduleCourses ? (
+            <SectionsEmptyState />
+          ) : catalogLoading ? (
+            <div className="max-w-3xl">
+              <SectionListSkeleton count={8} />
+            </div>
+          ) : groupedSections.length === 0 ? (
+            <p className="max-w-3xl py-12 text-left text-sm text-muted">
+              No se encontraron secciones.
+            </p>
+          ) : (
+            <div className="max-w-3xl overflow-hidden rounded-2xl border border-slate-200/60 bg-white/88 backdrop-blur-sm">
               <div className="divide-y divide-slate-100">
                 {groupedSections.map((group) => (
                   <CourseGroupBlock
@@ -266,31 +226,31 @@ export function SectionsExplorer({
                   />
                 ))}
               </div>
-            )}
-          </div>
-
-          {detailSection && detailCourse && (
-            <aside className="hidden w-[min(360px,34vw)] shrink-0 border-l border-slate-100 bg-surface md:flex md:flex-col">
-              <SectionDetailPanel
-                section={detailSection}
-                courseName={detailCourse.name}
-                courseCode={detailCourse.code}
-                selected={isSectionSelected(detailSection.id)}
-                conflicts={conflicts}
-                selectedSections={selectedSections}
-                siblingSections={siblingSections}
-                coursesById={conflictCourseMap}
-                allSectionsById={allSectionsById}
-                toggleLoading={toggleLoading}
-                onToggle={() => onToggle(detailSection)}
-                onSelectSibling={setDetailSection}
-                onClose={() => setDetailSection(null)}
-                progressLabel={detailProgressLabel}
-              />
-            </aside>
+            </div>
           )}
         </div>
-      )}
+
+        {detailSection && detailCourse && (
+          <aside className="relative z-10 hidden w-[min(360px,34vw)] shrink-0 border-l border-slate-200/40 bg-white/80 backdrop-blur-md md:flex md:flex-col">
+            <SectionDetailPanel
+              section={detailSection}
+              courseName={detailCourse.name}
+              courseCode={detailCourse.code}
+              selected={isSectionSelected(detailSection.id)}
+              conflicts={conflicts}
+              selectedSections={selectedSections}
+              siblingSections={siblingSections}
+              coursesById={conflictCourseMap}
+              allSectionsById={allSectionsById}
+              toggleLoading={toggleLoading}
+              onToggle={() => onToggle(detailSection)}
+              onSelectSibling={setDetailSection}
+              onClose={() => setDetailSection(null)}
+              progressLabel={detailProgressLabel}
+            />
+          </aside>
+        )}
+      </div>
 
       {detailSection && detailCourse && (
         <>
@@ -327,6 +287,42 @@ export function SectionsExplorer({
   )
 }
 
+function CareerPill({ label }: { label: string }) {
+  return (
+    <span className="inline-flex shrink-0 rounded-full border border-slate-200/80 bg-slate-100/90 px-1.5 py-0.5 text-[10px] font-medium leading-none text-slate-600">
+      {label}
+    </span>
+  )
+}
+
+function SectionsEmptyState() {
+  return (
+    <div className="flex flex-col items-center justify-center px-6 py-16 text-center md:px-8">
+      <img
+        src={sectionsEmptyIllustration}
+        alt="Ilustración de materias y secciones"
+        width={480}
+        height={480}
+        className="mb-6 h-auto max-h-[220px] w-[clamp(180px,42vw,240px)] object-contain opacity-90"
+        draggable={false}
+      />
+      <h2 className="text-base font-semibold tracking-tight text-text md:text-lg">
+        Agregá materias a tu horario
+      </h2>
+      <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted">
+        Acá vas a ver las secciones de las materias que ya sumaste al horario, para comparar
+        alternativas o cambiar de sección.
+      </p>
+      <Link
+        to={ROUTES.home}
+        className="mt-5 inline-flex items-center rounded-lg bg-primary px-4 py-2 text-sm font-medium !text-white transition hover:bg-primary/90 hover:!text-white"
+      >
+        Ir al horario
+      </Link>
+    </div>
+  )
+}
+
 function CourseGroupBlock({
   group,
   selectedSections,
@@ -353,18 +349,21 @@ function CourseGroupBlock({
   const initial = getCourseInitial(group.courseName, group.courseCode)
 
   return (
-    <section className="px-4 py-1 md:px-8">
+    <section className="px-4 py-1 md:px-6">
       {compactHeader ? (
         <div className="flex items-baseline justify-between gap-2 py-2.5">
           <div className="min-w-0">
-            <p className="truncate text-sm font-semibold text-text">
-              {group.courseName}
-              {group.courseFootnote === 'final_exam_only' && (
-                <span className="ml-1 font-bold text-amber-700" aria-hidden="true">
-                  *
-                </span>
-              )}
-            </p>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <p className="truncate text-sm font-semibold text-text">
+                {group.courseName}
+                {group.courseFootnote === 'final_exam_only' && (
+                  <span className="ml-1 font-bold text-amber-700" aria-hidden="true">
+                    *
+                  </span>
+                )}
+              </p>
+              {group.careerLabel && <CareerPill label={group.careerLabel} />}
+            </div>
             {group.courseFootnote && (
               <div className="mt-1">
                 <CourseFootnoteCardNote kind={group.courseFootnote} />
@@ -388,6 +387,7 @@ function CourseGroupBlock({
             courseName={group.courseName}
             courseFootnote={group.courseFootnote}
             courseCode={group.courseCode}
+            careerLabel={group.careerLabel}
             courseInitial={initial}
             showCourseName={!compactHeader}
             selected={isSectionSelected(section.id)}
@@ -410,6 +410,7 @@ function SectionCompactRow({
   courseName,
   courseFootnote,
   courseCode,
+  careerLabel,
   courseInitial,
   showCourseName,
   selected,
@@ -425,6 +426,7 @@ function SectionCompactRow({
   courseName: string
   courseFootnote: CourseFootnoteKind | null
   courseCode: string | null
+  careerLabel: string | null
   courseInitial: string
   showCourseName: boolean
   selected: boolean
@@ -471,13 +473,16 @@ function SectionCompactRow({
           <span className="min-w-0 flex-1">
             {showCourseName && (
               <>
-                <span className="block truncate text-sm font-semibold text-text">
-                  {courseName}
-                  {courseFootnote === 'final_exam_only' && (
-                    <span className="ml-1 font-bold text-amber-700" aria-hidden="true">
-                      *
-                    </span>
-                  )}
+                <span className="flex flex-wrap items-center gap-1.5">
+                  <span className="truncate text-sm font-semibold text-text">
+                    {courseName}
+                    {courseFootnote === 'final_exam_only' && (
+                      <span className="ml-1 font-bold text-amber-700" aria-hidden="true">
+                        *
+                      </span>
+                    )}
+                  </span>
+                  {careerLabel && <CareerPill label={careerLabel} />}
                 </span>
                 {courseFootnote && (
                   <span className="mt-1 block">
@@ -578,8 +583,14 @@ function SectionActionButton({
           : 'bg-primary text-white hover:bg-primary/90'
       }`}
     >
-      {selected && <Check className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />}
-      {selected ? 'Agregada' : 'Agregar'}
+      {selected ? (
+        <>
+          <Check className="h-3 w-3" strokeWidth={2.5} aria-hidden="true" />
+          {sectionCode}
+        </>
+      ) : (
+        'Agregar'
+      )}
     </button>
   )
 }

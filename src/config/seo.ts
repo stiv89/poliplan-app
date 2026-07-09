@@ -10,6 +10,9 @@ export const LEGAL_DISCLAIMER =
 export const OFFICIAL_FPUNA_URL =
   'https://www.pol.una.py/academico/horarios-de-clases-y-examenes/'
 
+export const DONATE_URL =
+  (import.meta.env.VITE_DONATE_URL as string | undefined)?.trim() || '#'
+
 export const PUBLIC_ROUTES = {
   presentacion: '/',
   horarios: '/horarios-fpuna',
@@ -125,4 +128,5 @@ export const APP_NOINDEX_PATHS = [
   '/novedades',
   '/configuracion',
   '/offline',
+  '/compartir',
 ] as const
