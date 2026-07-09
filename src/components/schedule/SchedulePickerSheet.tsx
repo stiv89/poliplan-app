@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
-import { Check, ChevronDown, MoreHorizontal, Plus, RotateCcw, Trash2 } from 'lucide-react'
+import { ChevronDown, MoreHorizontal, Plus, RotateCcw, Trash2 } from 'lucide-react'
 import { AnimatedPopover } from '@/components/ui/AnimatedPopover'
 import { Button } from '@/components/ui/Button'
 import type { SavedScheduleRecord } from '@/types/schedule'
+
+export type SchedulePickerMode = 'list' | 'create' | 'trash'
 
 export interface SchedulePickerPanelProps {
   activeSchedule: SavedScheduleRecord | null
@@ -10,6 +12,7 @@ export interface SchedulePickerPanelProps {
   deletedSchedules: SavedScheduleRecord[]
   periodName: string | null
   periodLabelsById?: Record<string, string>
+  careerLabelsById?: Record<string, string>
   onSelect: (scheduleId: string) => void
   onCreate: (name: string, copyFromScheduleId?: string | null) => void
   onRename: (scheduleId: string, name: string) => void
@@ -18,6 +21,16 @@ export interface SchedulePickerPanelProps {
   onPermanentDelete: (scheduleId: string) => void
   onClose: () => void
   open: boolean
+  embedded?: boolean
+  /** When embedding inside a parent navigator, hide the panel chrome header. */
+  hideChrome?: boolean
+  initialMode?: SchedulePickerMode
+  onModeChange?: (mode: SchedulePickerMode) => void
+  onRequestCareerPeriod?: (scheduleId: string) => void
+  onDuplicate?: (scheduleId: string) => void
+  showManageFooter?: boolean
+  manageLabel?: string
+  onManage?: () => void
 }
 
 export function SchedulePickerPanel({
@@ -25,6 +38,7 @@ export function SchedulePickerPanel({
   schedules,
   deletedSchedules,
   periodLabelsById = {},
+  careerLabelsById = {},
   onSelect,
   onCreate,
   onRename,
@@ -33,13 +47,27 @@ export function SchedulePickerPanel({
   onPermanentDelete,
   onClose,
   open,
+  embedded = false,
+  hideChrome = false,
+  initialMode = 'list',
+  onModeChange,
+  onRequestCareerPeriod,
+  onDuplicate,
+  showManageFooter = false,
+  manageLabel = 'Administrar horarios',
+  onManage,
 }: SchedulePickerPanelProps) {
-  const [mode, setMode] = useState<'list' | 'create' | 'trash'>('list')
+  const [mode, setMode] = useState<SchedulePickerMode>(initialMode)
   const [newName, setNewName] = useState('')
   const [copyCurrent, setCopyCurrent] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [editingName, setEditingName] = useState('')
   const [openMenuId, setOpenMenuId] = useState<string | null>(null)
+
+  function updateMode(next: SchedulePickerMode) {
+    setMode(next)
+    onModeChange?.(next)
+  }
 
   useEffect(() => {
     if (!open) {
@@ -48,8 +76,10 @@ export function SchedulePickerPanel({
       setCopyCurrent(false)
       setEditingId(null)
       setOpenMenuId(null)
+      return
     }
-  }, [open])
+    setMode(initialMode)
+  }, [open, initialMode])
 
   useEffect(() => {
     if (!openMenuId) return
@@ -65,61 +95,73 @@ export function SchedulePickerPanel({
   }, [openMenuId])
 
   return (
-    <div className="flex max-h-[min(70vh,400px)] w-[min(18.5rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xl">
-      <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-100 px-3 py-2">
-        {mode === 'list' && (
-          <>
-            <p className="min-w-0 truncate text-sm text-text">Tus horarios</p>
-            <button
-              type="button"
-              onClick={() => setMode('create')}
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-muted transition hover:border-slate-300 hover:bg-slate-50 hover:text-text"
-              aria-label="Nuevo horario"
-            >
-              <Plus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
-            </button>
-          </>
-        )}
-        {mode === 'create' && (
-          <>
-            <p className="text-sm font-medium text-text">Nuevo horario</p>
-            <button
-              type="button"
-              onClick={() => setMode('list')}
-              className="text-xs text-muted transition hover:text-text"
-            >
-              Volver
-            </button>
-          </>
-        )}
-        {mode === 'trash' && (
-          <>
-            <p className="text-sm font-medium text-text">Eliminados</p>
-            <button
-              type="button"
-              onClick={() => setMode('list')}
-              className="text-xs text-muted transition hover:text-text"
-            >
-              Volver
-            </button>
-          </>
-        )}
-      </div>
+    <div
+      className={
+        embedded
+          ? 'flex w-full flex-col overflow-hidden'
+          : 'flex max-h-[min(70vh,400px)] w-[min(18.5rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-2xl border border-slate-200/90 bg-white shadow-xl'
+      }
+    >
+      {!hideChrome && (
+        <div className="flex shrink-0 items-center justify-between gap-2 border-b border-slate-100 px-3 py-2">
+          {mode === 'list' && (
+            <>
+              <p className="min-w-0 truncate text-sm text-text">Tus horarios</p>
+              <button
+                type="button"
+                onClick={() => updateMode('create')}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 text-muted transition hover:border-slate-300 hover:bg-slate-50 hover:text-text"
+                aria-label="Nuevo horario"
+              >
+                <Plus className="h-4 w-4" strokeWidth={2} aria-hidden="true" />
+              </button>
+            </>
+          )}
+          {mode === 'create' && (
+            <>
+              <p className="text-sm font-medium text-text">Nuevo horario</p>
+              <button
+                type="button"
+                onClick={() => updateMode('list')}
+                className="text-xs text-muted transition hover:text-text"
+              >
+                Volver
+              </button>
+            </>
+          )}
+          {mode === 'trash' && (
+            <>
+              <p className="text-sm font-medium text-text">Eliminados</p>
+              <button
+                type="button"
+                onClick={() => updateMode('list')}
+                className="text-xs text-muted transition hover:text-text"
+              >
+                Volver
+              </button>
+            </>
+          )}
+        </div>
+      )}
 
       <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
         {mode === 'list' && (
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             {schedules.map((schedule) => {
               const isActive = schedule.id === activeSchedule?.id
               const isEditing = editingId === schedule.id
               const periodLabel = periodLabelsById[schedule.academicPeriodId]
+              const careerLabel = schedule.selectedCareerId
+                ? careerLabelsById[schedule.selectedCareerId]
+                : undefined
+              const meta = [careerLabel, periodLabel].filter(Boolean).join(' · ')
 
               return (
                 <div
                   key={schedule.id}
-                  className={`rounded-lg px-2 py-1.5 ${
+                  className={`rounded-xl px-2.5 py-2 transition ${
                     isActive
-                      ? 'bg-primary/[0.04] ring-1 ring-primary/20'
+                      ? 'bg-primary/[0.04] ring-1 ring-primary/15'
                       : 'hover:bg-slate-50'
                   }`}
                 >
@@ -159,46 +201,46 @@ export function SchedulePickerPanel({
                         }}
                       >
                         <div className="flex min-w-0 items-center gap-1.5">
-                          <p className="truncate text-sm font-medium text-text">
+                          <p className="truncate text-[13px] font-semibold text-slate-800">
                             {schedule.name}
                           </p>
                           {isActive && (
-                            <span className="shrink-0 rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                            <span className="shrink-0 rounded bg-primary/10 px-1.5 py-px text-[10px] font-medium text-primary">
                               En uso
                             </span>
                           )}
                         </div>
-                        {periodLabel && (
-                          <p className="mt-0.5 truncate text-[11px] text-muted">{periodLabel}</p>
-                        )}
-                        {!isActive && !periodLabel && (
-                          <p className="mt-0.5 text-[11px] text-muted/80">Tocá para cambiar</p>
+                        {meta ? (
+                          <p className="mt-0.5 truncate text-[11px] text-slate-500">{meta}</p>
+                        ) : (
+                          <p className="mt-0.5 text-[11px] text-slate-400">Sin carrera · periodo</p>
                         )}
                       </button>
 
-                      <div className="flex shrink-0 items-center gap-0.5">
-                        {isActive && (
-                          <Check
-                            className="h-4 w-4 text-primary"
-                            strokeWidth={2.5}
-                            aria-hidden="true"
-                          />
-                        )}
-                        <ScheduleItemMenu
-                          scheduleName={schedule.name}
-                          open={openMenuId === schedule.id}
-                          onOpenChange={(next) => setOpenMenuId(next ? schedule.id : null)}
-                          onRename={() => {
-                            setEditingId(schedule.id)
-                            setEditingName(schedule.name)
-                            setOpenMenuId(null)
-                          }}
-                          onDelete={() => {
-                            onDelete(schedule.id)
-                            setOpenMenuId(null)
-                          }}
-                        />
-                      </div>
+                      <ScheduleItemMenu
+                        scheduleName={schedule.name}
+                        open={openMenuId === schedule.id}
+                        onOpenChange={(next) => setOpenMenuId(next ? schedule.id : null)}
+                        onRename={() => {
+                          setEditingId(schedule.id)
+                          setEditingName(schedule.name)
+                          setOpenMenuId(null)
+                        }}
+                        onChangeCareerPeriod={() => {
+                          setOpenMenuId(null)
+                          onRequestCareerPeriod?.(schedule.id)
+                        }}
+                        onDuplicate={() => {
+                          setOpenMenuId(null)
+                          onDuplicate?.(schedule.id)
+                        }}
+                        onDelete={() => {
+                          onDelete(schedule.id)
+                          setOpenMenuId(null)
+                        }}
+                        showCareerPeriod={Boolean(onRequestCareerPeriod)}
+                        showDuplicate={Boolean(onDuplicate)}
+                      />
                     </div>
                   )}
                 </div>
@@ -296,11 +338,23 @@ export function SchedulePickerPanel({
         )}
       </div>
 
-      {mode === 'list' && (
+      {mode === 'list' && showManageFooter && onManage && (
+        <div className="shrink-0 border-t border-slate-100/80 px-3 py-1.5">
+          <button
+            type="button"
+            onClick={onManage}
+            className="w-full py-1.5 text-center text-[11px] text-slate-400 transition hover:text-slate-600"
+          >
+            {manageLabel}
+          </button>
+        </div>
+      )}
+
+      {mode === 'list' && !hideChrome && !showManageFooter && (
         <div className="shrink-0 border-t border-slate-100 px-3 py-1.5">
           <button
             type="button"
-            onClick={() => setMode('trash')}
+            onClick={() => updateMode('trash')}
             className="w-full py-1 text-center text-[11px] text-muted/70 transition hover:text-muted"
           >
             Ver eliminados
@@ -319,13 +373,21 @@ function ScheduleItemMenu({
   open,
   onOpenChange,
   onRename,
+  onChangeCareerPeriod,
+  onDuplicate,
   onDelete,
+  showCareerPeriod = false,
+  showDuplicate = false,
 }: {
   scheduleName: string
   open: boolean
   onOpenChange: (open: boolean) => void
   onRename: () => void
+  onChangeCareerPeriod?: () => void
+  onDuplicate?: () => void
   onDelete: () => void
+  showCareerPeriod?: boolean
+  showDuplicate?: boolean
 }) {
   const buttonRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
@@ -357,7 +419,7 @@ function ScheduleItemMenu({
         <div
           role="menu"
           data-schedule-menu
-          className="min-w-[8.5rem] overflow-hidden rounded-lg border border-slate-200/90 bg-white py-1 shadow-lg"
+          className="min-w-[11rem] overflow-hidden rounded-lg border border-slate-200/90 bg-white py-1 shadow-lg"
         >
           <button
             type="button"
@@ -368,8 +430,34 @@ function ScheduleItemMenu({
               onRename()
             }}
           >
-            Renombrar
+            Editar nombre
           </button>
+          {showCareerPeriod && onChangeCareerPeriod && (
+            <button
+              type="button"
+              role="menuitem"
+              className="w-full px-3 py-1.5 text-left text-xs text-text hover:bg-slate-50"
+              onClick={(event) => {
+                event.stopPropagation()
+                onChangeCareerPeriod()
+              }}
+            >
+              Cambiar carrera y periodo
+            </button>
+          )}
+          {showDuplicate && onDuplicate && (
+            <button
+              type="button"
+              role="menuitem"
+              className="w-full px-3 py-1.5 text-left text-xs text-text hover:bg-slate-50"
+              onClick={(event) => {
+                event.stopPropagation()
+                onDuplicate()
+              }}
+            >
+              Duplicar horario
+            </button>
+          )}
           <button
             type="button"
             role="menuitem"
@@ -379,7 +467,7 @@ function ScheduleItemMenu({
               onDelete()
             }}
           >
-            Eliminar
+            Eliminar horario
           </button>
         </div>
       </AnimatedPopover>
@@ -394,13 +482,18 @@ interface SchedulePickerMenuProps extends Omit<SchedulePickerPanelProps, 'onClos
   /** @deprecated Usar pill */
   embeddedCapsule?: boolean
   pill?: boolean
+  compact?: boolean
 }
 
 const SELECTABLE_PILL_BASE =
   'inline-flex max-w-full min-w-0 items-center gap-1 rounded-full border bg-white px-3 py-1.5 text-left transition hover:border-slate-300 hover:bg-slate-50/90 active:bg-slate-100/70'
 
-function selectablePillClass(open: boolean): string {
-  return `${SELECTABLE_PILL_BASE} ${
+function selectablePillClass(open: boolean, compact = false): string {
+  const base = compact
+    ? 'inline-flex max-w-full min-w-0 items-center gap-1 rounded-full border bg-white px-2.5 py-1 text-left text-xs transition hover:border-slate-300 hover:bg-slate-50/90 active:bg-slate-100/70'
+    : SELECTABLE_PILL_BASE
+
+  return `${base} ${
     open
       ? 'border-slate-300 bg-slate-50 ring-1 ring-slate-200/70'
       : 'border-slate-200/90'
@@ -414,6 +507,7 @@ export function SchedulePickerMenu({
   embedded = false,
   embeddedCapsule = false,
   pill = false,
+  compact = false,
   ...panelProps
 }: SchedulePickerMenuProps) {
   const [open, setOpen] = useState(false)
@@ -451,7 +545,7 @@ export function SchedulePickerMenu({
         onClick={() => setOpen((value) => !value)}
         className={`group flex max-w-full items-center gap-1 text-left ${
           pill
-            ? selectablePillClass(open)
+            ? selectablePillClass(open, compact)
             : embeddedCapsule
               ? 'rounded-md px-0.5 py-0.5'
               : ''
@@ -460,16 +554,21 @@ export function SchedulePickerMenu({
         aria-expanded={open}
         aria-haspopup="dialog"
       >
-        <h1
+        <span
           className={`truncate tracking-tight ${
-            pill || embedded ? 'text-sm font-semibold text-slate-800' : 'font-semibold text-text'
-          } ${titleClassName}`}
+            titleClassName ??
+            (pill || embedded
+              ? compact
+                ? 'text-xs font-medium text-slate-800'
+                : 'text-sm font-semibold text-slate-800'
+              : 'font-semibold text-text')
+          }`}
         >
           {scheduleName}
-        </h1>
+        </span>
         <ChevronDown
           className={`shrink-0 text-slate-400/80 transition-transform duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] group-hover:text-slate-500 ${
-            embedded ? 'h-3 w-3' : 'h-3.5 w-3.5 text-muted/70 group-hover:text-muted'
+            compact ? 'h-2.5 w-2.5' : embedded ? 'h-3 w-3' : 'h-3.5 w-3.5 text-muted/70 group-hover:text-muted'
           } ${open ? 'rotate-180' : 'rotate-0'}`}
           aria-hidden="true"
         />

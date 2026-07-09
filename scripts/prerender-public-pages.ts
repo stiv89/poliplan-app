@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { CANONICAL_ORIGIN, PUBLIC_SEO_PATHS } from '../src/config/seo'
+import { CANONICAL_ORIGIN, APP_NOINDEX_PATHS, PUBLIC_SEO_PATHS } from '../src/config/seo'
 import { buildAppDocumentHead, injectHeadIntoHtml, injectRootHtml } from '../src/seo/documentHead'
 import { renderPublicPageHead, renderPublicPageHtml } from '../src/seo/prerender'
 
@@ -28,15 +28,19 @@ function prerenderPublicPages(spaTemplate: string): void {
 
 function prepareAppShell(spaTemplate: string): void {
   const appShell = injectHeadIntoHtml(spaTemplate, buildAppDocumentHead())
-  writeFileSync(join(distDir, 'index.html'), appShell)
-  console.log('app shell: / -> index.html (noindex)')
+  for (const path of APP_NOINDEX_PATHS) {
+    const outPath = distPathForRoute(path)
+    mkdirSync(dirname(outPath), { recursive: true })
+    writeFileSync(outPath, appShell)
+    console.log(`app shell: ${path} -> ${outPath.replace(`${distDir}/`, '')}`)
+  }
 }
 
 function generateSitemap(): void {
   const lastmod = new Date().toISOString().slice(0, 10)
   const urls = PUBLIC_SEO_PATHS.map((path) => {
     const loc = `${CANONICAL_ORIGIN}${path}`
-    const priority = path === '/presentacion' ? '1.0' : '0.8'
+    const priority = path === '/' ? '1.0' : '0.8'
     return `  <url>\n    <loc>${loc}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>${priority}</priority>\n  </url>`
   }).join('\n')
 

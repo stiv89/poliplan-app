@@ -79,11 +79,7 @@ export function DataTrustBanner() {
         <p className="font-medium">
           {isRecent ? 'Datos verificados' : 'Datos con más de 7 días'}
         </p>
-        <p className="flex flex-wrap gap-x-3 opacity-80">
-          <span>Versión {info.version}</span>
-          {info.checksum && <span>SHA {info.checksum.slice(0, 8)}…</span>}
-          <span>{formatTrustDatetime(info.downloadedAt)}</span>
-        </p>
+        <p className="opacity-80">{formatTrustDatetime(info.downloadedAt)}</p>
       </div>
     </div>
   )
@@ -115,7 +111,6 @@ export function DataTrustFooter({ lastUpdated }: { lastUpdated?: string | null }
         <span className="text-slate-600">
           {isRecent ? 'Datos verificados' : 'Datos desactualizados'}
         </span>
-        {info && <span className="text-muted">· v{info.version}</span>}
       </div>
       {updatedLabel && (
         <p className="mt-0.5 pl-[18px] text-muted">Actualizado {updatedLabel}</p>

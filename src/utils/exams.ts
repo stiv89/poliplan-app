@@ -148,6 +148,38 @@ export function getNextExam(exams: ExamItem[], fromDate = todayKey()): ExamItem 
   return sorted[0] ?? null
 }
 
+export function groupUpcomingExamsByRecency(
+  exams: ExamItem[],
+  fromDate = todayKey(),
+): Array<{ label: string; exams: ExamItem[] }> {
+  const upcoming = sortExamsChronologically(
+    exams.filter((exam) => exam.examDate && exam.examDate >= fromDate),
+  )
+
+  const now = new Date()
+  const weekEnd = new Date(now)
+  weekEnd.setHours(0, 0, 0, 0)
+  weekEnd.setDate(weekEnd.getDate() + (7 - ((weekEnd.getDay() + 6) % 7)))
+  const weekEndKey = toDateKey(weekEnd.getFullYear(), weekEnd.getMonth(), weekEnd.getDate())
+
+  const today: ExamItem[] = []
+  const thisWeek: ExamItem[] = []
+  const later: ExamItem[] = []
+
+  for (const exam of upcoming) {
+    if (!exam.examDate) continue
+    if (exam.examDate === fromDate) today.push(exam)
+    else if (exam.examDate < weekEndKey) thisWeek.push(exam)
+    else later.push(exam)
+  }
+
+  const groups: Array<{ label: string; exams: ExamItem[] }> = []
+  if (today.length > 0) groups.push({ label: 'Hoy', exams: today })
+  if (thisWeek.length > 0) groups.push({ label: 'Esta semana', exams: thisWeek })
+  if (later.length > 0) groups.push({ label: 'Próximos', exams: later })
+  return groups
+}
+
 export function todayKey(): string {
   const now = new Date()
   return toDateKey(now.getFullYear(), now.getMonth(), now.getDate())

@@ -9,6 +9,8 @@ interface ScheduleSaveStatusProps {
   officialDataSyncing: boolean
   onSync?: () => void
   compact?: boolean
+  /** Oculta el estado rutinario (p. ej. "Guardado en este dispositivo") para ahorrar espacio. */
+  hiddenUnlessNotable?: boolean
 }
 
 export function ScheduleSaveStatus({
@@ -19,6 +21,7 @@ export function ScheduleSaveStatus({
   officialDataSyncing,
   onSync,
   compact = false,
+  hiddenUnlessNotable = false,
 }: ScheduleSaveStatusProps) {
   const status = getScheduleSaveStatus({
     isOnline,
@@ -27,6 +30,17 @@ export function ScheduleSaveStatus({
     userSyncAt,
     officialDataSyncing,
   })
+
+  const isRoutine =
+    !status.showSyncAction &&
+    !status.showSyncedCheck &&
+    (status.label === 'Guardado en este dispositivo' ||
+      status.label === 'Guardado' ||
+      status.label === 'Sincronizado')
+
+  if (hiddenUnlessNotable && isRoutine) {
+    return null
+  }
 
   return (
     <div

@@ -42,7 +42,7 @@ export function buildAppDocumentHead(): string {
   return `
     <title>${escapeHtml(SITE_NAME)} — App</title>
     <meta name="robots" content="noindex, follow" />
-    <link rel="canonical" href="${escapeAttr(`${CANONICAL_ORIGIN}/`)}">
+    <link rel="canonical" href="${escapeAttr(`${CANONICAL_ORIGIN}/horario`)}">
   `.trim()
 }
 

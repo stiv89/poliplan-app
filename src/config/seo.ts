@@ -11,7 +11,7 @@ export const OFFICIAL_FPUNA_URL =
   'https://www.pol.una.py/academico/horarios-de-clases-y-examenes/'
 
 export const PUBLIC_ROUTES = {
-  presentacion: '/presentacion',
+  presentacion: '/',
   horarios: '/horarios-fpuna',
   examenes: '/examenes-fpuna',
   calculadora: '/calculadora-notas-fpuna',
@@ -117,7 +117,7 @@ export const PUBLIC_SEO_PATHS = [
 
 /** Rutas de la app interactiva (noindex en SEO). */
 export const APP_NOINDEX_PATHS = [
-  '/',
+  '/horario',
   '/secciones',
   '/examenes',
   '/calculadora',
@@ -125,5 +125,4 @@ export const APP_NOINDEX_PATHS = [
   '/novedades',
   '/configuracion',
   '/offline',
-  '/horario',
 ] as const

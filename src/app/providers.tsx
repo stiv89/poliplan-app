@@ -19,7 +19,7 @@ function PwaUpdatePrompt() {
 
   return (
     <div
-      className="fixed bottom-20 left-4 right-4 z-50 mx-auto max-w-lg rounded-2xl border border-primary/20 bg-surface p-4 shadow-lg md:bottom-6 md:left-auto md:right-6"
+      className="bottom-above-dock fixed left-4 right-4 z-50 mx-auto max-w-lg rounded-2xl border border-primary/20 bg-surface p-4 shadow-lg md:bottom-6 md:left-auto md:right-6"
       role="status"
       aria-live="polite"
     >

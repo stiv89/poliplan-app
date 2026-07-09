@@ -2,7 +2,8 @@
  * HomePage — Organizador principal de PoliPlan (UX simplificado)
  *
  * Desktop: navegación lateral compacta + área principal del horario
- * Mobile:  header compacto + selector de días + vista diaria + FAB + bottom sheets
+ * Mobile:  header compacto + onboarding guiado sin materias;
+ *          con materias → selector de días + vista diaria + FAB
  *
  * Progressive disclosure:
  *   - Solo el calendario es permanente.
@@ -16,9 +17,13 @@ import {
   Plus,
   Bell,
   X,
-  Info,
+  LayoutDashboard,
+  Cloud,
+  CircleHelp,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
+import logoMark from '../../logos/logo-sidebar.png'
+import scheduleEmptyIllustration from '../../logos/schedule-empty-illustration.webp'
 import { DAYS_OF_WEEK, ROUTES } from '@/config/constants'
 import { ScheduleSaveStatus } from '@/components/guest/ScheduleSaveStatus'
 import { useAuth } from '@/features/auth/AuthContext'
@@ -27,6 +32,7 @@ import { useChanges } from '@/hooks/useChanges'
 import { useSchedule } from '@/hooks/useSchedule'
 import { SectionSearchPanel } from '@/components/schedule/SectionSearchPanel'
 import { ScheduleContextBar } from '@/components/schedule/ScheduleContextBar'
+import { ScheduleContextSelector } from '@/components/schedule/ScheduleContextSelector'
 import { ScheduleOnboardingTour } from '@/components/onboarding/ScheduleOnboardingTour'
 import {
   ScheduleUndoToast,
@@ -84,6 +90,18 @@ export function HomePage() {
   const [searchOpen, setSearchOpen] = useState(false)
   const [summaryOpen, setSummaryOpen] = useState(false)
   const [searchPrefill, setSearchPrefill] = useState('')
+  const [isDesktopLayout, setIsDesktopLayout] = useState(() =>
+    typeof window !== 'undefined' ? window.matchMedia('(min-width: 768px)').matches : true,
+  )
+  const summaryButtonRef = useRef<HTMLButtonElement>(null)
+
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 768px)')
+    const sync = () => setIsDesktopLayout(media.matches)
+    sync()
+    media.addEventListener('change', sync)
+    return () => media.removeEventListener('change', sync)
+  }, [])
 
   // Mobile state
   const [mobileDay, setMobileDay] = useState<number>(new Date().getDay() || 1)
@@ -104,7 +122,8 @@ export function HomePage() {
       tourTriggeredRef.current ||
       startupMode !== 'ready' ||
       !settings ||
-      settings.scheduleTourCompletedAt
+      settings.scheduleTourCompletedAt ||
+      selectedSections.length === 0
     ) {
       return
     }
@@ -112,7 +131,7 @@ export function HomePage() {
     tourTriggeredRef.current = true
     const timeout = window.setTimeout(() => setTourOpen(true), 700)
     return () => window.clearTimeout(timeout)
-  }, [settings, startupMode])
+  }, [settings, startupMode, selectedSections.length])
 
   const finishTour = useCallback(() => {
     setTourOpen(false)
@@ -223,12 +242,21 @@ export function HomePage() {
     [academicPeriods],
   )
 
+  const careerLabelsById = useMemo(
+    () =>
+      Object.fromEntries(
+        careers.map((career) => [career.id, career.code ?? career.name]),
+      ),
+    [careers],
+  )
+
   const schedulePickerProps = {
     activeSchedule,
     schedules: savedSchedules,
     deletedSchedules,
     periodName: activePeriod?.name ?? null,
     periodLabelsById,
+    careerLabelsById,
     onSelect: (scheduleId: string) => void switchSchedule(scheduleId),
     onCreate: (name: string, copyFromScheduleId?: string | null) =>
       void createSchedule(name, copyFromScheduleId),
@@ -257,7 +285,10 @@ export function HomePage() {
     onPeriodChange: (periodId: string) => void setSelectedPeriod(periodId),
     catalogLoading,
     selectedSectionIds: selectedSections.map((section) => section.id),
+    onCareerChange: (careerId: string | null) => void setSelectedCareer(careerId),
   }
+
+  const hasScheduleSections = selectedSections.length > 0
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -299,6 +330,7 @@ export function HomePage() {
             onCareerChange={(careerId) => void setSelectedCareer(careerId)}
             scheduleCareers={scheduleCareers}
             onSummary={() => setSummaryOpen((v) => !v)}
+            summaryButtonRef={summaryButtonRef}
             schedulePicker={schedulePickerProps}
             isOnline={isOnline}
             isAuthenticated={!!user}
@@ -320,8 +352,15 @@ export function HomePage() {
               viewFilters={viewFilters}
             />
             {selectedSections.length === 0 && !previewSection && (
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-background/60 px-6">
-                <EmptySchedule periodName={activePeriod?.name ?? null} compact />
+              <div
+                className={`pointer-events-none absolute inset-0 flex items-center justify-center px-6 ${
+                  settings?.selectedCareerId ? 'bg-background/55' : 'bg-background/40'
+                }`}
+              >
+                <EmptySchedule
+                  compact
+                  phase={settings?.selectedCareerId ? 'needs-section' : 'needs-career'}
+                />
               </div>
             )}
             {selectedSections.length === 0 && previewSection && (
@@ -331,32 +370,31 @@ export function HomePage() {
                 </p>
               </div>
             )}
-          </div>
 
-          {summaryOpen && (
-            <div
-              className="absolute inset-0 z-20 bg-black/10"
-              onClick={() => setSummaryOpen(false)}
-              aria-hidden="true"
+            <SummaryDrawer
+              open={summaryOpen && isDesktopLayout}
+              onClose={() => setSummaryOpen(false)}
+              scheduleName={activeSchedule?.name ?? 'Mi horario'}
+              activePeriod={activePeriod}
+              selectedCareer={selectedCareer}
+              selectedSections={selectedSections}
+              conflicts={conflicts}
+              coursesById={coursesMeta}
+              lastUpdated={lastUpdated}
+              returnFocusRef={summaryButtonRef}
+              onAddFirstCourse={() => {
+                setSummaryOpen(false)
+                // Desktop explorer is always visible; focus search via prefill remount.
+                setSearchPrefill(` `)
+                requestAnimationFrame(() => setSearchPrefill(''))
+              }}
             />
-          )}
-
-          <SummaryDrawer
-            open={summaryOpen}
-            onClose={() => setSummaryOpen(false)}
-            activePeriod={activePeriod}
-            selectedCareer={selectedCareer}
-            selectedSections={selectedSections}
-            conflicts={conflicts}
-            coursesById={coursesMeta}
-            lastUpdated={lastUpdated}
-          />
+          </div>
         </div>
       </div>
 
       {/* ── MÓVIL ───────────────────────────────────────────────────── */}
-      <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-background md:hidden">
-        {/* Header móvil compacto */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-hidden bg-slate-50/40 md:hidden">
         <MobileHeader
           scheduleName={activeSchedule?.name ?? 'Mi horario'}
           periodName={activePeriod?.name ?? null}
@@ -367,11 +405,11 @@ export function HomePage() {
           careers={careers}
           selectedCareerId={settings?.selectedCareerId ?? null}
           onCareerChange={(careerId) => void setSelectedCareer(careerId)}
-          scheduleCareers={scheduleCareers}
           onSummary={() => {
             setSearchOpen(false)
             setSummaryOpen((v) => !v)
           }}
+          summaryButtonRef={summaryButtonRef}
           schedulePicker={schedulePickerProps}
           isOnline={isOnline}
           isAuthenticated={!!user}
@@ -379,42 +417,48 @@ export function HomePage() {
           userSyncAt={settings?.lastUserScheduleSyncAt ?? null}
           officialDataSyncing={syncStatus === 'downloading' || syncStatus === 'checking'}
           onSync={requestScheduleSync}
+          isEmpty={!hasScheduleSections}
         />
 
-        {/* Selector de días */}
-        <div className="shrink-0 border-b border-slate-200/50 bg-white" data-tour="day-selector">
-          <div className="flex gap-1 overflow-x-auto px-3 py-2">
-            {DAYS_OF_WEEK.map((day) => {
-              const hasMeetings = selectedSections.some((s) =>
-                s.meetings.some((m) => m.dayOfWeek === day.value),
-              )
-              const isActive = mobileDay === day.value
-              return (
-                <button
-                  key={day.value}
-                  onClick={() => setMobileDay(day.value)}
-                  className={`flex min-h-10 min-w-[50px] shrink-0 flex-col items-center justify-center rounded-lg px-2 py-1.5 text-xs font-normal transition ${
-                    isActive ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-100/80'
-                  }`}
-                  aria-pressed={isActive}
-                >
-                  <span>{day.label.slice(0, 3)}</span>
-                  {hasMeetings && (
-                    <span
-                      className={`mt-0.5 h-1.5 w-1.5 rounded-full ${isActive ? 'bg-white/70' : 'bg-slate-400/70'}`}
-                      aria-hidden="true"
-                    />
-                  )}
-                </button>
-              )
-            })}
+        {hasScheduleSections && (
+          <div className="shrink-0 px-2 py-2" data-tour="day-selector">
+            <div className="grid grid-cols-6 gap-1">
+              {DAYS_OF_WEEK.map((day) => {
+                const hasMeetings = selectedSections.some((s) =>
+                  s.meetings.some((m) => m.dayOfWeek === day.value),
+                )
+                const isActive = mobileDay === day.value
+                return (
+                  <button
+                    key={day.value}
+                    onClick={() => setMobileDay(day.value)}
+                    className={`flex min-h-10 w-full flex-col items-center justify-center rounded-lg px-1 py-1.5 text-xs font-normal transition ${
+                      isActive ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-100/80'
+                    }`}
+                    aria-pressed={isActive}
+                  >
+                    <span>{day.label.slice(0, 3)}</span>
+                    {hasMeetings && (
+                      <span
+                        className={`mt-0.5 h-1.5 w-1.5 rounded-full ${isActive ? 'bg-white/70' : 'bg-slate-400/70'}`}
+                        aria-hidden="true"
+                      />
+                    )}
+                  </button>
+                )
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
-        {/* Vista del día */}
-        <div className="relative min-h-0 flex-1 overflow-y-auto bg-slate-50/50">
-          {selectedSections.length === 0 ? (
-            <EmptyScheduleMobile periodName={activePeriod?.name ?? null} />
+        <div className="relative min-h-0 flex-1 overflow-y-auto">
+          {!hasScheduleSections ? (
+            <EmptyScheduleMobileOnboarding
+              hasCareer={Boolean(settings?.selectedCareerId)}
+              onAddFirst={() => openSearch()}
+              onSync={isOnline ? requestScheduleSync : undefined}
+              onShowTour={() => setTourOpen(true)}
+            />
           ) : (
             <DayScheduleView
               day={mobileDay}
@@ -427,16 +471,17 @@ export function HomePage() {
             />
           )}
 
-          {/* FAB: Agregar materia */}
-          <button
-            onClick={() => openSearch()}
-            data-tour="add-course-fab"
-            className="fixed bottom-20 right-4 z-30 flex min-h-11 items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-medium text-white shadow-lg hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
-            aria-label="Agregar materia"
-          >
-            <Plus className="h-5 w-5" aria-hidden="true" />
-            <span>Agregar materia</span>
-          </button>
+          {hasScheduleSections && (
+            <button
+              onClick={() => openSearch()}
+              data-tour="add-course-fab"
+              className="bottom-above-dock fixed right-4 z-30 flex min-h-11 items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-medium text-white shadow-lg hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+              aria-label="Agregar materia"
+            >
+              <Plus className="h-5 w-5" aria-hidden="true" />
+              <span>Agregar materia</span>
+            </button>
+          )}
         </div>
 
         {/* Bottom sheet: Búsqueda */}
@@ -454,9 +499,10 @@ export function HomePage() {
 
         {/* Bottom sheet: Resumen */}
         <BottomSheet
-          open={summaryOpen}
+          open={summaryOpen && !isDesktopLayout}
           onClose={() => setSummaryOpen(false)}
           minimal
+          tall
         >
           <ContextPanel
             activePeriod={activePeriod}
@@ -465,7 +511,11 @@ export function HomePage() {
             conflicts={conflicts}
             coursesById={coursesMeta}
             lastUpdated={lastUpdated}
+            scheduleName={activeSchedule?.name ?? 'Mi horario'}
             onClose={() => setSummaryOpen(false)}
+            onAddFirstCourse={() => openSearch()}
+            presentation="sheet"
+            returnFocusRef={summaryButtonRef}
           />
         </BottomSheet>
       </div>
@@ -485,25 +535,30 @@ export function HomePage() {
 
 // ── Header compartido ─────────────────────────────────────────────────────────
 
-function SummaryInfoButton({
+function SummaryButton({
   onClick,
   hasConflict,
+  buttonRef,
 }: {
   onClick: () => void
   hasConflict: boolean
+  buttonRef?: React.RefObject<HTMLButtonElement | null>
 }) {
   return (
     <button
+      ref={buttonRef}
       type="button"
       onClick={onClick}
       data-tour="schedule-summary"
-      className="relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted/60 transition hover:bg-slate-100 hover:text-muted"
-      aria-label="Ver resumen del horario"
+      title="Abrir resumen del horario"
+      className="relative inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-slate-200/80 bg-white px-2.5 text-[13px] font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-50 hover:text-slate-800"
+      aria-label="Abrir resumen del horario"
     >
-      <Info className="h-[18px] w-[18px]" strokeWidth={1.75} aria-hidden="true" />
+      <LayoutDashboard className="h-3.5 w-3.5 text-slate-500" aria-hidden="true" />
+      Resumen
       {hasConflict && (
         <span
-          className="absolute right-1 top-1 h-1.5 w-1.5 rounded-full bg-red-500 ring-2 ring-surface"
+          className="absolute -right-0.5 -top-0.5 h-1.5 w-1.5 rounded-full bg-red-500 ring-2 ring-white"
           aria-hidden="true"
         />
       )}
@@ -523,6 +578,7 @@ function ScheduleHeader({
   onCareerChange,
   scheduleCareers,
   onSummary,
+  summaryButtonRef,
   schedulePicker,
   isOnline,
   isAuthenticated,
@@ -542,6 +598,7 @@ function ScheduleHeader({
   onCareerChange: (careerId: string | null) => void
   scheduleCareers: Career[]
   onSummary: () => void
+  summaryButtonRef?: React.RefObject<HTMLButtonElement | null>
   schedulePicker: Omit<SchedulePickerPanelProps, 'open' | 'onClose' | 'periodName'>
   isOnline: boolean
   isAuthenticated: boolean
@@ -565,7 +622,11 @@ function ScheduleHeader({
           scheduleCareers={scheduleCareers}
           schedulePicker={schedulePicker}
         />
-        <SummaryInfoButton onClick={onSummary} hasConflict={conflictCount > 0} />
+        <SummaryButton
+          onClick={onSummary}
+          hasConflict={conflictCount > 0}
+          buttonRef={summaryButtonRef}
+        />
       </div>
       <div className="mt-1">
         <ScheduleSaveStatus
@@ -591,8 +652,8 @@ function MobileHeader({
   careers,
   selectedCareerId,
   onCareerChange,
-  scheduleCareers,
   onSummary,
+  summaryButtonRef,
   schedulePicker,
   isOnline,
   isAuthenticated,
@@ -600,6 +661,7 @@ function MobileHeader({
   userSyncAt,
   officialDataSyncing,
   onSync,
+  isEmpty = false,
 }: {
   scheduleName: string
   periodName: string | null
@@ -610,8 +672,8 @@ function MobileHeader({
   careers: Career[]
   selectedCareerId: string | null
   onCareerChange: (careerId: string | null) => void
-  scheduleCareers: Career[]
   onSummary: () => void
+  summaryButtonRef?: React.RefObject<HTMLButtonElement | null>
   schedulePicker: Omit<SchedulePickerPanelProps, 'open' | 'onClose' | 'periodName'>
   isOnline: boolean
   isAuthenticated: boolean
@@ -619,35 +681,58 @@ function MobileHeader({
   userSyncAt: string | null
   officialDataSyncing: boolean
   onSync: () => void
+  isEmpty?: boolean
 }) {
   return (
-    <header className="shrink-0 border-b border-slate-200/50 bg-white px-4 py-2">
+    <header className={`shrink-0 px-4 ${isEmpty ? 'pt-2.5 pb-3' : 'py-2'}`}>
       <div className="flex items-start justify-between gap-3">
-        <ScheduleContextBar
-          scheduleName={scheduleName}
-          periodName={periodName}
-          academicPeriods={academicPeriods}
-          selectedPeriodId={selectedPeriodId}
-          onPeriodChange={onPeriodChange}
-          careers={careers}
-          selectedCareerId={selectedCareerId}
-          onCareerChange={onCareerChange}
-          scheduleCareers={scheduleCareers}
-          schedulePicker={schedulePicker}
+        <div className="min-w-0 flex-1">
+          <div className="mb-1.5 flex items-center gap-2">
+            <img
+              src={logoMark}
+              alt=""
+              className={`shrink-0 select-none rounded-lg object-contain opacity-90 ${
+                isEmpty ? 'h-7 w-7' : 'h-8 w-8'
+              }`}
+              draggable={false}
+              aria-hidden="true"
+            />
+            <h1 className="text-lg font-bold tracking-tight text-text">PoliPlan</h1>
+          </div>
+          <ScheduleContextSelector
+            presentation="sheet"
+            scheduleName={scheduleName}
+            periodName={periodName}
+            academicPeriods={academicPeriods}
+            selectedPeriodId={selectedPeriodId}
+            onPeriodChange={onPeriodChange}
+            careers={careers}
+            selectedCareerId={selectedCareerId}
+            onCareerChange={onCareerChange}
+            schedulePicker={schedulePicker}
+          />
+        </div>
+        <SummaryButton
+          onClick={onSummary}
+          hasConflict={conflictCount > 0}
+          buttonRef={summaryButtonRef}
         />
-        <SummaryInfoButton onClick={onSummary} hasConflict={conflictCount > 0} />
       </div>
-      <div className="mt-1">
-        <ScheduleSaveStatus
-          isOnline={isOnline}
-          isAuthenticated={isAuthenticated}
-          localSaveState={localSaveState}
-          userSyncAt={userSyncAt}
-          officialDataSyncing={officialDataSyncing}
-          onSync={onSync}
-          compact
-        />
-      </div>
+
+      {!isEmpty && (
+        <div className="mt-1.5">
+          <ScheduleSaveStatus
+            isOnline={isOnline}
+            isAuthenticated={isAuthenticated}
+            localSaveState={localSaveState}
+            userSyncAt={userSyncAt}
+            officialDataSyncing={officialDataSyncing}
+            onSync={onSync}
+            compact
+            hiddenUnlessNotable
+          />
+        </div>
+      )}
     </header>
   )
 }
@@ -657,10 +742,16 @@ function MobileHeader({
 function SummaryDrawer({
   open,
   onClose,
+  scheduleName,
+  onAddFirstCourse,
+  returnFocusRef,
   ...panelProps
 }: {
   open: boolean
   onClose: () => void
+  scheduleName: string
+  onAddFirstCourse?: () => void
+  returnFocusRef?: React.RefObject<HTMLElement | null>
   activePeriod: import('@/types/academic').AcademicPeriod | null
   selectedCareer: import('@/types/academic').Career | undefined
   selectedSections: CourseSection[]
@@ -669,16 +760,32 @@ function SummaryDrawer({
   lastUpdated: string | null
 }) {
   return (
-    <div
-      className={`absolute right-0 top-0 z-30 flex h-full flex-col border-l border-slate-200/60 bg-white shadow-lg transition-all duration-200 ${
-        open ? 'w-[320px]' : 'w-0 overflow-hidden'
-      }`}
-      aria-hidden={!open}
-    >
-      {open && (
-        <ContextPanel {...panelProps} onClose={onClose} />
-      )}
-    </div>
+    <>
+      <div
+        className={`absolute inset-0 z-20 bg-slate-900/25 transition-opacity duration-300 ${
+          open ? 'opacity-100' : 'pointer-events-none opacity-0'
+        }`}
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <div
+        className={`absolute right-0 top-0 z-30 flex h-full w-[396px] max-w-[calc(100%-1rem)] flex-col overflow-hidden rounded-l-[24px] bg-white shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${
+          open ? 'translate-x-0' : 'pointer-events-none translate-x-full'
+        }`}
+        aria-hidden={!open}
+      >
+        {open && (
+          <ContextPanel
+            {...panelProps}
+            scheduleName={scheduleName}
+            onClose={onClose}
+            onAddFirstCourse={onAddFirstCourse}
+            presentation="drawer"
+            returnFocusRef={returnFocusRef}
+          />
+        )}
+      </div>
+    </>
   )
 }
 
@@ -689,12 +796,14 @@ function BottomSheet({
   onClose,
   title,
   minimal = false,
+  tall = false,
   children,
 }: {
   open: boolean
   onClose: () => void
   title?: string
   minimal?: boolean
+  tall?: boolean
   children: React.ReactNode
 }) {
   if (!open) return null
@@ -706,7 +815,9 @@ function BottomSheet({
         aria-hidden="true"
       />
       <div
-        className="fixed inset-x-0 bottom-0 z-50 flex max-h-[85dvh] flex-col rounded-t-2xl border-t border-slate-200 bg-surface shadow-2xl"
+        className={`fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-[24px] border-t border-slate-200 bg-surface shadow-2xl ${
+          tall ? 'h-[90dvh] max-h-[90dvh]' : 'max-h-[85dvh]'
+        }`}
         role="dialog"
         aria-label={title ?? 'Panel'}
       >
@@ -733,7 +844,7 @@ function BottomSheet({
             </button>
           </div>
         )}
-        <div className="flex-1 overflow-hidden">{children}</div>
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
       </div>
     </>
   )
@@ -741,80 +852,127 @@ function BottomSheet({
 
 // ── Estado vacío desktop ──────────────────────────────────────────────────────
 
+type EmptySchedulePhase = 'needs-career' | 'needs-section'
+
 function EmptySchedule({
-  periodName,
   compact = false,
+  phase = 'needs-career',
 }: {
-  periodName: string | null
   compact?: boolean
+  phase?: EmptySchedulePhase
 }) {
+  const isPassive = phase === 'needs-career'
+
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-5 px-6 text-center">
-      <div className="rounded-full bg-primary/8 p-6">
-        <svg
-          className="h-12 w-12 text-primary/60"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          aria-hidden="true"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.25}
-            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-          />
-        </svg>
-      </div>
-      <div>
-        <p className="text-xl font-bold text-text">Empezá a armar tu horario</p>
-        <p className="mt-1.5 text-sm text-muted">
-          {compact
-            ? 'Elegí tu carrera y agregá materias desde el panel de la izquierda.'
-            : 'Buscá una materia y elegí la sección que mejor te convenga.'}
-        </p>
-      </div>
-      {periodName && (
-        <div className="mt-2 text-xs text-muted/70">
-          <p>{periodName}</p>
-          <p>Datos oficiales verificados</p>
-        </div>
-      )}
+    <div className="flex -translate-y-10 flex-col items-center justify-center px-6 text-center">
+      <img
+        src={scheduleEmptyIllustration}
+        alt="Ilustración de un horario académico"
+        width={520}
+        height={520}
+        className={`mb-8 h-auto max-h-[260px] w-[clamp(200px,22vw,260px)] object-contain ${
+          isPassive ? 'opacity-[0.65]' : 'opacity-90'
+        }`}
+        draggable={false}
+      />
+      <h2
+        className={`tracking-tight ${
+          isPassive
+            ? 'text-base font-semibold text-slate-500'
+            : 'text-lg font-semibold text-slate-700'
+        }`}
+      >
+        {isPassive ? 'Tu horario aparecerá acá' : 'Agregá tu primera materia'}
+      </h2>
+      <p
+        className={`mt-2 max-w-sm leading-relaxed ${
+          isPassive ? 'text-sm text-slate-400' : 'text-sm text-muted'
+        }`}
+      >
+        {isPassive
+          ? 'Cuando agregues una materia, vas a verla organizada por día.'
+          : compact
+            ? 'Elegí una sección desde el panel izquierdo para empezar.'
+            : 'Elegí una sección para empezar a armar tu horario.'}
+      </p>
     </div>
   )
 }
 
-// ── Estado vacío móvil ────────────────────────────────────────────────────────
+// ── Estado vacío móvil (onboarding) ───────────────────────────────────────────
 
-function EmptyScheduleMobile({ periodName }: { periodName: string | null }) {
+function EmptyScheduleMobileOnboarding({
+  hasCareer,
+  onAddFirst,
+  onSync,
+  onShowTour,
+}: {
+  hasCareer: boolean
+  onAddFirst: () => void
+  onSync?: () => void
+  onShowTour: () => void
+}) {
+  const isPassive = !hasCareer
+
   return (
-    <div className="flex h-full flex-col items-center justify-center gap-4 px-6 pb-24 text-center">
-      <div className="rounded-full bg-primary/8 p-5">
-        <svg
-          className="h-10 w-10 text-primary/60"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          aria-hidden="true"
+    <div className="flex min-h-full -translate-y-10 flex-col items-center justify-center px-6 pb-10 pt-6 text-center">
+      <img
+        src={scheduleEmptyIllustration}
+        alt="Ilustración de un horario académico"
+        width={520}
+        height={520}
+        className={`mb-8 h-auto max-h-[230px] w-[clamp(200px,58vw,230px)] object-contain ${
+          isPassive ? 'opacity-[0.65]' : 'opacity-90'
+        }`}
+        draggable={false}
+      />
+      <h2
+        className={`tracking-tight ${
+          isPassive
+            ? 'text-base font-semibold text-slate-500'
+            : 'text-lg font-semibold text-text'
+        }`}
+      >
+        {isPassive ? 'Tu horario aparecerá acá' : 'Agregá tu primera materia'}
+      </h2>
+      <p
+        className={`mt-2 max-w-[18rem] leading-relaxed ${
+          isPassive ? 'text-sm text-slate-400' : 'text-sm text-muted'
+        }`}
+      >
+        {isPassive
+          ? 'Cuando agregues una materia, vas a verla organizada por día.'
+          : 'Elegí una materia y sección para empezar.'}
+      </p>
+      {!isPassive && (
+        <button
+          type="button"
+          onClick={onAddFirst}
+          className="mt-6 flex h-[62px] w-[84%] max-w-[18rem] items-center justify-center rounded-xl bg-primary px-5 text-sm font-medium text-white shadow-[0_6px_18px_rgba(11,59,143,0.18)] hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
         >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={1.25}
-            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
-          />
-        </svg>
-      </div>
-      <div>
-        <p className="font-bold text-text">Empezá a armar tu horario</p>
-        <p className="mt-1 text-sm text-muted">Tocá el botón + para agregar materias.</p>
-      </div>
-      {periodName && (
-        <div className="mt-2 text-xs text-muted/70">
-          <p>{periodName}</p>
-          <p>Datos oficiales verificados</p>
-        </div>
+          Agregar mi primera materia
+        </button>
       )}
+      <div className={`flex flex-wrap items-center justify-center gap-x-5 gap-y-2 ${isPassive ? 'mt-6' : 'mt-5'}`}>
+        {onSync && (
+          <button
+            type="button"
+            onClick={onSync}
+            className="inline-flex items-center gap-1.5 text-xs text-muted/80 transition hover:text-primary"
+          >
+            <Cloud className="h-3.5 w-3.5" aria-hidden="true" />
+            Sincronizar
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={onShowTour}
+          className="inline-flex items-center gap-1.5 text-xs text-muted/80 transition hover:text-primary"
+        >
+          <CircleHelp className="h-3.5 w-3.5" aria-hidden="true" />
+          Ver cómo funciona
+        </button>
+      </div>
     </div>
   )
 }

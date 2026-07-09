@@ -33,7 +33,7 @@ function clampAnchorPosition(
   align: 'left' | 'right',
   offset: number,
   padding: number,
-): { top: number; left: number; right: number; placement: 'above' | 'below' } {
+): { top: number; left: number; placement: 'above' | 'below' } {
   const spaceBelow = window.innerHeight - anchorRect.bottom - padding
   const spaceAbove = anchorRect.top - padding
   const placeAbove =
@@ -43,26 +43,17 @@ function clampAnchorPosition(
     ? Math.max(padding, anchorRect.top - popoverRect.height - offset)
     : anchorRect.bottom + offset
 
-  let left = align === 'right' ? undefined : anchorRect.left
-  let right = align === 'right' ? window.innerWidth - anchorRect.right : undefined
-
-  if (align === 'left' && left != null) {
-    left = Math.min(Math.max(padding, left), window.innerWidth - popoverRect.width - padding)
-  }
-  if (align === 'right' && right != null) {
-    const computedLeft = window.innerWidth - right - popoverRect.width
-    const clampedLeft = Math.min(
-      Math.max(padding, computedLeft),
-      window.innerWidth - popoverRect.width - padding,
-    )
-    left = clampedLeft
-    right = undefined
-  }
+  // Prefer aligning under the trigger; clamp so the menu stays in the viewport.
+  const preferredLeft =
+    align === 'right' ? anchorRect.right - popoverRect.width : anchorRect.left
+  const left = Math.min(
+    Math.max(padding, preferredLeft),
+    window.innerWidth - popoverRect.width - padding,
+  )
 
   return {
     top,
-    left: left ?? padding,
-    right: right ?? padding,
+    left,
     placement: placeAbove ? 'above' : 'below',
   }
 }
@@ -81,7 +72,7 @@ export function AnimatedPopover({
 }: AnimatedPopoverProps) {
   const [mounted, setMounted] = useState(open)
   const [visible, setVisible] = useState(false)
-  const [position, setPosition] = useState({ top: 0, left: 0, right: 0 })
+  const [position, setPosition] = useState({ top: 0, left: 0 })
   const [anchorPlacement, setAnchorPlacement] = useState<'above' | 'below'>('below')
   const internalPopoverRef = useRef<HTMLDivElement>(null)
   const resolvedPopoverRef = popoverRef ?? internalPopoverRef
@@ -98,7 +89,7 @@ export function AnimatedPopover({
 
       if (strategy === 'viewport') {
         const next = clampViewportPosition(popoverRect, viewportPadding)
-        setPosition({ top: next.top, left: next.left, right: 0 })
+        setPosition({ top: next.top, left: next.left })
         return
       }
 
@@ -112,7 +103,7 @@ export function AnimatedPopover({
         offset,
         viewportPadding,
       )
-      setPosition({ top: next.top, left: next.left, right: next.right })
+      setPosition({ top: next.top, left: next.left })
       setAnchorPlacement(next.placement)
     }
 
@@ -157,9 +148,7 @@ export function AnimatedPopover({
   const transformOrigin =
     strategy === 'viewport'
       ? 'center center'
-      : anchorPlacement === 'above'
-        ? 'bottom left'
-        : 'top left'
+      : `${anchorPlacement === 'above' ? 'bottom' : 'top'} ${align === 'right' ? 'right' : 'left'}`
 
   return createPortal(
     <div
@@ -169,9 +158,7 @@ export function AnimatedPopover({
       style={{
         position: 'fixed',
         top: position.top,
-        ...(strategy === 'viewport' || align === 'left'
-          ? { left: position.left }
-          : { right: position.right }),
+        left: position.left,
         zIndex: 200,
         maxHeight:
           strategy === 'viewport'

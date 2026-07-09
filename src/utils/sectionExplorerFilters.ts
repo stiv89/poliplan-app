@@ -19,6 +19,23 @@ export interface ActiveExplorerFilterChip {
   onRemove: () => void
 }
 
+export function countAdvancedExplorerFilters(
+  viewFilters: ScheduleViewFilters,
+  defaults: ScheduleViewFilters = DEFAULT_SCHEDULE_VIEW_FILTERS,
+): number {
+  let count = 0
+  const defaultDays = [...defaults.days].sort((a, b) => a - b).join(',')
+  const currentDays = [...viewFilters.days].sort((a, b) => a - b).join(',')
+  if (defaultDays !== currentDays) count++
+  if (
+    viewFilters.timeStartMinutes !== defaults.timeStartMinutes ||
+    viewFilters.timeEndMinutes !== defaults.timeEndMinutes
+  ) {
+    count++
+  }
+  return count
+}
+
 export function countSectionExplorerFilters(
   state: SectionExplorerFilterState,
   defaults: ScheduleViewFilters = DEFAULT_SCHEDULE_VIEW_FILTERS,

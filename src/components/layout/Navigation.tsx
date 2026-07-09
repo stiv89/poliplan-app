@@ -149,8 +149,8 @@ function RailNavItem({
       className={({ isActive }) =>
         `group relative z-10 flex w-full flex-col items-center gap-1 rounded-xl px-1 py-2.5 transition-[color,transform] duration-200 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.98] ${
           isActive
-            ? 'text-slate-600'
-            : 'text-slate-400/90 hover:text-slate-500'
+            ? 'text-primary'
+            : 'text-slate-500/90 hover:text-slate-600'
         }`
       }
       aria-label={badge > 0 ? `${label} (${badge} sin ver)` : label}
@@ -251,7 +251,7 @@ export function SidebarNav() {
   }))
 
   return (
-    <aside className="hidden h-full w-[76px] shrink-0 flex-col border-r border-slate-200/50 bg-slate-50/60 py-4 lg:w-20 md:flex">
+    <aside className="liquid-glass-sidebar hidden h-full w-[76px] shrink-0 flex-col py-4 lg:w-20 md:flex">
       <NavLink
         to={ROUTES.home}
         end
@@ -299,11 +299,11 @@ export function BottomNav() {
 
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-surface/95 backdrop-blur md:hidden"
+      className="pointer-events-none fixed inset-x-0 bottom-0 z-40 flex justify-center px-3 pb-[max(0.625rem,env(safe-area-inset-bottom))] md:hidden"
       aria-label="Navegación móvil"
       data-tour="app-nav"
     >
-      <div className="mx-auto max-w-lg px-1 py-1">
+      <div className="liquid-glass-dock pointer-events-auto w-full max-w-md px-1.5 py-1.5">
         <NavRail items={mobileItems} layout="horizontal" />
       </div>
     </nav>

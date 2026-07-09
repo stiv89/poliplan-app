@@ -1,6 +1,7 @@
-const CAREER_BUTTON_SELECTOR = '[aria-label="Elegir carrera del horario activo"]'
+const CAREER_BUTTON_SELECTOR =
+  '[data-schedule-context-trigger], [data-career-picker-trigger], [aria-label="Contexto del horario"], [aria-label="Elegir carrera y periodo académico"]'
 
-/** Abre el popover de carrera en la barra visible (desktop o mobile). */
+/** Abre el selector de contexto del horario en la barra visible (desktop o mobile). */
 export function openCareerMenu(): void {
   const buttons = document.querySelectorAll<HTMLButtonElement>(CAREER_BUTTON_SELECTOR)
   for (const button of buttons) {

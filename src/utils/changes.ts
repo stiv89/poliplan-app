@@ -48,6 +48,101 @@ export function getChangeSummary(change: ScheduleChange): string {
   return `Cambió ${FIELD_LABELS[change.field] ?? 'un dato'}`
 }
 
+/** Human-readable activity line for the schedule summary panel. */
+export function getActivityHeadline(change: ScheduleChange): string {
+  const course = change.courseName?.trim() || 'una materia'
+
+  switch (change.field) {
+    case 'sectionAdded':
+      return `Se agregó ${course}`
+    case 'sectionRemoved':
+      return `Se eliminó ${course}`
+    case 'teacherName':
+      return `Se actualizó el docente de ${course}`
+    case 'meetingDay':
+    case 'meetingTime':
+    case 'meetingClassroom':
+      return `Se cambió la sección de ${course}`
+    case 'examDate':
+    case 'examTime':
+    case 'examClassroom':
+      return `Se actualizó un examen de ${course}`
+    default:
+      return `Se actualizó ${course}`
+  }
+}
+
+export function getActivityDetail(change: ScheduleChange): string | null {
+  if (change.field === 'sectionAdded' || change.field === 'sectionRemoved') {
+    return change.sectionCode ? `Sección ${change.sectionCode}` : null
+  }
+
+  const previous = formatChangeValue(change.field, change.previousValue)
+  const next = formatChangeValue(change.field, change.newValue)
+
+  if (previous === '—' && next === '—') {
+    return change.sectionCode ? `Sección ${change.sectionCode}` : null
+  }
+
+  if (previous === '—') return `${getChangeFieldTitle(change.field)}: ${next}`
+  if (next === '—') return `${getChangeFieldTitle(change.field)}: se quitó ${previous}`
+  return `${getChangeFieldTitle(change.field)}: ${previous} → ${next}`
+}
+
+export type ActivityKindFilter = 'all' | 'added' | 'changed' | 'removed'
+
+export function getActivityKind(change: ScheduleChange): Exclude<ActivityKindFilter, 'all'> {
+  if (change.field === 'sectionAdded') return 'added'
+  if (change.field === 'sectionRemoved') return 'removed'
+  return 'changed'
+}
+
+export function filterActivityByKind(
+  changes: ScheduleChange[],
+  filter: ActivityKindFilter,
+): ScheduleChange[] {
+  if (filter === 'all') return changes
+  return changes.filter((change) => getActivityKind(change) === filter)
+}
+
+export function formatActivityTime(iso: string): string {
+  return new Date(iso).toLocaleTimeString('es-PY', {
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+}
+
+export function groupChangesByActivityRecency(
+  changes: ScheduleChange[],
+): Array<{ label: string; changes: ScheduleChange[] }> {
+  const now = new Date()
+  const yesterday = new Date(now)
+  yesterday.setDate(yesterday.getDate() - 1)
+  const weekStart = new Date(now)
+  weekStart.setHours(0, 0, 0, 0)
+  weekStart.setDate(weekStart.getDate() - ((weekStart.getDay() + 6) % 7))
+
+  const today: ScheduleChange[] = []
+  const yday: ScheduleChange[] = []
+  const thisWeek: ScheduleChange[] = []
+  const older: ScheduleChange[] = []
+
+  for (const change of changes) {
+    const date = new Date(change.detectedAt)
+    if (isSameDay(date, now)) today.push(change)
+    else if (isSameDay(date, yesterday)) yday.push(change)
+    else if (date >= weekStart) thisWeek.push(change)
+    else older.push(change)
+  }
+
+  const groups: Array<{ label: string; changes: ScheduleChange[] }> = []
+  if (today.length > 0) groups.push({ label: 'Hoy', changes: today })
+  if (yday.length > 0) groups.push({ label: 'Ayer', changes: yday })
+  if (thisWeek.length > 0) groups.push({ label: 'Esta semana', changes: thisWeek })
+  if (older.length > 0) groups.push({ label: 'Anteriores', changes: older })
+  return groups
+}
+
 export function formatChangeValue(field: ChangeField, value: string | null): string {
   if (value === null || value === '') return '—'
 

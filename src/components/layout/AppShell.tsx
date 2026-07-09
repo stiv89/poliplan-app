@@ -20,7 +20,7 @@ export function AppShell() {
           <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col overflow-hidden md:flex-row md:rounded-[24px] md:border md:border-slate-200/60 md:bg-white">
             <SidebarNav />
 
-            <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background pb-[calc(3.5rem+env(safe-area-inset-bottom,0px))] md:bg-transparent md:pb-0">
+            <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background pb-mobile-dock md:bg-transparent">
               <Outlet />
             </main>
           </div>

@@ -116,7 +116,7 @@ export function GradingPage() {
       </div>
 
       {mode === 'have-pp' && finalResult?.status === 'success' && finalResult.grade != null && (
-        <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] z-30 border-t border-slate-200 bg-surface/95 px-4 py-3 backdrop-blur md:hidden">
+        <div className="bottom-above-dock fixed inset-x-0 z-30 border-t border-slate-200 bg-surface/95 px-4 py-3 backdrop-blur md:hidden">
           <div className="mx-auto flex max-w-lg items-center justify-between gap-3">
             <div>
               <p className="text-xs text-muted">Nota estimada</p>
@@ -225,7 +225,7 @@ function BuildPpStickyBar({ evaluations }: { evaluations: WeightedEvaluation[] }
   if (result.status !== 'success' || result.pp == null) return null
 
   return (
-    <div className="fixed inset-x-0 bottom-[calc(3.5rem+env(safe-area-inset-bottom,0px))] z-30 border-t border-slate-200 bg-surface/95 px-4 py-3 backdrop-blur md:hidden">
+    <div className="bottom-above-dock fixed inset-x-0 z-30 border-t border-slate-200 bg-surface/95 px-4 py-3 backdrop-blur md:hidden">
       <div className="mx-auto max-w-lg">
         <p className="text-xs text-muted">PP estimado</p>
         <p className="text-2xl font-bold tabular-nums text-primary">{result.pp}</p>

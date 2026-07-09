@@ -25,6 +25,7 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  --mobile-dock-offset: calc(5.25rem + env(safe-area-inset-bottom, 0px));
 }
 
 * {
@@ -38,14 +39,13 @@ html {
 body {
   margin: 0;
   min-width: 320px;
-  height: 100%;
-  overflow: hidden;
+  min-height: 100%;
+  overflow-x: hidden;
   background: var(--color-background);
 }
 
 #root {
-  height: 100%;
-  overflow: hidden;
+  min-height: 100%;
 }
 
 a {
@@ -83,9 +83,14 @@ select {
   position: absolute;
   z-index: 0;
   pointer-events: none;
-  border-radius: 0.75rem;
-  background: color-mix(in srgb, var(--color-text) 5%, white);
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-text) 6%, transparent);
+  border-radius: 0.875rem;
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(12px) saturate(1.4);
+  -webkit-backdrop-filter: blur(12px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.85),
+    0 1px 4px rgba(15, 23, 42, 0.06);
   transition:
     top 320ms cubic-bezier(0.32, 0.72, 0, 1),
     left 320ms cubic-bezier(0.32, 0.72, 0, 1),
@@ -97,6 +102,64 @@ select {
 @media (prefers-reduced-motion: reduce) {
   .nav-rail-indicator {
     transition: none;
+  }
+}
+
+/* ── Liquid glass (Apple-style frosted surfaces) ─────────────────────────── */
+
+.liquid-glass-surface {
+  background: rgba(255, 255, 255, 0.58);
+  backdrop-filter: blur(24px) saturate(1.65) brightness(1.04);
+  -webkit-backdrop-filter: blur(24px) saturate(1.65) brightness(1.04);
+  border: 1px solid rgba(255, 255, 255, 0.52);
+  box-shadow:
+    0 8px 32px rgba(15, 23, 42, 0.1),
+    0 2px 8px rgba(15, 23, 42, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.78),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.18);
+}
+
+.liquid-glass-dock {
+  border-radius: 1.75rem;
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(28px) saturate(1.75) brightness(1.06);
+  -webkit-backdrop-filter: blur(28px) saturate(1.75) brightness(1.06);
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  box-shadow:
+    0 12px 40px rgba(15, 23, 42, 0.12),
+    0 4px 12px rgba(15, 23, 42, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.22);
+}
+
+.liquid-glass-sidebar {
+  background: rgba(248, 250, 252, 0.52);
+  backdrop-filter: blur(22px) saturate(1.5) brightness(1.03);
+  -webkit-backdrop-filter: blur(22px) saturate(1.5) brightness(1.03);
+  border-right: 1px solid rgba(255, 255, 255, 0.42);
+  box-shadow:
+    inset -1px 0 0 rgba(255, 255, 255, 0.35),
+    4px 0 24px rgba(15, 23, 42, 0.04);
+}
+
+@media (max-width: 767px) {
+  .pb-mobile-dock {
+    padding-bottom: var(--mobile-dock-offset);
+  }
+
+  .bottom-above-dock {
+    bottom: var(--mobile-dock-offset);
+  }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .liquid-glass-surface,
+  .liquid-glass-dock {
+    background: rgba(255, 255, 255, 0.94);
+  }
+
+  .liquid-glass-sidebar {
+    background: rgba(248, 250, 252, 0.96);
   }
 }
 
@@ -119,6 +182,330 @@ select {
 .course-card-surface[data-open='true'] {
   box-shadow: 0 12px 34px rgba(20, 40, 80, 0.08);
   background: rgba(241, 245, 249, 0.96);
+}
+
+/* Lista: filas planas, tarjeta solo al expandir materia */
+.course-explorer-list {
+  display: flex;
+  flex-direction: column;
+}
+
+.course-card-list:not(.is-open) {
+  background: transparent;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.course-card-list:not(.is-open) + .course-card-list:not(.is-open) {
+  border-top: 1px solid rgba(20, 40, 80, 0.07);
+}
+
+.course-card-list.is-open {
+  margin: 0.25rem 0.1rem;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid rgba(15, 23, 42, 0.1);
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.course-list-row-btn {
+  padding: 0.65rem 0.35rem;
+}
+
+.course-card-list--dense .course-list-row-btn {
+  padding: 0.5rem 0.3rem;
+}
+
+.course-card-header-row {
+  padding-left: 0.4rem;
+  padding-right: 0.4rem;
+}
+
+.course-card-list.is-open .course-card-header-row {
+  padding-top: 0.6rem;
+  padding-bottom: 0.25rem;
+}
+
+.course-card-list--dense.is-open .course-card-header-row {
+  padding-top: 0.5rem;
+  padding-bottom: 0.2rem;
+}
+
+.course-card-checkbox-wrap {
+  display: flex;
+  align-items: flex-start;
+  padding-top: 0.15rem;
+  cursor: pointer;
+}
+
+.course-card-list .course-card-header-btn {
+  width: auto;
+  padding: 0;
+}
+
+.course-card-list.is-open .course-card-header-btn {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.course-card-list--dense.is-open .course-card-header-btn {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.section-row-flat {
+  margin: 0 0.15rem;
+  padding: 0.55rem 0.45rem;
+  border-top: 1px solid rgba(20, 40, 80, 0.06);
+  list-style: none;
+  background: transparent;
+}
+
+.section-row-flat--dense {
+  padding: 0.45rem 0.35rem;
+}
+
+.section-row-flat:first-child {
+  border-top: none;
+}
+
+.section-row-flat.is-selected {
+  background: color-mix(in srgb, var(--color-primary) 5%, white);
+  border-radius: 8px;
+  border-top-color: transparent;
+}
+
+.section-row-flat.is-conflict {
+  background: color-mix(in srgb, #d97706 4%, white);
+  border-radius: 8px;
+}
+
+/* Secciones como celdas + checkbox */
+.section-cell {
+  list-style: none;
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+}
+
+.section-cell:first-child {
+  border-top: none;
+}
+
+.section-cell-label {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  padding: 0.55rem 0.4rem;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background-color 140ms ease;
+}
+
+.section-cell--dense .section-cell-label {
+  gap: 0.55rem;
+  padding: 0.4rem 0.3rem;
+}
+
+.section-cell-label:hover {
+  background: rgba(15, 23, 42, 0.025);
+}
+
+.section-cell.is-selected .section-cell-label {
+  background: color-mix(in srgb, var(--color-primary) 5%, white);
+}
+
+.section-cell.is-preview .section-cell-label {
+  background: rgba(15, 23, 42, 0.03);
+}
+
+.section-cell.is-conflict .section-cell-label {
+  background: color-mix(in srgb, #d97706 4%, white);
+}
+
+.section-cell-checkbox {
+  margin-top: 0.15rem;
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+}
+
+.section-cell--dense .section-cell-checkbox {
+  width: 0.9rem;
+  height: 0.9rem;
+  margin-top: 0.12rem;
+}
+
+.section-cell-body {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.section-cell-top {
+  display: flex;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.5rem;
+}
+
+.section-cell-code {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: #1e293b;
+  letter-spacing: -0.01em;
+}
+
+.section-cell--dense .section-cell-code {
+  font-size: 0.75rem;
+}
+
+.section-cell-shift {
+  font-size: 0.6875rem;
+  font-weight: 500;
+  color: #64748b;
+  background: #f1f5f9;
+  border-radius: 9999px;
+  padding: 0.1rem 0.45rem;
+}
+
+.section-cell-conflict {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.625rem;
+  font-weight: 500;
+  color: #b45309;
+}
+
+.section-cell-schedule {
+  font-size: 0.75rem;
+  color: #64748b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.section-cell--dense .section-cell-schedule {
+  font-size: 0.6875rem;
+}
+
+.section-cell-teacher {
+  min-width: 0;
+  font-size: 0.75rem;
+  color: #94a3b8;
+}
+
+.section-cell--dense .section-cell-teacher {
+  font-size: 0.6875rem;
+}
+
+.section-cell-teacher-btn {
+  display: block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  font-size: inherit;
+}
+
+/* Scroll translúcido del explorador (semestres / materias / secciones) */
+.explorer-scroll,
+.sections-scroll-desktop {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(15, 23, 42, 0.22) transparent;
+}
+
+.explorer-scroll::-webkit-scrollbar,
+.sections-scroll-desktop::-webkit-scrollbar {
+  width: 6px;
+}
+
+.explorer-scroll::-webkit-scrollbar-track,
+.sections-scroll-desktop::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 4px 0;
+}
+
+.explorer-scroll::-webkit-scrollbar-thumb,
+.sections-scroll-desktop::-webkit-scrollbar-thumb {
+  background: rgba(15, 23, 42, 0.18);
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+
+.explorer-scroll::-webkit-scrollbar-thumb:hover,
+.sections-scroll-desktop::-webkit-scrollbar-thumb:hover {
+  background: rgba(15, 23, 42, 0.32);
+  border: 1px solid transparent;
+  background-clip: padding-box;
+}
+
+.explorer-scroll::-webkit-scrollbar-corner,
+.sections-scroll-desktop::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+.sections-scroll-desktop {
+  max-height: 26rem;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-top: 1px solid rgba(15, 23, 42, 0.06);
+  margin-top: 0.15rem;
+}
+
+.add-section-btn-compact {
+  width: 1.85rem;
+  height: 1.85rem;
+  border-width: 1.5px;
+  border-color: rgba(15, 23, 42, 0.16);
+  color: #475569;
+  background: #fff;
+  box-shadow: none;
+}
+
+.add-section-btn-dense {
+  width: 1.65rem;
+  height: 1.65rem;
+}
+
+.add-section-btn-compact:hover:not(:disabled) {
+  border-color: rgba(15, 23, 42, 0.28);
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.add-section-btn-compact.is-added {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(11, 59, 143, 0.18);
+}
+
+.section-row-compact {
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.section-row-compact:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: rgba(20, 40, 80, 0.14);
+}
+
+.course-card-list.is-open .section-row-compact:hover {
+  transform: none;
+  box-shadow: none;
 }
 
 .course-card-details {

@@ -203,7 +203,7 @@ export function GuestExperienceProvider({ children }: { children: ReactNode }) {
 
       {syncToast && (
         <div
-          className="fixed bottom-20 left-4 right-4 z-50 mx-auto max-w-md rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 shadow-lg md:bottom-6"
+          className="bottom-above-dock fixed left-4 right-4 z-50 mx-auto max-w-md rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 shadow-lg md:bottom-6"
           role="status"
         >
           <div className="flex items-start justify-between gap-3">

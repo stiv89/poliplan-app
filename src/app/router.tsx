@@ -27,10 +27,11 @@ function LegacyAppRedirect() {
 }
 
 export const router = createBrowserRouter([
+  { path: PUBLIC_ROUTES.presentacion, element: <LandingPage /> },
+  { path: 'presentacion', element: <Navigate to={PUBLIC_ROUTES.presentacion} replace /> },
   {
     element: <PublicLayout />,
     children: [
-      { path: PUBLIC_ROUTES.presentacion.slice(1), element: <LandingPage /> },
       { path: PUBLIC_ROUTES.horarios.slice(1), element: <HorariosFpunaPage /> },
       { path: PUBLIC_ROUTES.examenes.slice(1), element: <ExamenesFpunaPage /> },
       { path: PUBLIC_ROUTES.calculadora.slice(1), element: <CalculadoraNotasFpunaPage /> },
@@ -40,12 +41,10 @@ export const router = createBrowserRouter([
     ],
   },
   {
-    path: ROUTES.home,
     element: <AppShell />,
     children: [
-      { index: true, element: <HomePage /> },
+      { path: ROUTES.home.slice(1), element: <HomePage /> },
       { path: ROUTES.sections.slice(1), element: <SectionsPage /> },
-      { path: ROUTES.schedule.slice(1), element: <Navigate to={ROUTES.home} replace /> },
       { path: ROUTES.exams.slice(1), element: <ExamsPage /> },
       { path: ROUTES.grading.slice(1), element: <GradingPage /> },
       { path: ROUTES.progress.slice(1), element: <ProgressPage /> },

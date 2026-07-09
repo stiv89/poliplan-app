@@ -1,7 +1,6 @@
 import { renderToString } from 'react-dom/server'
 import { createElement, type ReactElement } from 'react'
 import { LANDING_FAQ } from '@/components/public/FaqSection'
-import { PublicLayout } from '@/components/public/PublicLayout'
 import {
   PUBLIC_PAGE_SEO,
   PUBLIC_ROUTES,
@@ -15,6 +14,7 @@ import { ExamenesFpunaPage } from '@/pages/public/ExamenesFpunaPage'
 import { FuentesPage } from '@/pages/public/FuentesPage'
 import { HorariosFpunaPage } from '@/pages/public/HorariosFpunaPage'
 import { LandingPage } from '@/pages/public/LandingPage'
+import { PublicLayout } from '@/components/public/PublicLayout'
 import { buildDocumentHead } from '@/seo/documentHead'
 
 const PAGE_BY_PATH: Record<PublicSeoPath, () => ReactElement> = {
@@ -29,6 +29,9 @@ const PAGE_BY_PATH: Record<PublicSeoPath, () => ReactElement> = {
 
 export function renderPublicPageHtml(path: PublicSeoPath): string {
   const Page = PAGE_BY_PATH[path]
+  if (path === PUBLIC_ROUTES.presentacion) {
+    return renderToString(Page())
+  }
   return renderToString(createElement(PublicLayout, { children: Page() }))
 }
 
