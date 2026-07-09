@@ -1,9 +1,9 @@
 export const APP_NAME = 'PoliPlan'
 
 export const ROUTES = {
-  home: '/horario',
+  home: '/',
   sections: '/secciones',
-  schedule: '/horario',
+  schedule: '/',
   exams: '/examenes',
   grading: '/calculadora',
   progress: '/progreso',

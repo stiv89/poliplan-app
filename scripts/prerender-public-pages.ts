@@ -40,7 +40,7 @@ function generateSitemap(): void {
   const lastmod = new Date().toISOString().slice(0, 10)
   const urls = PUBLIC_SEO_PATHS.map((path) => {
     const loc = `${CANONICAL_ORIGIN}${path}`
-    const priority = path === '/' ? '1.0' : '0.8'
+    const priority = path === PUBLIC_ROUTES.presentacion ? '1.0' : '0.8'
     return `  <url>\n    <loc>${loc}</loc>\n    <lastmod>${lastmod}</lastmod>\n    <changefreq>weekly</changefreq>\n    <priority>${priority}</priority>\n  </url>`
   }).join('\n')
 

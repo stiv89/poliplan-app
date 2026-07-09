@@ -14,7 +14,7 @@ export const DONATE_URL =
   (import.meta.env.VITE_DONATE_URL as string | undefined)?.trim() || '#'
 
 export const PUBLIC_ROUTES = {
-  presentacion: '/',
+  presentacion: '/presentacion',
   horarios: '/horarios-fpuna',
   examenes: '/examenes-fpuna',
   calculadora: '/calculadora-notas-fpuna',
@@ -120,7 +120,7 @@ export const PUBLIC_SEO_PATHS = [
 
 /** Rutas de la app interactiva (noindex en SEO). */
 export const APP_NOINDEX_PATHS = [
-  '/horario',
+  '/',
   '/secciones',
   '/examenes',
   '/calculadora',

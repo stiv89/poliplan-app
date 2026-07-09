@@ -1,12 +1,12 @@
 {
   "redirects": [
-    { "source": "/presentacion", "destination": "/", "permanent": true },
-    { "source": "/app", "destination": "/horario", "permanent": true },
+    { "source": "/horario", "destination": "/", "permanent": true },
+    { "source": "/app", "destination": "/", "permanent": true },
     { "source": "/app/:path*", "destination": "/:path*", "permanent": true }
   ],
   "rewrites": [
     {
-      "source": "/((?!sitemap\\.xml|robots\\.txt|assets/|email/|data/|icons/|horarios-fpuna|examenes-fpuna|calculadora-notas-fpuna|como-funciona|fuentes|aviso-legal|.*\\..*).*)",
+      "source": "/((?!sitemap\\.xml|robots\\.txt|assets/|email/|data/|icons/|presentacion|horarios-fpuna|examenes-fpuna|calculadora-notas-fpuna|como-funciona|fuentes|aviso-legal|.*\\..*).*)",
       "destination": "/index.html"
     }
   ],

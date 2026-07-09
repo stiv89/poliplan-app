@@ -28,8 +28,22 @@ function LegacyAppRedirect() {
 }
 
 export const router = createBrowserRouter([
-  { path: PUBLIC_ROUTES.presentacion, element: <LandingPage /> },
-  { path: 'presentacion', element: <Navigate to={PUBLIC_ROUTES.presentacion} replace /> },
+  {
+    element: <ScheduleAppShell />,
+    children: [
+      { index: true, element: <HomePage /> },
+      { path: 'horario', element: <Navigate to={ROUTES.home} replace /> },
+      { path: ROUTES.sharedSchedule.slice(1), element: <SharedSchedulePage /> },
+      { path: ROUTES.sections.slice(1), element: <SectionsPage /> },
+      { path: ROUTES.exams.slice(1), element: <ExamsPage /> },
+      { path: ROUTES.grading.slice(1), element: <GradingPage /> },
+      { path: ROUTES.progress.slice(1), element: <ProgressPage /> },
+      { path: ROUTES.changes.slice(1), element: <ChangesPage /> },
+      { path: ROUTES.settings.slice(1), element: <SettingsPage /> },
+      { path: ROUTES.offline.slice(1), element: <OfflinePage /> },
+    ],
+  },
+  { path: PUBLIC_ROUTES.presentacion.slice(1), element: <LandingPage /> },
   {
     element: <PublicLayout />,
     children: [
@@ -39,20 +53,6 @@ export const router = createBrowserRouter([
       { path: PUBLIC_ROUTES.comoFunciona.slice(1), element: <ComoFuncionaPage /> },
       { path: PUBLIC_ROUTES.fuentes.slice(1), element: <FuentesPage /> },
       { path: PUBLIC_ROUTES.avisoLegal.slice(1), element: <AvisoLegalPage /> },
-    ],
-  },
-  {
-    element: <ScheduleAppShell />,
-    children: [
-      { path: ROUTES.home.slice(1), element: <HomePage /> },
-      { path: ROUTES.sharedSchedule.slice(1), element: <SharedSchedulePage /> },
-      { path: ROUTES.sections.slice(1), element: <SectionsPage /> },
-      { path: ROUTES.exams.slice(1), element: <ExamsPage /> },
-      { path: ROUTES.grading.slice(1), element: <GradingPage /> },
-      { path: ROUTES.progress.slice(1), element: <ProgressPage /> },
-      { path: ROUTES.changes.slice(1), element: <ChangesPage /> },
-      { path: ROUTES.settings.slice(1), element: <SettingsPage /> },
-      { path: ROUTES.offline.slice(1), element: <OfflinePage /> },
     ],
   },
   { path: 'app', element: <LegacyAppRedirect /> },
