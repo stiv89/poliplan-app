@@ -12,48 +12,24 @@ import {
   Clock,
   ChevronDown,
   Layers,
-  List,
-  type LucideIcon,
 } from 'lucide-react'
 import { TeacherNameButton } from '@/components/teachers/TeacherNameButton'
 import { CourseFootnoteCardNote } from '@/components/schedule/CourseFootnoteNotice'
-import { SectionExplorerFilterMenu } from '@/components/schedule/SectionExplorerFilterMenu'
 import { CompactCareerSelect } from '@/components/schedule/CompactCareerSelect'
 import { SectionListSkeleton } from '@/components/schedule/SectionListSkeleton'
-import { AnimatedPopover } from '@/components/ui/AnimatedPopover'
 import { useSupportsHover } from '@/components/schedule/useClassBlockPopover'
 import { resolveSectionShift } from '@/utils/sectionCode'
 import { getConflictsForSection } from '@/utils/conflicts'
 import { filterAndRankSections } from '@/utils/fuzzySearch'
 import { formatScheduleCompact, getCourseSemesterNumber, groupSectionsByCourse, type SectionCourseInfo } from '@/utils/sectionDisplay'
 import { resolveSectionElectiveName } from '@/utils/electiveCourses'
-import {
-  buildActiveExplorerFilterChips,
-  clearSectionExplorerFilters,
-  countSectionExplorerFilters,
-} from '@/utils/sectionExplorerFilters'
-import {
-  readExplorerBrowseMode,
-  writeExplorerBrowseMode,
-  type ExplorerBrowseMode,
-} from '@/utils/explorerBrowseMode'
 import { sectionMatchesViewFilters } from '@/utils/scheduleFilters'
-import type { AcademicPeriod, Career, CourseSection, ScheduleConflict } from '@/types/academic'
+import type { Career, CourseSection, ScheduleConflict } from '@/types/academic'
 import type { ScheduleViewFilters } from '@/types/scheduleFilters'
 
 const OTHER_SEMESTER_KEY = 0
 const HOVER_OPEN_DELAY_MS = 450
 const HOVER_CLOSE_DELAY_MS = 120
-
-const BROWSE_MODE_OPTIONS: {
-  id: ExplorerBrowseMode
-  label: string
-  compactLabel: string
-  Icon: LucideIcon
-}[] = [
-  { id: 'semester', label: 'Por semestre', compactLabel: 'Semestre', Icon: Layers },
-  { id: 'all', label: 'Todas las materias', compactLabel: 'Todas', Icon: List },
-]
 
 interface SectionSearchPanelProps {
   careers: Career[]
@@ -69,12 +45,7 @@ interface SectionSearchPanelProps {
   onPreviewSection?: (section: CourseSection | null) => void
   previewSectionId?: string | null
   viewFilters?: ScheduleViewFilters
-  academicPeriods?: AcademicPeriod[]
-  selectedPeriodId?: string | null
-  onPeriodChange?: (periodId: string) => void
-  onViewFiltersChange?: (filters: ScheduleViewFilters) => void
   catalogLoading?: boolean
-  selectedSectionIds?: string[]
   onCareerChange?: (careerId: string | null) => void
 }
 
@@ -92,32 +63,22 @@ export function SectionSearchPanel({
   onPreviewSection,
   previewSectionId = null,
   viewFilters,
-  academicPeriods = [],
-  selectedPeriodId = null,
-  onPeriodChange,
-  onViewFiltersChange,
   catalogLoading = false,
-  selectedSectionIds = [],
   onCareerChange,
 }: SectionSearchPanelProps) {
   const [search, setSearch] = useState(initialSearch)
-  const [shiftFilter, setShiftFilter] = useState<string | null>(null)
-  const [semesterFilter, setSemesterFilter] = useState<number | null>(null)
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => new Set())
   const [expandedSemesters, setExpandedSemesters] = useState<Set<number>>(() => new Set())
   const [hoveredGroupKey, setHoveredGroupKey] = useState<string | null>(null)
   const hoverOpenTimeoutRef = useRef<number | null>(null)
   const hoverCloseTimeoutRef = useRef<number | null>(null)
   const supportsHover = useSupportsHover()
-  const [browseMode, setBrowseMode] = useState<ExplorerBrowseMode>(() => readExplorerBrowseMode())
 
   useEffect(() => {
     setSearch(initialSearch)
   }, [initialSearch])
 
   useEffect(() => {
-    setShiftFilter(null)
-    setSemesterFilter(null)
     setExpandedSemesters(new Set())
   }, [selectedCareerId])
 
@@ -135,10 +96,6 @@ export function SectionSearchPanel({
   const hasCareer = Boolean(selectedCareerId)
   const hasSearch = search.trim().length > 0
   const isMobileSheet = Boolean(onClose)
-  const isSemesterMode = browseMode === 'semester'
-  /** Semester mode always groups (including search results) */
-  const showSemesterBlocks = isSemesterMode
-  const showFullList = browseMode === 'all'
 
   const searchMatches = useMemo(() => {
     if (!hasCareer) return []
@@ -146,27 +103,8 @@ export function SectionSearchPanel({
     return filterAndRankSections(allSections, search, coursesById)
   }, [allSections, coursesById, hasCareer, search])
 
-  const availableSemesters = useMemo(() => {
-    const semesters = new Set<number>()
-    for (const section of allSections) {
-      const course = coursesById.get(section.courseId)
-      const semester = course ? getCourseSemesterNumber(course) : null
-      if (semester) semesters.add(semester)
-    }
-    return [...semesters].sort((a, b) => a - b)
-  }, [allSections, coursesById])
-
   const filteredSections = useMemo(() => {
-    const results = (shiftFilter
-      ? searchMatches.filter((section) => resolveSectionShift(section) === shiftFilter)
-      : searchMatches
-    )
-      .filter((section) => {
-        if (semesterFilter == null) return true
-        const course = coursesById.get(section.courseId)
-        return course ? getCourseSemesterNumber(course) === semesterFilter : false
-      })
-      .filter((section) =>
+    const results = searchMatches.filter((section) =>
       viewFilters ? sectionMatchesViewFilters(section, viewFilters) : true,
     )
 
@@ -177,7 +115,7 @@ export function SectionSearchPanel({
       const bCourse = coursesById.get(b.courseId)?.name ?? ''
       return aCourse.localeCompare(bCourse) || a.sectionCode.localeCompare(b.sectionCode)
     })
-  }, [searchMatches, shiftFilter, semesterFilter, coursesById, viewFilters, hasSearch])
+  }, [searchMatches, viewFilters, coursesById, hasSearch])
 
   const courseGroups = useMemo(
     () => groupSectionsByCourse(filteredSections, coursesById, { preserveOrder: hasSearch }),
@@ -209,50 +147,13 @@ export function SectionSearchPanel({
       }))
   }, [courseGroups, isSectionSelected])
 
-  const browseContextKey = `${selectedCareerId ?? ''}:${browseMode}:${semesterFilter ?? 'all'}:${shiftFilter ?? 'all'}`
+  const browseContextKey = `${selectedCareerId ?? ''}:${semesterBlocks.length}`
 
   useEffect(() => {
-    if (hasSearch || showSemesterBlocks) {
-      setExpandedGroups(new Set())
-      return
-    }
-
-    const selectedIds = new Set(selectedSectionIds)
-    const next = new Set<string>()
-    for (const group of courseGroups) {
-      if (group.sections.some((section) => selectedIds.has(section.id))) {
-        next.add(group.groupKey)
-        if (isMobileSheet) break
-      }
-    }
-    setExpandedGroups(next)
-  }, [browseContextKey, hasSearch, showSemesterBlocks, isMobileSheet])
+    setExpandedGroups(new Set())
+  }, [browseContextKey, hasSearch])
 
   useEffect(() => {
-    if (hasSearch || isMobileSheet || showSemesterBlocks) return
-
-    setExpandedGroups((current) => {
-      const selectedIds = new Set(selectedSectionIds)
-      const next = new Set(current)
-      let changed = false
-
-      for (const group of courseGroups) {
-        if (
-          group.sections.some((section) => selectedIds.has(section.id)) &&
-          !next.has(group.groupKey)
-        ) {
-          next.add(group.groupKey)
-          changed = true
-        }
-      }
-
-      return changed ? next : current
-    })
-  }, [selectedSectionIds, hasSearch, isMobileSheet, showSemesterBlocks])
-
-  useEffect(() => {
-    if (!showSemesterBlocks) return
-
     setExpandedSemesters((current) => {
       if (hasSearch) {
         return new Set(semesterBlocks.map((block) => block.semester))
@@ -271,13 +172,13 @@ export function SectionSearchPanel({
       }
       return next
     })
-  }, [browseContextKey, showSemesterBlocks, isMobileSheet, semesterBlocks, hasSearch])
+  }, [browseContextKey, isMobileSheet, semesterBlocks, hasSearch])
 
   const toggleGroupExpanded = (groupKey: string) => {
     setHoveredGroupKey(null)
     setExpandedGroups((current) => {
       if (current.has(groupKey)) return new Set()
-      if (isMobileSheet || showSemesterBlocks) return new Set([groupKey])
+      if (isMobileSheet) return new Set([groupKey])
       const next = new Set(current)
       next.add(groupKey)
       return next
@@ -341,63 +242,11 @@ export function SectionSearchPanel({
     })
   }
 
-  function handleBrowseModeChange(mode: ExplorerBrowseMode) {
-    setBrowseMode(mode)
-    writeExplorerBrowseMode(mode)
-    setExpandedGroups(new Set())
-    if (mode === 'semester') {
-      setSemesterFilter(null)
-      setShiftFilter(null)
-      if (onViewFiltersChange && viewFilters) {
-        clearSectionExplorerFilters(setSemesterFilter, setShiftFilter, onViewFiltersChange)
-      }
-      setExpandedSemesters(new Set())
-    }
-  }
-
-  const activeFilterChips = useMemo(() => {
-    if (!onViewFiltersChange || !viewFilters) return []
-
-    return buildActiveExplorerFilterChips({
-      semesterFilter,
-      shiftFilter,
-      viewFilters,
-      onSemesterChange: setSemesterFilter,
-      onShiftChange: setShiftFilter,
-      onViewFiltersChange,
-    })
-  }, [onViewFiltersChange, semesterFilter, shiftFilter, viewFilters])
-
-  const activeFilterCount = useMemo(
-    () =>
-      viewFilters
-        ? countSectionExplorerFilters({ semesterFilter, shiftFilter, viewFilters })
-        : Number(semesterFilter != null) + Number(shiftFilter != null),
-    [semesterFilter, shiftFilter, viewFilters],
-  )
-
   const courseCountLabel = useMemo(() => {
     if (catalogLoading) return 'Cargando…'
     if (courseGroups.length === 0) return 'Sin resultados'
-    if (showSemesterBlocks) {
-      return `${semesterBlocks.length} semestre${semesterBlocks.length !== 1 ? 's' : ''} · ${courseGroups.length} materia${courseGroups.length !== 1 ? 's' : ''}`
-    }
-    return `${courseGroups.length} materia${courseGroups.length !== 1 ? 's' : ''}`
-  }, [
-    catalogLoading,
-    courseGroups.length,
-    showSemesterBlocks,
-    semesterBlocks.length,
-  ])
-
-  function handleClearFilters() {
-    if (onViewFiltersChange && viewFilters) {
-      clearSectionExplorerFilters(setSemesterFilter, setShiftFilter, onViewFiltersChange)
-      return
-    }
-    setSemesterFilter(null)
-    setShiftFilter(null)
-  }
+    return `${semesterBlocks.length} semestre${semesterBlocks.length !== 1 ? 's' : ''} · ${courseGroups.length} materia${courseGroups.length !== 1 ? 's' : ''}`
+  }, [catalogLoading, courseGroups.length, semesterBlocks.length])
 
   function renderCourseGroup(group: (typeof courseGroups)[number]) {
     const pinned = expandedGroups.has(group.groupKey)
@@ -412,7 +261,7 @@ export function SectionSearchPanel({
         collapsible
         listMode
         dense={!isMobileSheet}
-        hideSemesterMeta={showSemesterBlocks}
+        hideSemesterMeta
         onToggleExpanded={() => toggleGroupExpanded(group.groupKey)}
         onHoverStart={() => handleGroupHoverStart(group.groupKey)}
         onHoverEnd={() => handleGroupHoverEnd(group.groupKey)}
@@ -459,48 +308,18 @@ export function SectionSearchPanel({
 
               <div className="my-1.5 w-px shrink-0 bg-slate-200/80" aria-hidden="true" />
 
-              <BrowseModeMenu
-                value={browseMode}
-                onChange={handleBrowseModeChange}
-                compactLabel={isMobileSheet}
-              />
-            </div>
-
-            {showFullList && onViewFiltersChange && viewFilters && (
-              <SectionExplorerFilterMenu
-                periods={academicPeriods}
-                selectedPeriodId={selectedPeriodId}
-                onPeriodChange={(periodId) => onPeriodChange?.(periodId)}
-                viewFilters={viewFilters}
-                onViewFiltersChange={onViewFiltersChange}
-                semesterFilter={semesterFilter}
-                onSemesterFilterChange={setSemesterFilter}
-                availableSemesters={availableSemesters}
-                shiftFilter={shiftFilter}
-                onShiftFilterChange={setShiftFilter}
-                resultCount={filteredSections.length}
-                align="right"
-                presentation={isMobileSheet ? 'sheet' : 'popover'}
-              />
-            )}
-          </div>
-
-          {showFullList && activeFilterCount > 0 && (
-            <div className="mt-2 flex min-h-5 items-center gap-2">
-              <div className="-mx-1 flex min-w-0 flex-1 items-center gap-1 overflow-x-auto px-1 pb-0.5">
-                {activeFilterChips.map((chip) => (
-                  <ActiveFilterChip key={chip.id} label={chip.label} onRemove={chip.onRemove} />
-                ))}
+              <div className="relative flex shrink-0 basis-[30%] items-stretch">
+                <div className="flex w-full items-center px-2 sm:px-2.5">
+                  <span className="flex min-w-0 items-center gap-1.5">
+                    <Layers className="h-3.5 w-3.5 shrink-0 text-slate-500" aria-hidden="true" />
+                    <span className="min-w-0 truncate text-[11px] font-medium text-slate-700 sm:text-xs">
+                      Por semestre
+                    </span>
+                  </span>
+                </div>
               </div>
-              <button
-                type="button"
-                onClick={handleClearFilters}
-                className="shrink-0 text-[11px] text-slate-400 transition hover:text-slate-600"
-              >
-                Limpiar
-              </button>
             </div>
-          )}
+          </div>
 
           <p className="mt-1 text-[10px] leading-tight text-slate-400">{courseCountLabel}</p>
         </div>
@@ -530,7 +349,7 @@ export function SectionSearchPanel({
                   : 'No se encontraron resultados.'}
               </p>
             </div>
-          ) : showSemesterBlocks ? (
+          ) : (
             <div className={isMobileSheet ? 'space-y-2' : 'space-y-1.5'}>
               {semesterBlocks.map((block) => {
                 const expanded = expandedSemesters.has(block.semester)
@@ -553,119 +372,9 @@ export function SectionSearchPanel({
                 )
               })}
             </div>
-          ) : (
-            <>{courseGroups.map((group) => renderCourseGroup(group))}</>
           )}
         </div>
       )}
-    </div>
-  )
-}
-
-function BrowseModeMenu({
-  value,
-  onChange,
-  compactLabel = false,
-}: {
-  value: ExplorerBrowseMode
-  onChange: (mode: ExplorerBrowseMode) => void
-  compactLabel?: boolean
-}) {
-  const [open, setOpen] = useState(false)
-  const buttonRef = useRef<HTMLButtonElement>(null)
-  const popoverRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    if (!open) return
-
-    function onPointerDown(event: MouseEvent) {
-      const target = event.target as Node
-      if (buttonRef.current?.contains(target) || popoverRef.current?.contains(target)) {
-        return
-      }
-      setOpen(false)
-    }
-
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === 'Escape') setOpen(false)
-    }
-
-    document.addEventListener('mousedown', onPointerDown)
-    document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.removeEventListener('mousedown', onPointerDown)
-      document.removeEventListener('keydown', onKeyDown)
-    }
-  }, [open])
-
-  const activeOption =
-    BROWSE_MODE_OPTIONS.find((option) => option.id === value) ?? BROWSE_MODE_OPTIONS[0]!
-  const ActiveIcon = activeOption.Icon
-  const label = compactLabel ? activeOption.compactLabel : activeOption.label
-
-  return (
-    <div className="relative flex shrink-0 basis-[30%] items-stretch">
-      <button
-        ref={buttonRef}
-        type="button"
-        onClick={() => setOpen((current) => !current)}
-        aria-expanded={open}
-        aria-haspopup="listbox"
-        aria-label="Vista de materias"
-        className="flex w-full items-center justify-between gap-0.5 px-2 text-left transition hover:bg-slate-50/80 sm:px-2.5"
-      >
-        <span className="flex min-w-0 items-center gap-1.5">
-          <ActiveIcon className="h-3.5 w-3.5 shrink-0 text-slate-500" aria-hidden="true" />
-          <span className="min-w-0 truncate text-[11px] font-medium text-slate-700 sm:text-xs">
-            {label}
-          </span>
-        </span>
-        <ChevronDown
-          className={`h-3 w-3 shrink-0 text-slate-400 transition-transform ${open ? 'rotate-180' : ''}`}
-          aria-hidden="true"
-        />
-      </button>
-
-      <AnimatedPopover
-        open={open}
-        anchorRef={buttonRef}
-        popoverRef={popoverRef}
-        align="right"
-        offset={6}
-        className="w-[min(15rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-slate-200/90 bg-white py-1 shadow-lg"
-      >
-        <p className="px-3 pb-1 pt-2 text-[10px] font-medium uppercase tracking-wide text-slate-400">
-          Vista de materias
-        </p>
-        {BROWSE_MODE_OPTIONS.map((option) => {
-          const selected = value === option.id
-          const OptionIcon = option.Icon
-          return (
-            <button
-              key={option.id}
-              type="button"
-              role="option"
-              aria-selected={selected}
-              onClick={() => {
-                onChange(option.id)
-                setOpen(false)
-              }}
-              className={`flex w-full items-center gap-2.5 px-3 py-2 text-left text-sm transition hover:bg-slate-50 ${
-                selected ? 'bg-primary/[0.04] text-slate-900' : 'text-slate-600'
-              }`}
-            >
-              <OptionIcon
-                className={`h-4 w-4 shrink-0 ${selected ? 'text-primary' : 'text-slate-400'}`}
-                aria-hidden="true"
-              />
-              <span className="min-w-0 flex-1">{option.label}</span>
-              {selected && (
-                <Check className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-              )}
-            </button>
-          )
-        })}
-      </AnimatedPopover>
     </div>
   )
 }
@@ -836,22 +545,6 @@ function CareerRequiredPrompt({
         <p className="mt-4 text-xs text-muted">No hay carreras disponibles todavía.</p>
       )}
     </div>
-  )
-}
-
-function ActiveFilterChip({ label, onRemove }: { label: string; onRemove: () => void }) {
-  return (
-    <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full border border-slate-200/80 bg-white px-2 py-0.5 text-[10px] font-normal text-slate-500">
-      {label}
-      <button
-        type="button"
-        onClick={onRemove}
-        className="flex h-3.5 w-3.5 items-center justify-center rounded-full text-slate-400 transition hover:text-slate-600"
-        aria-label={`Quitar filtro ${label}`}
-      >
-        ×
-      </button>
-    </span>
   )
 }
 

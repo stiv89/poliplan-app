@@ -73,6 +73,7 @@ export interface ScheduleContextValue {
         | 'syncPromptDismissedAt'
         | 'notificationPromptDismissedAt'
         | 'scheduleTourCompletedAt'
+        | 'appWelcomeCompletedAt'
         | 'lastUserScheduleSyncAt'
         | 'remoteScheduleByLocalId'
       >
@@ -431,6 +432,7 @@ export function ScheduleProvider({ children }: ScheduleProviderProps) {
         | 'syncPromptDismissedAt'
         | 'notificationPromptDismissedAt'
         | 'scheduleTourCompletedAt'
+        | 'appWelcomeCompletedAt'
         | 'lastUserScheduleSyncAt'
         | 'remoteScheduleByLocalId'
       >

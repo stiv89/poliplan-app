@@ -17,7 +17,7 @@ export function AppShell() {
 
         {/* Área de trabajo: contenedor unificado sidebar + contenido */}
         <div className="flex min-h-0 flex-1 overflow-hidden bg-background md:px-4 md:py-3 lg:px-5 lg:py-4">
-          <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col overflow-hidden md:flex-row md:rounded-[24px] md:border md:border-slate-200/60 md:bg-white">
+          <div className="liquid-glass-surface mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col overflow-hidden md:flex-row md:rounded-[24px]">
             <SidebarNav />
 
             <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background pb-mobile-dock md:bg-transparent">

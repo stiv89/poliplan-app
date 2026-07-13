@@ -152,6 +152,38 @@ export async function submitTeacherReview(input: {
   return mapReview(data as Record<string, unknown>)
 }
 
+export async function submitPublicTeacherReview(input: {
+  teacherId: string
+  courseId?: string | null
+  academicPeriodId?: string | null
+  body: string
+  rating: number
+  clientToken: string
+}): Promise<TeacherReview> {
+  const client = getSupabaseClient()
+  if (!client) {
+    throw new Error('Supabase no está configurado')
+  }
+
+  const { data, error } = await client.rpc('submit_public_teacher_review', {
+    p_teacher_id: input.teacherId,
+    p_body: input.body.trim(),
+    p_rating: input.rating,
+    p_client_token: input.clientToken,
+    p_course_id: input.courseId ?? null,
+    p_academic_period_id: input.academicPeriodId ?? null,
+  })
+
+  if (error) throw error
+
+  const row = Array.isArray(data) ? data[0] : data
+  if (!row) {
+    throw new Error('No se pudo publicar la reseña.')
+  }
+
+  return mapReview(row as Record<string, unknown>)
+}
+
 export async function reportTeacherReview(input: {
   reviewId: string
   reporterId: string

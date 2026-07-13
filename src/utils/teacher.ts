@@ -80,6 +80,19 @@ export type ReviewDimensionId = (typeof REVIEW_DIMENSIONS)[number]['id']
 
 export type ReviewDimensionRatings = Record<ReviewDimensionId, number>
 
+/** Shown first in quick-review flows; the rest expand on demand. */
+export const PRIMARY_REVIEW_DIMENSION_IDS = [
+  'clarity',
+  'organization',
+  'evaluation',
+] as const satisfies readonly ReviewDimensionId[]
+
+export const SECONDARY_REVIEW_DIMENSION_IDS = [
+  'punctuality',
+  'workload',
+  'feedback',
+] as const satisfies readonly ReviewDimensionId[]
+
 export const REVIEW_SUMMARY_CHIPS = [
   'Claridad',
   'Puntualidad',

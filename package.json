@@ -17,6 +17,7 @@
     "typecheck": "tsc -p tsconfig.app.json --noEmit",
     "import:schedule": "tsx scripts/import-schedule/index.ts",
     "admin:verify": "tsx scripts/admin/verify-supabase.ts",
+    "admin:verify-auth-email": "tsx scripts/admin/verify-auth-email-hook.ts",
     "admin:fresh-start": "tsx scripts/admin/fresh-start.ts",
     "admin:fresh-start:dry": "tsx scripts/admin/fresh-start.ts --dry-run",
     "admin:verify-careers": "tsx scripts/admin/verify-careers.ts",

@@ -11,7 +11,7 @@
  *   - Detalle de clase → popover inline.
  *   - Conflictos → etiqueta + intervalo exacto.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Plus,
   Bell,
@@ -32,7 +32,6 @@ import { SectionSearchPanel } from '@/components/schedule/SectionSearchPanel'
 import { ShareScheduleDialog } from '@/components/schedule/ShareScheduleDialog'
 import { ScheduleContextBar } from '@/components/schedule/ScheduleContextBar'
 import { ScheduleContextSelector } from '@/components/schedule/ScheduleContextSelector'
-import { ScheduleOnboardingTour } from '@/components/onboarding/ScheduleOnboardingTour'
 import {
   ScheduleUndoToast,
   type SchedulePickerPanelProps,
@@ -76,8 +75,6 @@ export function HomePage() {
     isOnline,
     syncStatus,
     localSaveState,
-    startupMode,
-    updateAppSettings,
   } = useSchedule()
 
   const { user } = useAuth()
@@ -101,29 +98,6 @@ export function HomePage() {
     DEFAULT_SCHEDULE_VIEW_FILTERS,
   )
   const [academicPeriods, setAcademicPeriods] = useState<AcademicPeriod[]>([])
-  const [tourOpen, setTourOpen] = useState(false)
-  const tourTriggeredRef = useRef(false)
-
-  useEffect(() => {
-    if (
-      tourTriggeredRef.current ||
-      startupMode !== 'ready' ||
-      !settings ||
-      settings.scheduleTourCompletedAt ||
-      selectedSections.length === 0
-    ) {
-      return
-    }
-
-    tourTriggeredRef.current = true
-    const timeout = window.setTimeout(() => setTourOpen(true), 700)
-    return () => window.clearTimeout(timeout)
-  }, [settings, startupMode, selectedSections.length])
-
-  const finishTour = useCallback(() => {
-    setTourOpen(false)
-    void updateAppSettings({ scheduleTourCompletedAt: new Date().toISOString() })
-  }, [updateAppSettings])
 
   useEffect(() => {
     void scheduleRepository.getAcademicPeriods().then(setAcademicPeriods)
@@ -283,12 +257,7 @@ export function HomePage() {
     onPreviewSection: setPreviewSection,
     previewSectionId: previewSection?.id ?? null,
     viewFilters,
-    onViewFiltersChange: setViewFilters,
-    academicPeriods,
-    selectedPeriodId: activePeriod?.id ?? settings?.selectedAcademicPeriodId ?? null,
-    onPeriodChange: (periodId: string) => void setSelectedPeriod(periodId),
     catalogLoading,
-    selectedSectionIds: selectedSections.map((section) => section.id),
     onCareerChange: (careerId: string | null) => void setSelectedCareer(careerId),
   }
 
@@ -490,8 +459,6 @@ export function HomePage() {
           onDismiss={dismissPendingDelete}
         />
       )}
-
-      <ScheduleOnboardingTour open={tourOpen} onComplete={finishTour} onDismiss={finishTour} />
 
       <ShareScheduleDialog
         open={Boolean(shareDialogUrl)}

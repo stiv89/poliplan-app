@@ -1,13 +1,24 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { getSupabaseClient } from '@/lib/supabase'
 import type { AuthUser } from '@/features/settings/auth.types'
+import { formatAuthError, getAuthErrorCode } from '@/utils/authErrors'
+
+interface SignUpResult {
+  error: string | null
+  needsVerification: boolean
+}
 
 interface AuthContextValue {
   user: AuthUser | null
   loading: boolean
   isConfigured: boolean
-  signInWithEmail: (email: string) => Promise<{ error: string | null }>
-  signInWithGoogle: () => Promise<{ error: string | null }>
+  signInWithPassword: (
+    email: string,
+    password: string,
+  ) => Promise<{ error: string | null; needsEmailVerification: boolean }>
+  signUp: (input: { email: string; password: string; name: string }) => Promise<SignUpResult>
+  verifySignupOtp: (email: string, token: string) => Promise<{ error: string | null }>
+  resendSignupOtp: (email: string) => Promise<{ error: string | null }>
   signOut: () => Promise<void>
 }
 
@@ -16,6 +27,21 @@ const AuthContext = createContext<AuthContextValue | null>(null)
 function mapUser(user: { id: string; email?: string | null } | null): AuthUser | null {
   if (!user) return null
   return { id: user.id, email: user.email ?? null }
+}
+
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase()
+}
+
+function validateEmail(email: string): string | null {
+  const trimmed = normalizeEmail(email)
+  if (!trimmed.includes('@')) return 'Ingresá un correo válido.'
+  return null
+}
+
+function validatePassword(password: string): string | null {
+  if (password.length < 6) return 'La contraseña debe tener al menos 6 caracteres.'
+  return null
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -55,38 +81,114 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       loading,
       isConfigured,
-      signInWithEmail: async (email: string) => {
+      signInWithPassword: async (email: string, password: string) => {
         if (!client) {
-          return { error: 'Supabase no está configurado.' }
+          return { error: 'Supabase no está configurado.', needsEmailVerification: false }
         }
 
-        const trimmed = email.trim().toLowerCase()
-        if (!trimmed.includes('@')) {
-          return { error: 'Ingresá un correo válido.' }
+        const emailError = validateEmail(email)
+        if (emailError) return { error: emailError, needsEmailVerification: false }
+
+        const passwordError = validatePassword(password)
+        if (passwordError) return { error: passwordError, needsEmailVerification: false }
+
+        const { error } = await client.auth.signInWithPassword({
+          email: normalizeEmail(email),
+          password,
+        })
+
+        if (!error) {
+          return { error: null, needsEmailVerification: false }
         }
 
-        const { error } = await client.auth.signInWithOtp({
-          email: trimmed,
+        const needsEmailVerification = getAuthErrorCode(error) === 'email_not_confirmed'
+        return {
+          error: formatAuthError(error),
+          needsEmailVerification,
+        }
+      },
+      signUp: async ({ email, password, name }) => {
+        if (!client) {
+          return { error: 'Supabase no está configurado.', needsVerification: false }
+        }
+
+        const emailError = validateEmail(email)
+        if (emailError) return { error: emailError, needsVerification: false }
+
+        const passwordError = validatePassword(password)
+        if (passwordError) return { error: passwordError, needsVerification: false }
+
+        const trimmedName = name.trim()
+        if (!trimmedName) {
+          return { error: 'Ingresá tu nombre.', needsVerification: false }
+        }
+
+        const normalizedEmail = normalizeEmail(email)
+        const { data, error } = await client.auth.signUp({
+          email: normalizedEmail,
+          password,
           options: {
+            data: { display_name: trimmedName },
             emailRedirectTo: `${window.location.origin}/`,
           },
         })
 
-        return { error: error?.message ?? null }
+        if (error) {
+          return { error: formatAuthError(error), needsVerification: false }
+        }
+
+        if (data.user?.identities?.length === 0) {
+          return {
+            error: 'Ya existe una cuenta con este correo. Iniciá sesión.',
+            needsVerification: false,
+          }
+        }
+
+        const needsVerification = !data.session && Boolean(data.user)
+        return { error: null, needsVerification }
       },
-      signInWithGoogle: async () => {
+      verifySignupOtp: async (email: string, token: string) => {
         if (!client) {
           return { error: 'Supabase no está configurado.' }
         }
 
-        const { error } = await client.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: `${window.location.origin}/configuracion`,
-          },
+        const emailError = validateEmail(email)
+        if (emailError) return { error: emailError }
+
+        const code = token.trim()
+        if (!/^\d{6}$/.test(code)) {
+          return { error: 'Ingresá el código de 6 dígitos.' }
+        }
+
+        const normalizedEmail = normalizeEmail(email)
+        let lastError = 'No se pudo verificar el código.'
+
+        for (const type of ['signup', 'email'] as const) {
+          const { error } = await client.auth.verifyOtp({
+            email: normalizedEmail,
+            token: code,
+            type,
+          })
+          if (!error) return { error: null }
+          lastError = formatAuthError(error)
+        }
+
+        return { error: lastError }
+      },
+      resendSignupOtp: async (email: string) => {
+        if (!client) {
+          return { error: 'Supabase no está configurado.' }
+        }
+
+        const emailError = validateEmail(email)
+        if (emailError) return { error: emailError }
+
+        const { error } = await client.auth.resend({
+          type: 'signup',
+          email: normalizeEmail(email),
         })
 
-        return { error: error?.message ?? null }
+        return { error: error ? formatAuthError(error) : null }
       },
       signOut: async () => {
         if (!client) return

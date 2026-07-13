@@ -30,6 +30,10 @@ function jsonResponse(body: Record<string, unknown>, status = 200): Response {
   })
 }
 
+function normalizeHookSecret(raw: string): string {
+  return raw.trim().replace(/^v1,whsec_/, '')
+}
+
 function resolveAuthEmail(payload: AuthEmailHookPayload): {
   subject: string
   html: string
@@ -39,7 +43,7 @@ function resolveAuthEmail(payload: AuthEmailHookPayload): {
   const redirectTo = payload.email_data.redirect_to ?? Deno.env.get('APP_URL') ?? 'https://poliplan.app'
   const isNewUser = isLikelyNewUser(payload.user.created_at)
 
-  if (payload.email_data.token && !payload.email_data.token_hash) {
+  if (payload.email_data.token) {
     return {
       subject: isNewUser ? 'Bienvenido a PoliPlan' : 'Tu código de acceso — PoliPlan',
       html: renderOtpEmail({ code: payload.email_data.token, isNewUser }),
@@ -66,6 +70,8 @@ function resolveAuthEmail(payload: AuthEmailHookPayload): {
         html: renderEmailChangeEmail(verifyUrl),
       }
     case 'signup':
+    case 'confirmation':
+    case 'email_confirmation':
     case 'invite':
     case 'magiclink':
     default:
@@ -81,20 +87,24 @@ Deno.serve(async (request) => {
     return jsonResponse({ error: 'Method not allowed' }, 405)
   }
 
-  const hookSecret = Deno.env.get('SEND_EMAIL_HOOK_SECRET') ?? Deno.env.get('AUTH_HOOK_SECRET')
+  const hookSecretRaw = Deno.env.get('SEND_EMAIL_HOOK_SECRET') ?? Deno.env.get('AUTH_HOOK_SECRET')
   const rawBody = await request.text()
 
   let payload: AuthEmailHookPayload
   try {
-    if (hookSecret) {
-      const webhook = new Webhook(hookSecret)
+    if (hookSecretRaw) {
+      const webhook = new Webhook(normalizeHookSecret(hookSecretRaw))
       payload = webhook.verify(rawBody, Object.fromEntries(request.headers)) as AuthEmailHookPayload
     } else {
       payload = JSON.parse(rawBody) as AuthEmailHookPayload
     }
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Invalid payload'
-    return jsonResponse({ error: message }, 401)
+    const message =
+      error instanceof Error
+        ? error.message
+        : 'Invalid Send Email hook payload or signature'
+    console.error('auth-send-email verify', message)
+    return jsonResponse({ error: { http_code: 401, message } }, 401)
   }
 
   const email = payload.user.email?.trim().toLowerCase()

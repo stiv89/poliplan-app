@@ -5,7 +5,7 @@ export interface AuthUser {
 
 export interface AuthRepository {
   getCurrentUser(): Promise<AuthUser | null>
-  signInWithEmail(email: string): Promise<void>
+  signInWithPassword(email: string, password: string): Promise<void>
   signOut(): Promise<void>
 }
 

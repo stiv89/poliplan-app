@@ -1,0 +1,1113 @@
+[
+  {
+    "name": "Abog. Ruiz Díaz Centurión William Iván",
+    "email": "wruizdiaz@pol.una.py",
+    "courses": [
+      "Optativa 1 - Administración Gubernamental",
+      "Optativa 2 - Administración Gubernamental",
+      "Optativa 3 - Administración Gubernamental"
+    ]
+  },
+  {
+    "name": "C.P. Funes Rivera Nilsa Lorena",
+    "email": "nfunes@pol.una.py",
+    "courses": [
+      "Inglés"
+    ]
+  },
+  {
+    "name": "C.P. Ríos Argaña Leidy Jessica",
+    "email": "ljrios@pol.una.py",
+    "courses": [
+      "Contabilidad"
+    ]
+  },
+  {
+    "name": "C.P. Romero Bernal Juan Manuel",
+    "email": null,
+    "courses": [
+      "Contabilidad"
+    ]
+  },
+  {
+    "name": "Dr. Benítez Penayo Édgar Rubén",
+    "email": "erbenitez@pol.una.py",
+    "courses": [
+      "Métodos Numéricos"
+    ]
+  },
+  {
+    "name": "Dr. Cabrera Oviedo César Darío",
+    "email": "ccabrera@pol.una.py",
+    "courses": [
+      "Cálculo II"
+    ]
+  },
+  {
+    "name": "Dr. Cappo Araújo Cristian Ramón",
+    "email": "ccappo@pol.una.py",
+    "courses": [
+      "Algoritmos y Estructuras de Datos III"
+    ]
+  },
+  {
+    "name": "Dr. Dávalos Giménez Enrique Javier",
+    "email": "edavalos@pol.una.py",
+    "courses": [
+      "Electiva 1 - Desempeño y Seguridad de las Redes",
+      "Electiva 2 - Desempeño y Seguridad de las Redes",
+      "Electiva 3 - Desempeño y Seguridad de las Redes",
+      "Electiva 4 - Desempeño y Seguridad de las Redes",
+      "Electiva 5 - Desempeño y Seguridad de las Redes",
+      "Electiva 5- Desempeño y Seguridad de las Redes",
+      "Electiva 6 - Desempeño y Seguridad de las Redes",
+      "Electiva 7 - Desempeño y Seguridad de las Redes",
+      "Redes de Computadoras I",
+      "Redes de Computadoras II"
+    ]
+  },
+  {
+    "name": "Dr. González Ayala Vicente Arnaldo",
+    "email": "vagonzalez@pol.una.py",
+    "courses": [
+      "Organización y Arquitectura de Computadoras II"
+    ]
+  },
+  {
+    "name": "Dr. Jara Céspedes Adolfo Javier",
+    "email": null,
+    "courses": [
+      "Organización y Arquitectura de Computadoras I"
+    ]
+  },
+  {
+    "name": "Dr. López Pezoa Édgar",
+    "email": "elopez@pol.una.py",
+    "courses": [
+      "Cálculo III",
+      "Matemática Discreta"
+    ]
+  },
+  {
+    "name": "Dr. Méndez Gaona Fernando José",
+    "email": "fmendez@pol.una.py",
+    "courses": [
+      "Física 2"
+    ]
+  },
+  {
+    "name": "Dr. Núñez Castillo Carlos Heriberto",
+    "email": "cnunez@pol.una.py",
+    "courses": [
+      "Bases de Datos I"
+    ]
+  },
+  {
+    "name": "Dr. Pinto Roa Diego Pedro",
+    "email": "dpinto@pol.una.py",
+    "courses": [
+      "Electiva 1 - Machine Learning",
+      "Electiva 2 - Machine Learning",
+      "Electiva 3 - Machine Learning",
+      "Electiva 4 - Machine Learning",
+      "Electiva 5 - Machine Learning",
+      "Electiva 6 - Machine Learning",
+      "Electiva 7 - Machine Learning",
+      "Lenguajes de Programación I"
+    ]
+  },
+  {
+    "name": "Dr. Sosa Cabrera Gustavo Daniel",
+    "email": "gdsosa@pol.una.py",
+    "courses": [
+      "Electiva 1 - Data Mining",
+      "Electiva 1 - Datamining",
+      "Electiva 2 - Data Mining",
+      "Electiva 2 - Datamining",
+      "Electiva 3 - Data Mining",
+      "Electiva 3 - Datamining",
+      "Electiva 4 - Data Mining",
+      "Electiva 4 - Datamining",
+      "Electiva 5 - Data Mining",
+      "Electiva 5 - Datamining",
+      "Electiva 6 - Data Mining",
+      "Electiva 6 - Datamining",
+      "Electiva 7 - Data Mining",
+      "Electiva 7 - Datamining"
+    ]
+  },
+  {
+    "name": "Dr. Vázquez Noguera José Luis",
+    "email": "jlvazquez@pol.una.py",
+    "courses": [
+      "Electiva 1 - Procesamiento Digital de Imágenes",
+      "Electiva 2 - Procesamiento Digital de Imágenes",
+      "Electiva 3 - Procesamiento Digital de Imágenes",
+      "Electiva 4 - Procesamiento Digital de Imágenes",
+      "Electiva 5 - Procesamiento Digital de Imágenes",
+      "Electiva 6 - Procesamiento Digital de Imágenes",
+      "Electiva 7 - Procesamiento Digital de Imágenes"
+    ]
+  },
+  {
+    "name": "Dr. Villagra Riquelme Marcos Daniel",
+    "email": null,
+    "courses": [
+      "Electiva 1 - Blockchain",
+      "Electiva 2 - Blockchain",
+      "Electiva 3 - Blockchain",
+      "Electiva 4 - Blockchain",
+      "Electiva 5 - Blockchain",
+      "Electiva 6 - Blockchain",
+      "Electiva 7 - Blockchain"
+    ]
+  },
+  {
+    "name": "Dr. Von Lücken Martínez Christian Daniel",
+    "email": "clucken@pol.una.py",
+    "courses": [
+      "Electiva 1 - Inteligencia Artificial",
+      "Electiva 2 - Inteligencia Artificial",
+      "Electiva 3 - Inteligencia Artificial",
+      "Electiva 4 - Inteligencia Artificial",
+      "Electiva 5 - Inteligencia Artificial",
+      "Electiva 6 - Inteligencia Artificial",
+      "Electiva 7 - Inteligencia Artificial",
+      "Estructura de los Lenguajes"
+    ]
+  },
+  {
+    "name": "Dra. Coronel de López Luciana Dalila",
+    "email": "dalicor@pol.una.py",
+    "courses": [
+      "Optativa 1 - Metodología de la Investigación",
+      "Optativa 2 - Metodología de la Investigación",
+      "Optativa 3 - Metodología de la Investigación"
+    ]
+  },
+  {
+    "name": "Dra. Ruiz Olazar Margarita Ramona",
+    "email": "mrruiz@pol.una.py",
+    "courses": [
+      "Electiva 1 - Data Science",
+      "Electiva 2 - Data Science",
+      "Electiva 3 - Data Science",
+      "Electiva 4 - Data Science",
+      "Electiva 5 - Data Science",
+      "Electiva 6 - Data Science",
+      "Electiva 7 - Data Science"
+    ]
+  },
+  {
+    "name": "Dra. Sena Correa Emilce Noemi",
+    "email": "esena@pol.una.py",
+    "courses": [
+      "Optativa 1 - Metodología de la Investigación",
+      "Optativa 2 - Metodología de la Investigación",
+      "Optativa 3 - Metodología de la Investigación"
+    ]
+  },
+  {
+    "name": "Econ. Fernández Caje Jerson",
+    "email": "jfernandez@pol.una.py",
+    "courses": [
+      "Economía y Finanzas",
+      "Técnicas de Organización y Métodos"
+    ]
+  },
+  {
+    "name": "Econ. Zárate Cabrera Darío Isabelino",
+    "email": null,
+    "courses": [
+      "Economía y Finanzas"
+    ]
+  },
+  {
+    "name": "Ing. Aceval Sosa Cristian Rodrigo",
+    "email": null,
+    "courses": [
+      "Algoritmos y Estructuras de Datos I"
+    ]
+  },
+  {
+    "name": "Ing. Aranda Zemán Sergio Andrés",
+    "email": "saranda@pol.una.py",
+    "courses": [
+      "Diseño de Compiladores"
+    ]
+  },
+  {
+    "name": "Ing. Árevalos Flor Sara María",
+    "email": null,
+    "courses": [
+      "Electiva 1 - Testing de software",
+      "Electiva 2 - Testing de software",
+      "Electiva 3 - Testing de software",
+      "Electiva 4 - Testing de software",
+      "Electiva 5 - Testing de software",
+      "Electiva 6 - Testing de software",
+      "Electiva 7 - Testing de software"
+    ]
+  },
+  {
+    "name": "Ing. Colbes Sanabria José Domingo",
+    "email": null,
+    "courses": [
+      "Algoritmos y Estructuras de Datos II"
+    ]
+  },
+  {
+    "name": "Ing. Da Silva Adilson Renato",
+    "email": null,
+    "courses": [
+      "Fundamentos de Matemática"
+    ]
+  },
+  {
+    "name": "Ing. Dr. Ruiz Olazar Mendez Gaona Maria Raquel Fernando José",
+    "email": "mruiz@pol.una.py",
+    "courses": [
+      "Física 1",
+      "Física 4"
+    ]
+  },
+  {
+    "name": "Ing. Fernández Ferreira César Ignacio",
+    "email": "cfernandez@pol.una.py",
+    "courses": [
+      "Organización y Arquitectura de Computadoras II"
+    ]
+  },
+  {
+    "name": "Ing. Filippi Sanabria Carlos Luis",
+    "email": "carlippi@pol.una.py",
+    "courses": [
+      "Algoritmos y Estructuras de Datos I",
+      "Algoritmos y Estructuras de Datos II"
+    ]
+  },
+  {
+    "name": "Ing. Franco Lugo María José",
+    "email": null,
+    "courses": [
+      "Sistemas Distribuidos"
+    ]
+  },
+  {
+    "name": "Ing. Jimenez Riveros Rchard Daniel",
+    "email": null,
+    "courses": [
+      "Electiva 1 - Big Data",
+      "Electiva 2 - Big Data",
+      "Electiva 3 - Big Data",
+      "Electiva 4 - Big Data",
+      "Electiva 5 - Big Data",
+      "Electiva 6 - Big Data",
+      "Electiva 7 - Big Data"
+    ]
+  },
+  {
+    "name": "Ing. Leguizamón Correa Deysi Natalia",
+    "email": "dleguizamon@pol.una.py",
+    "courses": [
+      "Electiva 1 - Gestión de Proyectos",
+      "Electiva 2 - Gestión de Proyectos",
+      "Electiva 3 - Gestión de Proyectos",
+      "Electiva 4 - Gestión de Proyectos",
+      "Electiva 5 - Gestión de Proyectos",
+      "Electiva 6 - Gestión de Proyectos",
+      "Electiva 7 - Gestión de Proyectos"
+    ]
+  },
+  {
+    "name": "Ing. Lima Molinari Joaquín Quinto",
+    "email": "joaquin.lima@pol.una.py",
+    "courses": [
+      "Bases de Datos II",
+      "Lenguajes de Programación II",
+      "Lenguajes de Programación III"
+    ]
+  },
+  {
+    "name": "Ing. Mancía Zelaya Fernando Manuel",
+    "email": "fmancia@pol.una.py",
+    "courses": [
+      "Lógica para Ciencias de la Computación",
+      "Sistemas Distribuidos"
+    ]
+  },
+  {
+    "name": "Ing. Moré Rodríguez Luis Guillermo",
+    "email": "lmoré@pol.una.py",
+    "courses": [
+      "Algoritmos y Estructuras de Datos III"
+    ]
+  },
+  {
+    "name": "Ing. Moré Rodríguez Luis Guillermo",
+    "email": "lmore@pol.una.py",
+    "courses": [
+      "Algoritmos y Estructuras de Datos III"
+    ]
+  },
+  {
+    "name": "Ing. Paciello Coronel Julio Manuel",
+    "email": "julio.paciello@pol.una.py",
+    "courses": [
+      "Electiva 1 - Inteligencia Artificial",
+      "Electiva 2 - Inteligencia Artificial",
+      "Electiva 3 - Inteligencia Artificial",
+      "Electiva 4 - Inteligencia Artificial",
+      "Electiva 5 - Inteligencia Artificial",
+      "Electiva 6 - Inteligencia Artificial",
+      "Electiva 7 - Inteligencia Artificial"
+    ]
+  },
+  {
+    "name": "Ing. Pereyra Molinas Nicolás",
+    "email": "npereyra@pol.una.py",
+    "courses": [
+      "Electiva 1 - Ciberseguridad",
+      "Electiva 1 - Tecnología Emergente en Telecomunicaciones y Redes",
+      "Electiva 2 - Ciberseguridad",
+      "Electiva 2 - Tecnología Emergente en Telecomunicaciones y Redes",
+      "Electiva 3 - Ciberseguridad",
+      "Electiva 3 - Tecnología Emergente en Telecomunicaciones y Redes",
+      "Electiva 4 - Ciberseguridad",
+      "Electiva 4 - Tecnología Emergente en Telecomunicaciones y Redes",
+      "Electiva 5 - Ciberseguridad",
+      "Electiva 5 - Tecnología Emergente en Telecomunicaciones y Redes",
+      "Electiva 6 - Ciberseguridad",
+      "Electiva 6 - Tecnología Emergente en Telecomunicaciones y Redes",
+      "Electiva 7 - Ciberseguridad",
+      "Electiva 7 - Tecnología Emergente en Telecomunicaciones y Redes",
+      "Electiva 7- Tecnología Emergente en Telecomunicaciones y Redes"
+    ]
+  },
+  {
+    "name": "Ing. Riveros Rojas Gerardo Jesús",
+    "email": "griveros@pol.una.py",
+    "courses": [
+      "Gestión de Centro de Cómputos",
+      "Redes de Computadoras I"
+    ]
+  },
+  {
+    "name": "Ing. Ruiz Jara Alexis Miguel",
+    "email": null,
+    "courses": [
+      "Investigación de Operaciones I"
+    ]
+  },
+  {
+    "name": "Ing. Sosa Cataldo Gustavo Arsenio",
+    "email": "sosacataldo@pol.una.py",
+    "courses": [
+      "Electiva 1 - Programación Web Back-End",
+      "Electiva 1 - Programación Web Front-End",
+      "Electiva 2 - Programación Web Back-End",
+      "Electiva 2 - Programación Web Front-End",
+      "Electiva 3 - Programación Web Back-End",
+      "Electiva 3 - Programación Web Front-End",
+      "Electiva 4 - Programación Web Back-End",
+      "Electiva 4 - Programación Web Front-End",
+      "Electiva 5 - Programación Web Back-End",
+      "Electiva 5 - Programación Web Front-End",
+      "Electiva 6 - Programación Web Back-End",
+      "Electiva 6 - Programación Web Front-End",
+      "Electiva 7 - Programación Web Back-End",
+      "Electiva 7 - Programación Web Front-End",
+      "Lenguajes de Programación II",
+      "Lenguajes de Programación III"
+    ]
+  },
+  {
+    "name": "Ing. Talavera Maldonado Julia Ysabel",
+    "email": null,
+    "courses": [
+      "Ingeniería de Software I"
+    ]
+  },
+  {
+    "name": "Lic. Acosta López Cynthia Raquel",
+    "email": null,
+    "courses": [
+      "Fundamentos de Matemática"
+    ]
+  },
+  {
+    "name": "Lic. Álvarez Ojeda Rodi Ramón",
+    "email": null,
+    "courses": [
+      "Física 1",
+      "Física 4"
+    ]
+  },
+  {
+    "name": "Lic. Baruja Recalde Lourdes Ramona",
+    "email": null,
+    "courses": [
+      "Optativa 1 - Ecología y Desarrollo Sustentable",
+      "Optativa 2 - Ecología y Desarrollo Sustentable",
+      "Optativa 3 - Ecología y Desarrollo Sustentable"
+    ]
+  },
+  {
+    "name": "Lic. Benítez Duarte Antonia Felicia",
+    "email": "afbenitez@pol.una.py",
+    "courses": [
+      "Emprendedorismo"
+    ]
+  },
+  {
+    "name": "Lic. Benitez Sánchez Rolando Eusebio",
+    "email": "rolando.benitez@pol.una.py",
+    "courses": [
+      "Expresión Oral y Escrita"
+    ]
+  },
+  {
+    "name": "Lic. Cabrera Herebia Osmar Augusto",
+    "email": "acabrera@pol.una.py",
+    "courses": [
+      "Lenguajes de Programación I"
+    ]
+  },
+  {
+    "name": "Lic. Cáceres de Flores Sady María del Carmen",
+    "email": "scaceres@pol.una.py",
+    "courses": [
+      "Emprendedorismo"
+    ]
+  },
+  {
+    "name": "Lic. Calonga Vera Jorgelina",
+    "email": "jcalonga@pol.una.py",
+    "courses": [
+      "Expresión Oral y Escrita"
+    ]
+  },
+  {
+    "name": "Lic. Céspedes Zarza Carlos Daniel",
+    "email": "cdcespedes@pol.una.py",
+    "courses": [
+      "Emprendedorismo"
+    ]
+  },
+  {
+    "name": "Lic. Chamorro Hermosa Silvia Verónica",
+    "email": "schamorro@pol.una.py",
+    "courses": [
+      "Cálculo I",
+      "Cálculo II"
+    ]
+  },
+  {
+    "name": "Lic. Correa Paredes Jessica Andrea",
+    "email": null,
+    "courses": [
+      "Cálculo I",
+      "Cálculo II"
+    ]
+  },
+  {
+    "name": "LIc. Cristaldo Garcete Jorge Ramón",
+    "email": null,
+    "courses": [
+      "Cálculo I"
+    ]
+  },
+  {
+    "name": "Lic. Demattei Ortiz Zulma Lucía",
+    "email": "zdematei@pol.una.py",
+    "courses": [
+      "Técnicas de Organización y Métodos"
+    ]
+  },
+  {
+    "name": "Lic. Demattei Ortiz Zulma Lucía",
+    "email": "zdemattei@pol.una.py",
+    "courses": [
+      "Técnicas de Organización y Métodos"
+    ]
+  },
+  {
+    "name": "Lic. Fatecha Roa Juan",
+    "email": "jfatecha@pol.una.py",
+    "courses": [
+      "Física 2"
+    ]
+  },
+  {
+    "name": "Lic. Ferreira Vázquez Cinthia Noemí",
+    "email": "cferreira@pol.una.py",
+    "courses": [
+      "Cálculo I",
+      "Fundamentos de Matemática"
+    ]
+  },
+  {
+    "name": "Lic. Flores Acosta Pamela Raquel",
+    "email": null,
+    "courses": [
+      "Cálculo II"
+    ]
+  },
+  {
+    "name": "Lic. Franco Caballero Cynthia Soledad",
+    "email": "cfranco@pol.una.py",
+    "courses": [
+      "Algebra Lineal",
+      "Matemática Discreta"
+    ]
+  },
+  {
+    "name": "Lic. Franco Torres Rodney Fabian",
+    "email": null,
+    "courses": [
+      "Física 3"
+    ]
+  },
+  {
+    "name": "Lic. Giménez Cantero José Enrique",
+    "email": "jegimenez@pol.una.py",
+    "courses": [
+      "Fundamentos de Matemática"
+    ]
+  },
+  {
+    "name": "Lic. González Carlos Daniel",
+    "email": "cdgonzalez@pol.una.py",
+    "courses": [
+      "Física 3"
+    ]
+  },
+  {
+    "name": "Lic. Gónzalez de la Gracia Rodrigo Antonio",
+    "email": null,
+    "courses": [
+      "Cálculo II"
+    ]
+  },
+  {
+    "name": "Lic. Hermosilla Mechetti Víctor Eduardo",
+    "email": "vhermosilla@pol.una.py",
+    "courses": [
+      "Algoritmos y Estructuras de Datos I"
+    ]
+  },
+  {
+    "name": "Lic. Ibáñez de Mongelós González Martinez Ramona Lucía Juana Ubaidina",
+    "email": "ramiba@pol.una.py",
+    "courses": [
+      "Inglés"
+    ]
+  },
+  {
+    "name": "Lic. Ibarra Gauto Marcos Miguel",
+    "email": null,
+    "courses": [
+      "Matemática Discreta"
+    ]
+  },
+  {
+    "name": "Lic. Jara Ávalos Jorge Antonio",
+    "email": "jorgejara@pol.una.py",
+    "courses": [
+      "Física 4"
+    ]
+  },
+  {
+    "name": "Lic. Meaurio de Neufeld Ruth Trinidad",
+    "email": "rmeaurio@pol.una.py",
+    "courses": [
+      "Física 2",
+      "Física 4"
+    ]
+  },
+  {
+    "name": "Lic. Mercado Benitez Sergio Orlando",
+    "email": null,
+    "courses": [
+      "Matemática Aplicada"
+    ]
+  },
+  {
+    "name": "Lic. Morales Espínola Evelio Elcidio",
+    "email": "evelio.morales@pol.una.py",
+    "courses": [
+      "Física 1"
+    ]
+  },
+  {
+    "name": "Lic. Ojeda Sosa Luis Serafín",
+    "email": "lojeda@pol.una.py",
+    "courses": [
+      "Probabilidades y Estadística"
+    ]
+  },
+  {
+    "name": "Lic. Páez de Arrieta Gladys Numidia",
+    "email": null,
+    "courses": [
+      "Probabilidades y Estadística"
+    ]
+  },
+  {
+    "name": "Lic. Páez Rejala Gladys Numidia",
+    "email": "gpaez@pol.una.py",
+    "courses": [
+      "Probabilidades y Estadística"
+    ]
+  },
+  {
+    "name": "Lic. Rejala Torres Ysacio Amadeo",
+    "email": "yrejala@pol.una.py",
+    "courses": [
+      "Organización y Arquitectura de Computadoras II"
+    ]
+  },
+  {
+    "name": "Lic. Riveros Báez Julio Ramón",
+    "email": "jrriveros@pol.una.py",
+    "courses": [
+      "Contabilidad"
+    ]
+  },
+  {
+    "name": "Lic. Riveros Valdez Lilian Mercedes Raquel Rocío",
+    "email": "lilian.riveros@pol.una.py",
+    "courses": [
+      "Electiva 1 - Interacción Humano - Computador",
+      "Electiva 2 - Interacción Humano - Computador",
+      "Electiva 3 - Interacción Humano - Computador",
+      "Electiva 4 - Interacción Humano - Computador",
+      "Electiva 5 - Interacción Humano - Computador",
+      "Electiva 6 - Interacción Humano - Computador",
+      "Electiva 7 - Interacción Humano - Computador"
+    ]
+  },
+  {
+    "name": "Lic. Rojas Duré Cayo Adolfo",
+    "email": "crojas@pol.una.py",
+    "courses": [
+      "Optativa 1 - Marketing",
+      "Optativa 2 - Marketing",
+      "Optativa 3 - Marketing"
+    ]
+  },
+  {
+    "name": "Lic. Rojas Vargas María Belén",
+    "email": null,
+    "courses": [
+      "Emprendedorismo"
+    ]
+  },
+  {
+    "name": "Lic. Román Rodríguez Juan Gabriel",
+    "email": "juan_roman@pol.una.py",
+    "courses": [
+      "Física 2",
+      "Física 3"
+    ]
+  },
+  {
+    "name": "Lic. Sanabria Añazco Sandra Magdalena",
+    "email": "ssanabria@pol.una.py",
+    "courses": [
+      "Inglés"
+    ]
+  },
+  {
+    "name": "Lic. Sánchez Laspina Julio Néstor",
+    "email": "julio@pol.una.py",
+    "courses": [
+      "Economía y Finanzas"
+    ]
+  },
+  {
+    "name": "Lic. Servián Sugastti Fátima Rossana",
+    "email": null,
+    "courses": [
+      "Fundamentos de Matemática"
+    ]
+  },
+  {
+    "name": "Lic. Sosa Cabrera Osvaldo David",
+    "email": "ososa@pol.una.py",
+    "courses": [
+      "Técnicas de Organización y Métodos"
+    ]
+  },
+  {
+    "name": "Lic. Torres Recalde Lissi Fabiola",
+    "email": null,
+    "courses": [
+      "Inglés"
+    ]
+  },
+  {
+    "name": "Lic. Vargas Fernández Crispín Rafael",
+    "email": "cvargas@pol.una.py",
+    "courses": [
+      "Física 1",
+      "Física 2"
+    ]
+  },
+  {
+    "name": "Lic. Velázquez Galeano Rodrigo Manuel",
+    "email": "rvelazquez@pol.una.py",
+    "courses": [
+      "Lenguajes de Programación II"
+    ]
+  },
+  {
+    "name": "Lic. Villamayor Argaña Máximo Antonio",
+    "email": "maxvillamayor@pol.una.py",
+    "courses": [
+      "Organización y Arquitectura de Computadoras I"
+    ]
+  },
+  {
+    "name": "Lic. Villasantti Flores Richard Adrián",
+    "email": "villasantti@pol.una.py",
+    "courses": [
+      "Algebra Lineal"
+    ]
+  },
+  {
+    "name": "Ms. Aranda Espínola Teresa Dejesús",
+    "email": "tdaranda@pol.una.py",
+    "courses": [
+      "Fundamentos de Matemática"
+    ]
+  },
+  {
+    "name": "Ms. Ayala Rodríguez María Soledad",
+    "email": "msayala@pol.una.py",
+    "courses": [
+      "Optativa 1 - Metodología de la Investigación",
+      "Optativa 2 - Metodología de la Investigación",
+      "Optativa 3 - Metodología de la Investigación"
+    ]
+  },
+  {
+    "name": "Ms. Báez Chávez Silvia",
+    "email": "sbaez@pol.una.py",
+    "courses": [
+      "Algebra Lineal"
+    ]
+  },
+  {
+    "name": "Ms. Baruja Recalde Lourdes Ramona",
+    "email": "vvera@pol.una.py",
+    "courses": [
+      "Optativa 1 - Ecología y Desarrollo Sustentable",
+      "Optativa 2 - Ecología y Desarrollo Sustentable",
+      "Optativa 3 - Ecología y Desarrollo Sustentable"
+    ]
+  },
+  {
+    "name": "Ms. Cano Paredes Robert Paulino",
+    "email": "rcano@pol.una.py",
+    "courses": [
+      "Optativa 1 - Realidad Nacional",
+      "Optativa 2 - Realidad Nacional",
+      "Optativa 3 - Realidad Nacional"
+    ]
+  },
+  {
+    "name": "Ms. Carrera Otazo Haida",
+    "email": "hcarrera@pol.una.py",
+    "courses": [
+      "Algebra Lineal"
+    ]
+  },
+  {
+    "name": "Ms. Coronel Ruiz Díaz José Aníbal",
+    "email": "jac@pol.una.py",
+    "courses": [
+      "Economía y Finanzas"
+    ]
+  },
+  {
+    "name": "Ms. Escurra Sady Patricia",
+    "email": null,
+    "courses": [
+      "Expresión Oral y Escrita"
+    ]
+  },
+  {
+    "name": "Ms. Fatecha Roa Juan",
+    "email": null,
+    "courses": [
+      "Física 1"
+    ]
+  },
+  {
+    "name": "Ms. Fernández Espínola Zunilda Rossana",
+    "email": "zfernandez@pol.una.py",
+    "courses": [
+      "Fundamentos de Matemática"
+    ]
+  },
+  {
+    "name": "Ms. Ferreira Vázquez Liz Mariana",
+    "email": "liz.ferreira@pol.una.py",
+    "courses": [
+      "Física 1",
+      "Física 2"
+    ]
+  },
+  {
+    "name": "Ms. Franco Martínez Antonio de la Paz",
+    "email": "afranco@pol.una.py",
+    "courses": [
+      "Métodos Numéricos"
+    ]
+  },
+  {
+    "name": "Ms. Franco Torres Rodney Fabian",
+    "email": null,
+    "courses": [
+      "Física 2"
+    ]
+  },
+  {
+    "name": "Ms. González Armoa Gustavo Adolfo",
+    "email": "omicron@pol.una.py",
+    "courses": [
+      "Cálculo III"
+    ]
+  },
+  {
+    "name": "Ms. González Rodas Guillermo Jacobo",
+    "email": "ggonzalez@pol.una.py",
+    "courses": [
+      "Electiva 1 - Gestión de Proyectos",
+      "Electiva 2 - Gestión de Proyectos",
+      "Electiva 3 - Gestión de Proyectos",
+      "Electiva 4 - Gestión de Proyectos",
+      "Electiva 5 - Gestión de Proyectos",
+      "Electiva 6 - Gestión de Proyectos",
+      "Electiva 7 - Gestión de Proyectos",
+      "Ingeniería de Software II"
+    ]
+  },
+  {
+    "name": "Ms. Ihara Centurión Diego Hisashi",
+    "email": "dihara@pol.una.py",
+    "courses": [
+      "Electiva 1 - Blockchain",
+      "Electiva 2 - Blockchain",
+      "Electiva 3 - Blockchain",
+      "Electiva 4 - Blockchain",
+      "Electiva 5 - Blockchain",
+      "Electiva 6 - Blockchain",
+      "Electiva 7 - Blockchain"
+    ]
+  },
+  {
+    "name": "Ms. Lugo de Acosta Carmen Antonia",
+    "email": "carmen.lugo@pol.una.py",
+    "courses": [
+      "Cálculo I",
+      "Cálculo III",
+      "Fundamentos de Matemática"
+    ]
+  },
+  {
+    "name": "Ms. Martínez Leguizamón Cristhian José",
+    "email": "cmartinez@pol.una.py",
+    "courses": [
+      "Cálculo I",
+      "Fundamentos de Matemática"
+    ]
+  },
+  {
+    "name": "Ms. Martínez Ramírez Karen Ramona",
+    "email": "krmartinez@pol.una.py",
+    "courses": [
+      "Física 2"
+    ]
+  },
+  {
+    "name": "Ms. Méndez Xavier Ellen Luján",
+    "email": "emendez@pol.una.py",
+    "courses": [
+      "Ingeniería de Software I"
+    ]
+  },
+  {
+    "name": "Ms. Mereles Tottil Herman Agustín",
+    "email": "hmereles@pol.una.py",
+    "courses": [
+      "Sistemas Operativos"
+    ]
+  },
+  {
+    "name": "Ms. Molas Ovando Armin Jesús",
+    "email": "arminamolas@pol.una.py",
+    "courses": [
+      "Optativa 1 - E - Business",
+      "Optativa 2 - E - Business",
+      "Optativa 3 - E - Business"
+    ]
+  },
+  {
+    "name": "Ms. Ocáriz Ayala Víctor Daniel",
+    "email": "docariz@pol.una.py",
+    "courses": [
+      "Física 1"
+    ]
+  },
+  {
+    "name": "Ms. Páez Giménez Roberto Adriano",
+    "email": "rpaez@pol.una.py",
+    "courses": [
+      "Investigación de Operaciones II",
+      "Probabilidades y Estadística"
+    ]
+  },
+  {
+    "name": "Ms. Ramírez Barboza Estela Mary",
+    "email": "emramirez@pol.una.py",
+    "courses": [
+      "Técnicas de Organización y Métodos"
+    ]
+  },
+  {
+    "name": "Ms. Ramírez Barreto Rosa Isabel",
+    "email": "rramirez@pol.una.py",
+    "courses": [
+      "Optativa 1 - Metodología de la Investigación",
+      "Optativa 2 - Metodología de la Investigación",
+      "Optativa 3 - Metodología de la Investigación"
+    ]
+  },
+  {
+    "name": "Ms. Rodríguez Buongermini Natalia",
+    "email": "nrodriguez@pol.una.py",
+    "courses": [
+      "Optativa 1 - Merchandising",
+      "Optativa 1 - Políticas Públicas y de Negocios",
+      "Optativa 2 - Merchandising",
+      "Optativa 2 - Políticas Públicas y de Negocios",
+      "Optativa 3 - Merchandising",
+      "Optativa 3 - Políticas Públicas y de Negocios"
+    ]
+  },
+  {
+    "name": "Ms. Rodríguez Torres Ruiz Jara Pamela Andrea Alexis Miguel",
+    "email": "prodriguez@pol.una.py",
+    "courses": [
+      "Cálculo I",
+      "Investigación de Operaciones I",
+      "Investigación de Operaciones II"
+    ]
+  },
+  {
+    "name": "Ms. Román Medina Zulma Noemí",
+    "email": "zroman@pol.una.py",
+    "courses": [
+      "Inglés"
+    ]
+  },
+  {
+    "name": "Ms. Romero Daspett Ida Luz",
+    "email": "idaromero@pol.una.py",
+    "courses": [
+      "Probabilidades y Estadística"
+    ]
+  },
+  {
+    "name": "Ms. Salinas Cañete Luis Gilberto",
+    "email": "gsalinas@pol.una.py",
+    "courses": [
+      "Ingeniería de Software III"
+    ]
+  },
+  {
+    "name": "Ms. Sánchez Quintana Oilda",
+    "email": "pbernal@pol.una.py",
+    "courses": [
+      "Contabilidad"
+    ]
+  },
+  {
+    "name": "Ms. Sánchez Quintana Oílda",
+    "email": "osanchez@pol.una.py",
+    "courses": [
+      "Contabilidad"
+    ]
+  },
+  {
+    "name": "Ms. Silguero Benítez Norma Beatriz",
+    "email": "nsilguero@pol.una.py",
+    "courses": [
+      "Cálculo I"
+    ]
+  },
+  {
+    "name": "Ms. Torres Gutt Alcides Javier",
+    "email": "torresgutt@pol.una.py",
+    "courses": [
+      "Optativa 1 - E - Business",
+      "Optativa 2 - E - Business",
+      "Optativa 3 - E - Business"
+    ]
+  },
+  {
+    "name": "Ms. Vega Gamarra Osvaldo Ramón",
+    "email": "ovega@pol.una.py",
+    "courses": [
+      "Cálculo II",
+      "Cálculo III"
+    ]
+  },
+  {
+    "name": "Ms. Vega Gamarra Salustiano",
+    "email": "svega@pol.una.py",
+    "courses": [
+      "Investigación de Operaciones I"
+    ]
+  },
+  {
+    "name": "Ms. Velázquez Franco José Gabriel",
+    "email": "jgvelazquez@pol.una.py",
+    "courses": [
+      "Cálculo I",
+      "Cálculo II"
+    ]
+  },
+  {
+    "name": "Ms. Velázquez Franco José Gabriel",
+    "email": "jvelazquez@pol.una.py",
+    "courses": [
+      "Cálculo II"
+    ]
+  },
+  {
+    "name": "Ms. Vera Bogado Ascención",
+    "email": "avera@pol.una.py",
+    "courses": [
+      "Probabilidades y Estadística"
+    ]
+  },
+  {
+    "name": "Ms. Villalba Sosa Pedro Alberto",
+    "email": "pvillalba@pol.una.py",
+    "courses": [
+      "Cálculo I",
+      "Fundamentos de Matemática"
+    ]
+  },
+  {
+    "name": "Ms. Zárate Rojas Florencio Ezequiel",
+    "email": "fzarate@pol.una.py",
+    "courses": [
+      "Economía y Finanzas",
+      "Técnicas de Organización y Métodos"
+    ]
+  }
+]

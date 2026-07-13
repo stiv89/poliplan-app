@@ -15,7 +15,7 @@ import { ComoFuncionaPage } from '@/pages/public/ComoFuncionaPage'
 import { ExamenesFpunaPage } from '@/pages/public/ExamenesFpunaPage'
 import { FuentesPage } from '@/pages/public/FuentesPage'
 import { HorariosFpunaPage } from '@/pages/public/HorariosFpunaPage'
-import { LandingPage } from '@/pages/public/LandingPage'
+import { IinTeacherReviewPage } from '@/pages/public/IinTeacherReviewPage'
 import { SectionsPage } from '@/pages/SectionsPage'
 import { ProgressPage } from '@/pages/ProgressPage'
 import { SharedSchedulePage } from '@/pages/SharedSchedulePage'
@@ -43,7 +43,15 @@ export const router = createBrowserRouter([
       { path: ROUTES.offline.slice(1), element: <OfflinePage /> },
     ],
   },
-  { path: PUBLIC_ROUTES.presentacion.slice(1), element: <LandingPage /> },
+  { path: PUBLIC_ROUTES.presentacion.slice(1), element: <Navigate to={ROUTES.home} replace /> },
+  {
+    path: PUBLIC_ROUTES.reviewsIin.slice(1),
+    element: (
+      <PublicLayout minimal>
+        <IinTeacherReviewPage />
+      </PublicLayout>
+    ),
+  },
   {
     element: <PublicLayout />,
     children: [

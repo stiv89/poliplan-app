@@ -221,6 +221,7 @@ export class LocalScheduleRepository implements ScheduleRepository {
       syncPromptDismissedAt: string | null
       notificationPromptDismissedAt: string | null
       scheduleTourCompletedAt: string | null
+      appWelcomeCompletedAt: string | null
       lastUserScheduleSyncAt: string | null
       remoteScheduleByLocalId: Record<string, string>
     }>,

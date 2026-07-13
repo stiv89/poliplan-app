@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import { Button } from '@/components/ui/Button'
+import { AppOnboarding } from '@/components/onboarding/AppOnboarding'
 import { ScheduleProvider } from '@/features/schedule/ScheduleContext'
 import { AuthProvider } from '@/features/auth/AuthContext'
 import { AppShell } from '@/components/layout/AppShell'
@@ -97,6 +98,7 @@ export function ScheduleAppShell() {
   return (
     <ScheduleProvider>
       <StartupOverlay />
+      <AppOnboarding />
       <AppShell />
     </ScheduleProvider>
   )

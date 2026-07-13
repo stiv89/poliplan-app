@@ -21,6 +21,7 @@ export const PUBLIC_ROUTES = {
   comoFunciona: '/como-funciona',
   fuentes: '/fuentes',
   avisoLegal: '/aviso-legal',
+  reviewsIin: '/iin/reseñas-docentes',
 } as const
 
 export type PublicSeoPath = (typeof PUBLIC_SEO_PATHS)[number]
@@ -97,6 +98,14 @@ export const PUBLIC_PAGE_SEO: Record<PublicSeoPath, PageSeoMeta> = {
     keywords: ['PoliPlan', 'Facultad Politécnica UNA', 'FP-UNA'],
     h1: 'Aviso legal de PoliPlan',
   },
+  [PUBLIC_ROUTES.reviewsIin]: {
+    path: PUBLIC_ROUTES.reviewsIin,
+    title: 'Reseñas de docentes IIN | PoliPlan',
+    description:
+      'Dejá tu opinión sobre docentes de Ingeniería Informática (IIN) en la FP-UNA. Formulario público anónimo para estudiantes.',
+    keywords: ['reseñas docentes IIN', 'FP-UNA', 'Ingeniería Informática', 'PoliPlan'],
+    h1: 'Reseñá a tu docente de IIN',
+  },
 }
 
 export const PUBLIC_NAV_LINKS = [
@@ -116,6 +125,7 @@ export const PUBLIC_SEO_PATHS = [
   PUBLIC_ROUTES.comoFunciona,
   PUBLIC_ROUTES.fuentes,
   PUBLIC_ROUTES.avisoLegal,
+  PUBLIC_ROUTES.reviewsIin,
 ] as const
 
 /** Rutas de la app interactiva (noindex en SEO). */

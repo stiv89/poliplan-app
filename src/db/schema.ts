@@ -12,6 +12,7 @@ export const DEFAULT_SETTINGS = {
   syncPromptDismissedAt: null,
   notificationPromptDismissedAt: null,
   scheduleTourCompletedAt: null,
+  appWelcomeCompletedAt: null,
   lastUserScheduleSyncAt: null,
   remoteScheduleByLocalId: {} as Record<string, string>,
   updatedAt: new Date().toISOString(),
