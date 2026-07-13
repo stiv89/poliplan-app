@@ -75,26 +75,6 @@ export function SectionsExplorer({
 
   const hasScheduleCourses = selectedSections.length > 0
 
-  const scheduleCourseIds = useMemo(
-    () => new Set(selectedSections.map((section) => section.courseId)),
-    [selectedSections],
-  )
-
-  const scheduleSections = useMemo(() => {
-    const byId = new Map<string, CourseSection>()
-    for (const section of allSections) {
-      if (scheduleCourseIds.has(section.courseId)) {
-        byId.set(section.id, section)
-      }
-    }
-    for (const section of selectedSections) {
-      if (scheduleCourseIds.has(section.courseId)) {
-        byId.set(section.id, section)
-      }
-    }
-    return [...byId.values()]
-  }, [allSections, scheduleCourseIds, selectedSections])
-
   const allSectionsById = useMemo(
     () => new Map(allSections.map((section) => [section.id, section])),
     [allSections],
@@ -109,7 +89,7 @@ export function SectionsExplorer({
     if (!hasScheduleCourses) return []
 
     const query = search.trim()
-    const searchResults = filterAndRankSections(scheduleSections, query, coursesById)
+    const searchResults = filterAndRankSections(selectedSections, query, coursesById)
 
     return searchResults.sort((a, b) => {
       if (query) return 0
@@ -117,7 +97,7 @@ export function SectionsExplorer({
       const bCourse = coursesById.get(b.courseId)?.name ?? ''
       return aCourse.localeCompare(bCourse) || a.sectionCode.localeCompare(b.sectionCode)
     })
-  }, [scheduleSections, coursesById, hasScheduleCourses, search])
+  }, [selectedSections, coursesById, hasScheduleCourses, search])
 
   const groupedSections = useMemo(() => {
     const map = new Map<string, CourseGroup>()
@@ -150,7 +130,7 @@ export function SectionsExplorer({
       ? getCourseProgressLabel(detailCourse.name, curriculum, statuses)
       : null
   const siblingSections = detailSection
-    ? scheduleSections.filter((section) => section.courseId === detailSection.courseId)
+    ? selectedSections.filter((section) => section.courseId === detailSection.courseId)
     : []
 
   const countLabel = catalogLoading
@@ -310,8 +290,7 @@ function SectionsEmptyState() {
         Agregá materias a tu horario
       </h2>
       <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted">
-        Acá vas a ver las secciones de las materias que ya sumaste al horario, para comparar
-        alternativas o cambiar de sección.
+        Acá vas a ver las secciones que ya sumaste a tu horario.
       </p>
       <Link
         to={ROUTES.home}
