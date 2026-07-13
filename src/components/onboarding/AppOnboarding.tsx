@@ -24,6 +24,15 @@ export function AppOnboarding() {
   }, [settings, startupMode, updateAppSettings])
 
   useEffect(() => {
+    const onShowTour = () => {
+      tourTriggeredRef.current = true
+      setTourOpen(true)
+    }
+    window.addEventListener('poliplan:show-schedule-tour', onShowTour)
+    return () => window.removeEventListener('poliplan:show-schedule-tour', onShowTour)
+  }, [])
+
+  useEffect(() => {
     if (startupMode !== 'ready' || !settings) return
     if (!settings.appWelcomeCompletedAt) return
     if (settings.scheduleTourCompletedAt) return

@@ -1,7 +1,7 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { CANONICAL_ORIGIN, APP_NOINDEX_PATHS, PUBLIC_SEO_PATHS } from '../src/config/seo'
+import { CANONICAL_ORIGIN, APP_NOINDEX_PATHS, PUBLIC_ROUTES, PUBLIC_SEO_PATHS } from '../src/config/seo'
 import { buildAppDocumentHead, injectHeadIntoHtml, injectRootHtml } from '../src/seo/documentHead'
 import { renderPublicPageHead, renderPublicPageHtml } from '../src/seo/prerender'
 

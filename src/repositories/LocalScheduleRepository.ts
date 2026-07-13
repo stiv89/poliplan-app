@@ -220,6 +220,7 @@ export class LocalScheduleRepository implements ScheduleRepository {
       showChangeAlerts: boolean
       syncPromptDismissedAt: string | null
       notificationPromptDismissedAt: string | null
+      teacherReviewPromptCompletedAt: string | null
       scheduleTourCompletedAt: string | null
       appWelcomeCompletedAt: string | null
       lastUserScheduleSyncAt: string | null

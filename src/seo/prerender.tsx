@@ -1,6 +1,8 @@
 import { renderToString } from 'react-dom/server'
 import { createElement, type ReactElement } from 'react'
 import { LANDING_FAQ } from '@/components/public/FaqSection'
+import { PublicLayout } from '@/components/public/PublicLayout'
+import { AuthProvider } from '@/features/auth/AuthContext'
 import {
   PUBLIC_PAGE_SEO,
   PUBLIC_ROUTES,
@@ -13,8 +15,8 @@ import { ComoFuncionaPage } from '@/pages/public/ComoFuncionaPage'
 import { ExamenesFpunaPage } from '@/pages/public/ExamenesFpunaPage'
 import { FuentesPage } from '@/pages/public/FuentesPage'
 import { HorariosFpunaPage } from '@/pages/public/HorariosFpunaPage'
+import { IinTeacherReviewPage } from '@/pages/public/IinTeacherReviewPage'
 import { LandingPage } from '@/pages/public/LandingPage'
-import { PublicLayout } from '@/components/public/PublicLayout'
 import { buildDocumentHead } from '@/seo/documentHead'
 
 const PAGE_BY_PATH: Record<PublicSeoPath, () => ReactElement> = {
@@ -25,12 +27,18 @@ const PAGE_BY_PATH: Record<PublicSeoPath, () => ReactElement> = {
   [PUBLIC_ROUTES.comoFunciona]: () => createElement(ComoFuncionaPage),
   [PUBLIC_ROUTES.fuentes]: () => createElement(FuentesPage),
   [PUBLIC_ROUTES.avisoLegal]: () => createElement(AvisoLegalPage),
+  [PUBLIC_ROUTES.reviewsIin]: () => createElement(IinTeacherReviewPage),
 }
 
 export function renderPublicPageHtml(path: PublicSeoPath): string {
   const Page = PAGE_BY_PATH[path]
   if (path === PUBLIC_ROUTES.presentacion) {
     return renderToString(Page())
+  }
+  if (path === PUBLIC_ROUTES.reviewsIin) {
+    return renderToString(
+      createElement(AuthProvider, null, createElement(PublicLayout, { minimal: true, children: Page() })),
+    )
   }
   return renderToString(createElement(PublicLayout, { children: Page() }))
 }

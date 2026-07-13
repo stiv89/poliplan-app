@@ -94,7 +94,7 @@ export function HomePage() {
   const [removingId, setRemovingId] = useState<string | null>(null)
   const [toggleLoading, setToggleLoading] = useState(false)
   const [previewSection, setPreviewSection] = useState<CourseSection | null>(null)
-  const [viewFilters, setViewFilters] = useState<ScheduleViewFilters>(
+  const [viewFilters] = useState<ScheduleViewFilters>(
     DEFAULT_SCHEDULE_VIEW_FILTERS,
   )
   const [academicPeriods, setAcademicPeriods] = useState<AcademicPeriod[]>([])
@@ -411,7 +411,7 @@ export function HomePage() {
               hasCareer={Boolean(settings?.selectedCareerId)}
               onAddFirst={() => openSearch()}
               onSync={isOnline ? requestScheduleSync : undefined}
-              onShowTour={() => setTourOpen(true)}
+              onShowTour={() => window.dispatchEvent(new Event('poliplan:show-schedule-tour'))}
             />
           ) : (
             <DayScheduleView

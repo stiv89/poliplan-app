@@ -11,6 +11,7 @@ export const DEFAULT_SETTINGS = {
   showChangeAlerts: true,
   syncPromptDismissedAt: null,
   notificationPromptDismissedAt: null,
+  teacherReviewPromptCompletedAt: null,
   scheduleTourCompletedAt: null,
   appWelcomeCompletedAt: null,
   lastUserScheduleSyncAt: null,

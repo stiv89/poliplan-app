@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
 import {
   ArrowLeft,
   ArrowRight,
@@ -62,7 +61,6 @@ const STEPS: { id: WizardStep; label: string }[] = [
 type FilterPanel = 'materia' | 'area' | null
 
 export function IinTeacherReviewPage() {
-  const [searchParams] = useSearchParams()
   const { isConfigured } = useAuth()
 
   const [step, setStep] = useState<WizardStep>('teacher')
@@ -110,14 +108,15 @@ export function IinTeacherReviewPage() {
   )
 
   useEffect(() => {
-    const email = searchParams.get('email')
-    const name = searchParams.get('name') ?? searchParams.get('profe')
+    const params = new URLSearchParams(window.location.search)
+    const email = params.get('email')
+    const name = params.get('name') ?? params.get('profe')
     const match = findTeacherByParam(email, name)
     if (match) {
       setSelectedKey(teacherKey(match))
       setStep('course')
     }
-  }, [searchParams])
+  }, [])
 
   useEffect(() => {
     try {
@@ -311,10 +310,10 @@ export function IinTeacherReviewPage() {
         {step === 'teacher' && (
           <p className="mt-4 text-center text-xs text-slate-400">
             Compartí este formulario:{' '}
-            <Link to={PUBLIC_ROUTES.reviewsIin} className="text-[#0B3B8F]/80 hover:underline">
+            <a href={PUBLIC_ROUTES.reviewsIin} className="text-[#0B3B8F]/80 hover:underline">
               {CANONICAL_ORIGIN}
               {PUBLIC_ROUTES.reviewsIin}
-            </Link>
+            </a>
           </p>
         )}
 
@@ -832,12 +831,12 @@ function DoneStep({
         </p>
       </div>
       <div className="flex flex-col gap-2 sm:flex-row sm:justify-center">
-        <Link
-          to={ROUTES.home}
+        <a
+          href={ROUTES.home}
           className="inline-flex items-center justify-center rounded-xl border border-slate-200 bg-surface px-4 py-2.5 text-sm font-medium text-text transition hover:bg-slate-50"
         >
           Ver en PoliPlan
-        </Link>
+        </a>
         <Button className="justify-center gap-2" onClick={onCopyLink}>
           {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
           {copied ? 'Enlace copiado' : 'Copiar enlace'}
