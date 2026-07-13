@@ -101,7 +101,9 @@ export async function fetchTeacherProfile(
     .order('created_at', { ascending: false })
 
   if (academicPeriodId) {
-    reviewsQuery = reviewsQuery.eq('academic_period_id', academicPeriodId)
+    reviewsQuery = reviewsQuery.or(
+      `academic_period_id.eq.${academicPeriodId},academic_period_id.is.null`,
+    )
   }
 
   const { data: reviewRows, error: reviewsError } = await reviewsQuery
