@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { RefreshCw } from 'lucide-react'
 import { useRegisterSW } from 'virtual:pwa-register/react'
 import { Button } from '@/components/ui/Button'
@@ -13,44 +13,22 @@ import loaderGif from '../../logos/loader.gif'
 
 const BLOCKING_STARTUP_MODES = new Set<StartupMode>(['offline-no-cache', 'updating-app'])
 
-function PwaUpdatePrompt() {
+/** Applies a waiting PWA update automatically (no manual click). */
+function PwaAutoUpdate() {
   const {
-    needRefresh: [needRefresh, setNeedRefresh],
+    needRefresh: [needRefresh],
     updateServiceWorker,
   } = useRegisterSW()
+  const triggeredRef = useRef(false)
 
-  if (!needRefresh) {
-    return null
-  }
+  useEffect(() => {
+    if (!needRefresh || triggeredRef.current) return
+    triggeredRef.current = true
+    window.sessionStorage.setItem('poliplan:startup-mode', 'updating-app')
+    void updateServiceWorker(true)
+  }, [needRefresh, updateServiceWorker])
 
-  return (
-    <div
-      className="bottom-above-dock fixed left-4 right-4 z-50 mx-auto max-w-lg rounded-2xl border border-primary/20 bg-surface p-4 shadow-lg md:bottom-6 md:left-auto md:right-6"
-      role="status"
-      aria-live="polite"
-    >
-      <p className="text-sm text-text">Hay una nueva versión de PoliPlan disponible.</p>
-      <div className="mt-3 flex gap-2">
-        <button
-          type="button"
-          className="rounded-xl bg-primary px-4 py-2 text-sm font-medium text-white"
-          onClick={() => {
-            window.sessionStorage.setItem('poliplan:startup-mode', 'updating-app')
-            void updateServiceWorker(true)
-          }}
-        >
-          Actualizar
-        </button>
-        <button
-          type="button"
-          className="rounded-xl border border-slate-200 px-4 py-2 text-sm text-muted"
-          onClick={() => setNeedRefresh(false)}
-        >
-          Más tarde
-        </button>
-      </div>
-    </div>
-  )
+  return null
 }
 
 function StartupOverlay() {
@@ -120,7 +98,7 @@ export function AppProviders({ children }: { children: ReactNode }) {
   return (
     <AuthProvider>
       {children}
-      <PwaUpdatePrompt />
+      <PwaAutoUpdate />
     </AuthProvider>
   )
 }
