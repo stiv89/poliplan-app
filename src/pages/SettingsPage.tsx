@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/Button'
 import { useDataTrustInfo } from '@/components/ui/DataTrustBanner'
 import { useInstallPrompt } from '@/hooks/useInstallPrompt'
 import { useProfileEmailPrefs } from '@/hooks/useProfileEmailPrefs'
+import { resolveEffectiveTheme } from '@/features/theme/theme'
 import { useSchedule } from '@/hooks/useSchedule'
 import { scheduleRepository } from '@/repositories/SupabaseScheduleRepository'
 import type { AcademicPeriod, SyncStatus } from '@/types/academic'
@@ -303,6 +304,14 @@ export function SettingsPage() {
             title="Aplicación"
             description="Opciones para instalar y usar PoliPlan en tu dispositivo."
           >
+            <SettingsSection>
+              <SettingsToggleRow
+                label="Modo nocturno"
+                description="Usa colores oscuros en toda la aplicación."
+                checked={resolveEffectiveTheme(settings?.theme ?? 'light') === 'dark'}
+                onChange={(checked) => void updateAppSettings({ theme: checked ? 'dark' : 'light' })}
+              />
+            </SettingsSection>
             {(canInstall || isInstalled) && (
               <SettingsSection>
                 <SettingsDetailRow

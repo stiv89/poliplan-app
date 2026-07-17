@@ -77,6 +77,7 @@ export interface ScheduleContextValue {
         | 'appWelcomeCompletedAt'
         | 'lastUserScheduleSyncAt'
         | 'remoteScheduleByLocalId'
+        | 'theme'
       >
     >,
   ) => Promise<void>
@@ -437,6 +438,7 @@ export function ScheduleProvider({ children }: ScheduleProviderProps) {
         | 'appWelcomeCompletedAt'
         | 'lastUserScheduleSyncAt'
         | 'remoteScheduleByLocalId'
+        | 'theme'
       >
     >,
   ) => {
@@ -452,6 +454,7 @@ export function ScheduleProvider({ children }: ScheduleProviderProps) {
       autoSyncEnabled: true,
       syncOnOpen: true,
       showChangeAlerts: true,
+      theme: 'light',
     })
     setSettings(next)
     await loadData().catch(() => undefined)

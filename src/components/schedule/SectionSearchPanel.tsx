@@ -407,7 +407,7 @@ function SemesterBlock({
 
   return (
     <section
-      className={`overflow-hidden rounded-xl border transition ${
+      className={`semester-group overflow-hidden rounded-xl border transition ${
         expanded
           ? 'border-slate-200 bg-white'
           : 'border-slate-200/80 bg-slate-50/60 hover:border-slate-300/70'

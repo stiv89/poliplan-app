@@ -310,14 +310,14 @@ export function HomePage() {
       <div className="hidden min-h-0 flex-1 overflow-hidden md:flex">
         {/* Explorador de materias — columna central del shell */}
         <aside
-          className="flex h-full min-h-0 w-[min(400px,32vw)] max-w-[420px] shrink-0 flex-col overflow-hidden border-r border-slate-200/60 bg-white"
+          className="course-panel-surface flex h-full min-h-0 w-[min(400px,32vw)] max-w-[420px] shrink-0 flex-col overflow-hidden border-r border-slate-200/60 bg-surface"
           data-tour="course-panel"
         >
           <SectionSearchPanel key={searchPrefill} {...searchPanelProps} />
         </aside>
 
         {/* Horario — área principal */}
-        <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-slate-50/45">
+        <div className="schedule-main-surface relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-slate-50/45">
           <ScheduleHeader
             scheduleName={activeSchedule?.name ?? 'Mi horario'}
             periodName={activePeriod?.name ?? null}

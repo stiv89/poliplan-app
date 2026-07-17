@@ -6,6 +6,7 @@ import { AppOnboarding } from '@/components/onboarding/AppOnboarding'
 import { ScheduleProvider } from '@/features/schedule/ScheduleContext'
 import { AuthProvider } from '@/features/auth/AuthContext'
 import { AppShell } from '@/components/layout/AppShell'
+import { ThemeSync } from '@/features/theme/ThemeSync'
 import { useSchedule } from '@/hooks/useSchedule'
 import type { StartupMode } from '@/features/schedule/ScheduleContext'
 import loaderGif from '../../logos/loader.gif'
@@ -97,6 +98,7 @@ function StartupOverlay() {
 export function ScheduleAppShell() {
   return (
     <ScheduleProvider>
+      <ThemeSync />
       <StartupOverlay />
       <AppOnboarding />
       <AppShell />

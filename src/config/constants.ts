@@ -45,16 +45,28 @@ export const COLORS = {
   success: '#16A34A',
 } as const
 
-/** Paleta suave para distinguir materias en el horario */
+/** Paleta suave para distinguir materias en el horario (modo claro) */
 export const COURSE_COLORS = [
-  { bg: '#F4F7FF', border: '#D9E2F5', text: '#475569' },
-  { bg: '#F2FBF6', border: '#CFE8DC', text: '#475569' },
-  { bg: '#FFFBF2', border: '#F5E6C8', text: '#475569' },
-  { bg: '#F7F4FF', border: '#E4DCF7', text: '#475569' },
-  { bg: '#FDF4F9', border: '#F3D9E8', text: '#475569' },
-  { bg: '#FFF8F3', border: '#F7DEC8', text: '#475569' },
-  { bg: '#F2FCFD', border: '#CFEEF2', text: '#475569' },
-  { bg: '#F8FAFC', border: '#E2E8F0', text: '#475569' },
+  { bg: '#F4F7FF', border: '#D9E2F5', text: '#334155', subtext: '#64748B', faint: '#94A3B8' },
+  { bg: '#F2FBF6', border: '#CFE8DC', text: '#334155', subtext: '#64748B', faint: '#94A3B8' },
+  { bg: '#FFFBF2', border: '#F5E6C8', text: '#334155', subtext: '#64748B', faint: '#94A3B8' },
+  { bg: '#F7F4FF', border: '#E4DCF7', text: '#334155', subtext: '#64748B', faint: '#94A3B8' },
+  { bg: '#FDF4F9', border: '#F3D9E8', text: '#334155', subtext: '#64748B', faint: '#94A3B8' },
+  { bg: '#FFF8F3', border: '#F7DEC8', text: '#334155', subtext: '#64748B', faint: '#94A3B8' },
+  { bg: '#F2FCFD', border: '#CFEEF2', text: '#334155', subtext: '#64748B', faint: '#94A3B8' },
+  { bg: '#F8FAFC', border: '#E2E8F0', text: '#334155', subtext: '#64748B', faint: '#94A3B8' },
+] as const
+
+/** Paleta más saturada para bloques del horario en modo oscuro */
+export const COURSE_COLORS_DARK = [
+  { bg: 'rgba(55, 98, 190, 0.32)', border: 'rgba(120, 160, 240, 0.38)', text: '#E8EEFB', subtext: '#B8CAEA', faint: '#94AEDB' },
+  { bg: 'rgba(34, 130, 88, 0.30)', border: 'rgba(80, 175, 130, 0.36)', text: '#E5F7EE', subtext: '#B5DEC9', faint: '#8EC9AD' },
+  { bg: 'rgba(180, 125, 40, 0.28)', border: 'rgba(220, 175, 80, 0.34)', text: '#FFF3DC', subtext: '#E8D4A8', faint: '#CDB882' },
+  { bg: 'rgba(120, 82, 210, 0.30)', border: 'rgba(165, 135, 255, 0.36)', text: '#F0EAFF', subtext: '#CDBFF5', faint: '#AB93E8' },
+  { bg: 'rgba(185, 72, 120, 0.28)', border: 'rgba(230, 120, 165, 0.34)', text: '#FFEAF3', subtext: '#E8B8CE', faint: '#CF93B0' },
+  { bg: 'rgba(195, 95, 45, 0.28)', border: 'rgba(235, 145, 85, 0.34)', text: '#FFEDE0', subtext: '#E8C4A8', faint: '#CF9E78' },
+  { bg: 'rgba(38, 150, 170, 0.28)', border: 'rgba(85, 195, 215, 0.34)', text: '#E3F9FD', subtext: '#B0E0EA', faint: '#7EC6D6' },
+  { bg: 'rgba(95, 115, 150, 0.30)', border: 'rgba(145, 165, 205, 0.36)', text: '#ECF1F8', subtext: '#B8C8DE', faint: '#93A8C4' },
 ] as const
 
 export type CourseColor = (typeof COURSE_COLORS)[number]
@@ -88,10 +100,11 @@ export function getCourseInitial(name: string, code: string | null | undefined):
 }
 
 /** Devuelve un color determinista para una courseId dada */
-export function getCourseColor(courseId: string): CourseColor {
+export function getCourseColor(courseId: string, mode: 'light' | 'dark' = 'light'): CourseColor {
   let hash = 0
   for (let i = 0; i < courseId.length; i++) {
     hash = (hash * 31 + courseId.charCodeAt(i)) >>> 0
   }
-  return COURSE_COLORS[hash % COURSE_COLORS.length]!
+  const palette = mode === 'dark' ? COURSE_COLORS_DARK : COURSE_COLORS
+  return palette[hash % palette.length]! as CourseColor
 }

@@ -7,6 +7,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#0B3B8F" />
     <title>PoliPlan</title>
+    <script>
+      ;(() => {
+        try {
+          const stored = localStorage.getItem('poliplan:theme')
+          const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+          const dark =
+            stored === 'dark' || (stored !== 'light' && stored === 'system' && prefersDark)
+          if (dark) document.documentElement.classList.add('dark')
+        } catch {}
+      })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

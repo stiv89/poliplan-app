@@ -4,6 +4,7 @@
 import { useEffect, useMemo, useRef } from 'react'
 import { AlertTriangle } from 'lucide-react'
 import { DAYS_OF_WEEK, getCourseColor } from '@/config/constants'
+import { useEffectiveTheme } from '@/hooks/useEffectiveTheme'
 import { DEFAULT_SCHEDULE_VIEW_FILTERS } from '@/types/scheduleFilters'
 import type { ScheduleViewFilters } from '@/types/scheduleFilters'
 import { formatTimeRange, timeToMinutes } from '@/utils/times'
@@ -58,6 +59,7 @@ export function WeeklyScheduleGrid({
     handlePopoverMouseLeave,
     close: closePopover,
   } = useClassBlockPopover()
+  const themeMode = useEffectiveTheme()
 
   const visibleDays = useMemo(
     () => DAYS_OF_WEEK.filter((day) => viewFilters.days.includes(day.value)),
@@ -214,7 +216,7 @@ export function WeeklyScheduleGrid({
       />
 
       <div
-        className={`grid shrink-0 border-b border-slate-200/50 bg-slate-50/30 transition-opacity duration-300 ${
+        className={`schedule-grid-header grid shrink-0 border-b border-slate-200/50 bg-slate-50/30 transition-opacity duration-300 ${
           isPreviewActive ? 'opacity-60' : 'opacity-100'
         }`}
         style={{ gridTemplateColumns: columnTemplate }}
@@ -223,7 +225,7 @@ export function WeeklyScheduleGrid({
         {visibleDays.map((day) => (
           <div
             key={day.value}
-            className="border-l border-slate-100/50 px-1 py-2 text-center text-[10px] font-normal tracking-wide text-slate-400 first:border-l-0"
+            className="schedule-grid-day-label border-l border-slate-100/50 px-1 py-2 text-center text-[10px] font-normal tracking-wide text-slate-400 first:border-l-0"
           >
             {day.label.slice(0, 3)}
           </div>
@@ -250,7 +252,7 @@ export function WeeklyScheduleGrid({
                   className="absolute left-0 right-0 flex items-start justify-end pr-1.5"
                   style={{ top: (hour - startHour) * HOUR_HEIGHT - 7, height: HOUR_HEIGHT }}
                 >
-                  <span className="text-[10px] font-normal tabular-nums text-slate-400/80">{hour}:00</span>
+                  <span className="schedule-grid-hour-label text-[10px] font-normal tabular-nums text-slate-400/80">{hour}:00</span>
                 </div>
               ))}
             </div>
@@ -259,11 +261,11 @@ export function WeeklyScheduleGrid({
               const dayBlocks = blocks.filter((block) => block.dayOfWeek === day.value)
 
               return (
-                <div key={day.value} className="relative border-l border-slate-100/50">
+                <div key={day.value} className="schedule-grid-column relative border-l border-slate-100/50">
                   {hourSlots.map((hour) => (
                     <div
                       key={hour}
-                      className="absolute inset-x-0 border-t border-slate-100/45"
+                      className="schedule-grid-hour-line absolute inset-x-0 border-t border-slate-100/45"
                       style={{ top: (hour - startHour) * HOUR_HEIGHT }}
                     />
                   ))}
@@ -274,7 +276,7 @@ export function WeeklyScheduleGrid({
                     const endMin = timeToMinutes(block.endTime) - startHour * 60
                     const top = (startMin / 60) * HOUR_HEIGHT
                     const height = Math.max(32, ((endMin - startMin) / 60) * HOUR_HEIGHT)
-                    const color = getCourseColor(block.courseId)
+                    const color = getCourseColor(block.courseId, themeMode)
                     const label = shortCourseLabel(block.title, course?.code)
 
                     const overlapsPreview =
@@ -304,15 +306,17 @@ export function WeeklyScheduleGrid({
                     return (
                       <button
                         key={block.id}
-                        className={`absolute inset-x-1 z-10 overflow-hidden rounded-md px-2 py-1 text-left transition-colors duration-200 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40 ${blockOpacity} ${
+                        className={`schedule-course-block absolute inset-x-1 z-10 overflow-hidden rounded-md px-2 py-1 text-left transition-[background-color,border-color,opacity,filter] duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40 ${blockOpacity} ${
                           isConflict
                             ? 'border border-red-100/90 border-l-[3px] border-l-red-400 bg-red-50/25 hover:bg-red-50/40'
-                            : 'border border-black/[0.04] hover:brightness-[0.98]'
+                            : 'border hover:brightness-[0.98]'
                         }`}
                         style={{
                           top,
                           height,
                           backgroundColor: isConflict ? undefined : color.bg,
+                          borderColor: isConflict ? undefined : color.border,
+                          color: isConflict ? undefined : color.text,
                         }}
                         onClick={(event) => handleBlockClick(block, event)}
                         onMouseEnter={(event) => handleBlockMouseEnter(block, event)}
@@ -325,19 +329,23 @@ export function WeeklyScheduleGrid({
                             {isPreviewOnly ? 'Solapa' : 'Conflicto'}
                           </span>
                         )}
-                        <p className="truncate text-[11px] font-medium leading-tight text-slate-800">
+                        <p className="truncate text-[11px] font-medium leading-tight">
                           {label}
                         </p>
                         {height >= 44 && (
-                          <p className="truncate text-[10px] font-normal leading-tight text-slate-500">
+                          <p
+                            className="truncate text-[10px] font-normal leading-tight"
+                            style={{ color: isConflict ? undefined : color.subtext }}
+                          >
                             Sec. {block.sectionCode}
                           </p>
                         )}
                         {height >= 52 && (
                           <p
                             className={`truncate text-[10px] leading-tight ${
-                              isConflict ? 'font-normal text-red-600/85' : 'font-normal text-slate-400'
+                              isConflict ? 'font-normal text-red-600/85' : 'font-normal'
                             }`}
+                            style={{ color: isConflict ? undefined : color.faint }}
                           >
                             {isConflict
                               ? formatTimeRange(block.startTime, block.endTime)

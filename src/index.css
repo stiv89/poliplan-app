@@ -1,17 +1,57 @@
 @import 'tailwindcss';
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  --app-background: #f8fafc;
+  --app-surface: #ffffff;
+  --app-text: #0f172a;
+  --app-muted: #64748b;
+  --app-border-subtle: rgba(15, 23, 42, 0.06);
+  --app-border-strong: rgba(15, 23, 42, 0.1);
+  --app-fill-muted: rgba(118, 118, 128, 0.08);
+  --app-fill-hover: rgba(118, 118, 128, 0.14);
+  --app-primary-soft: rgba(11, 59, 143, 0.08);
+}
+
+.dark {
+  color-scheme: dark;
+  --app-background: #090c10;
+  --app-surface: #121820;
+  --app-text: #e8edf3;
+  --app-muted: #a3b4c8;
+  --app-border-subtle: rgba(255, 255, 255, 0.08);
+  --app-border-strong: rgba(255, 255, 255, 0.12);
+  --app-fill-muted: rgba(255, 255, 255, 0.06);
+  --app-fill-hover: rgba(255, 255, 255, 0.1);
+  --app-primary-soft: rgba(77, 154, 255, 0.14);
+  --c-glass: #343a44;
+  --c-glass-light: #ffffff;
+  --c-glass-dark: #000000;
+  --glass-reflex-light: 0.35;
+  --glass-reflex-dark: 1.25;
+}
+
 @theme {
   --color-primary: #0b3b8f;
   --color-primary-light: #3b82f6;
-  --color-background: #f8fafc;
-  --color-surface: #ffffff;
-  --color-text: #0f172a;
-  --color-muted: #64748b;
+  --color-background: var(--app-background);
+  --color-surface: var(--app-surface);
+  --color-text: var(--app-text);
+  --color-muted: var(--app-muted);
   --color-danger: #dc2626;
   --color-warning: #d97706;
   --color-success: #16a34a;
   --font-sans:
     'Helvetica Neue', Helvetica, Arial, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.dark {
+  --color-primary: #5b9aff;
+  --color-primary-light: #7eb3ff;
+  --color-danger: #f87171;
+  --color-warning: #fbbf24;
+  --color-success: #4ade80;
 }
 
 :root {
@@ -42,6 +82,59 @@
 
 html {
   height: 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html.theme-transition,
+  html.theme-transition body,
+  html.theme-transition .liquid-glass-surface,
+  html.theme-transition .liquid-glass-sidebar,
+  html.theme-transition .liquid-glass-dock,
+  html.theme-transition .course-panel-surface,
+  html.theme-transition .schedule-main-surface,
+  html.theme-transition .mobile-days,
+  html.theme-transition .day-schedule-list,
+  html.theme-transition .bottom-sheet,
+  html.theme-transition .schedule-course-block {
+    transition:
+      background-color 320ms cubic-bezier(0.4, 0, 0.2, 1),
+      color 320ms cubic-bezier(0.4, 0, 0.2, 1),
+      border-color 320ms cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 320ms cubic-bezier(0.4, 0, 0.2, 1),
+      filter 320ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 320ms;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  ::view-transition-old(root) {
+    animation-name: theme-crossfade-out;
+  }
+
+  ::view-transition-new(root) {
+    animation-name: theme-crossfade-in;
+  }
+}
+
+@keyframes theme-crossfade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes theme-crossfade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 body {
@@ -1546,5 +1639,207 @@ html.bottom-sheet-open .app-content {
 
   .exam-detail-panel-enter {
     animation: none;
+  }
+}
+
+/* ── Dark mode: custom surfaces + common utilities ─────────────────────────── */
+
+.dark .liquid-glass-surface {
+  background: rgba(18, 24, 32, 0.82);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.35),
+    0 2px 8px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.02);
+}
+
+.dark .mobile-days,
+.dark .day-schedule-list {
+  background: rgba(18, 24, 32, 0.92);
+  border-color: var(--app-border-subtle);
+}
+
+.dark .mobile-day-label-text {
+  color: rgba(232, 237, 243, 0.34);
+}
+
+.dark .mobile-day-label--active .mobile-day-label-text {
+  color: var(--app-text);
+}
+
+.dark .day-schedule-row:active {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.dark .day-schedule-row--conflict {
+  background: rgba(127, 29, 29, 0.18);
+}
+
+.dark .bottom-sheet {
+  background: rgba(18, 24, 32, 0.96);
+  box-shadow:
+    0 -1px 0 rgba(255, 255, 255, 0.06),
+    0 -16px 50px rgba(0, 0, 0, 0.45);
+}
+
+.dark .sheet-backdrop {
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.dark .schedule-header-badge {
+  background: var(--app-fill-muted);
+  color: var(--app-muted);
+}
+
+.dark .schedule-header-badge--selected,
+.dark .schedule-header-badge--empty {
+  background: var(--app-primary-soft);
+  color: var(--color-primary);
+}
+
+.dark .schedule-header-circle-btn,
+.dark .schedule-header-share-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: var(--app-muted);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.dark .schedule-sheet-sync {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--app-border-subtle);
+}
+
+.dark .course-panel-surface,
+.dark .schedule-main-surface {
+  background-color: color-mix(in srgb, var(--app-surface) 94%, var(--app-background));
+}
+
+.dark .schedule-grid-header {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--app-border-subtle);
+}
+
+.dark .schedule-grid-day-label,
+.dark .schedule-grid-hour-label {
+  color: color-mix(in srgb, var(--app-muted) 92%, var(--app-text)) !important;
+}
+
+.dark .schedule-grid-column,
+.dark .schedule-grid-hour-line {
+  border-color: rgba(255, 255, 255, 0.06) !important;
+}
+
+.dark .semester-group {
+  border-color: var(--app-border-subtle) !important;
+  background: color-mix(in srgb, var(--app-surface) 90%, var(--app-background)) !important;
+}
+
+.dark .semester-group:hover {
+  border-color: var(--app-border-strong) !important;
+}
+
+.dark .schedule-course-block.border-red-100\/90 {
+  background: rgba(127, 29, 29, 0.22) !important;
+  border-color: rgba(248, 113, 113, 0.35) !important;
+}
+
+.dark .course-card-surface {
+  background: rgba(18, 24, 32, 0.88);
+  border-color: var(--app-border-subtle);
+  box-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.2),
+    0 10px 30px rgba(0, 0, 0, 0.25);
+}
+
+.dark .section-row-surface {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: var(--app-border-subtle);
+}
+
+.dark .bg-white {
+  background-color: var(--app-surface) !important;
+}
+
+.dark .border-slate-100,
+.dark .border-slate-100\/80,
+.dark .border-slate-200,
+.dark .border-slate-200\/60,
+.dark .border-slate-200\/80 {
+  border-color: var(--app-border-subtle) !important;
+}
+
+.dark .bg-slate-50,
+.dark .bg-slate-50\/45,
+.dark .bg-slate-50\/40,
+.dark .bg-slate-100,
+.dark .bg-slate-100\/80,
+.dark .bg-slate-100\/90 {
+  background-color: color-mix(in srgb, var(--app-surface) 88%, var(--app-background)) !important;
+}
+
+.dark .text-slate-600,
+.dark .text-slate-700 {
+  color: color-mix(in srgb, var(--app-text) 88%, var(--app-muted)) !important;
+}
+
+.dark .text-slate-400,
+.dark .text-slate-500 {
+  color: var(--app-muted) !important;
+}
+
+.dark .text-slate-800,
+.dark .text-slate-900 {
+  color: var(--app-text) !important;
+}
+
+.dark .schedule-course-block .text-slate-400,
+.dark .schedule-course-block .text-slate-500,
+.dark .schedule-course-block .text-slate-800 {
+  color: inherit !important;
+}
+
+.dark .bg-white\/70,
+.dark .bg-white\/75,
+.dark .bg-white\/80,
+.dark .bg-white\/88,
+.dark .bg-white\/90 {
+  background-color: color-mix(in srgb, var(--app-surface) 82%, transparent) !important;
+}
+
+.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--app-border-subtle) !important;
+}
+
+.dark .border-slate-300 {
+  border-color: var(--app-border-strong) !important;
+}
+
+.dark .bg-slate-200 {
+  background-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.dark .hover\:bg-slate-50:hover,
+.dark .hover\:bg-slate-100:hover {
+  background-color: var(--app-fill-hover) !important;
+}
+
+.dark .hover\:bg-slate-100\/90:hover {
+  background-color: var(--app-fill-hover) !important;
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .dark .liquid-glass-surface,
+  .dark .liquid-glass-dock {
+    background: rgba(18, 24, 32, 0.94);
+  }
+
+  .dark .liquid-glass-sidebar {
+    background: rgba(18, 24, 32, 0.92);
+  }
+
+  .dark .nav-rail-indicator {
+    background: rgba(255, 255, 255, 0.08);
   }
 }

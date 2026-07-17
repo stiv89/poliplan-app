@@ -22,7 +22,7 @@ export function AppShell() {
               id="app-content"
               className="app-content flex min-h-0 flex-1 flex-col overflow-hidden bg-background md:px-4 md:py-3 lg:px-5 lg:py-4"
             >
-              <div className="liquid-glass-surface mx-auto flex min-h-0 w-full max-w-[1600px] flex-1 flex-col overflow-hidden md:flex-row md:rounded-[24px]">
+              <div className="liquid-glass-surface flex min-h-0 w-full flex-1 flex-col overflow-hidden md:flex-row md:rounded-[24px]">
                 <SidebarNav />
 
                 <main className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-background pb-mobile-dock md:bg-transparent">

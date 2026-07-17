@@ -12,10 +12,12 @@ import {
   useRef,
   useState,
   type MutableRefObject,
+  type ReactNode,
   type RefObject,
 } from 'react'
 import { NavLink, useLocation, useNavigate, matchPath } from 'react-router-dom'
 import { ROUTES } from '@/config/constants'
+import { SidebarThemeToggle } from '@/components/layout/SidebarThemeToggle'
 import logoMark from '../../../logos/logo-sidebar.png'
 
 const MAIN_NAV_ITEMS = [
@@ -182,7 +184,7 @@ function RailNavItem({
       className={({ isActive }) => {
         const active = previewMode ? previewActive : isActive
         return `group relative z-10 flex w-full flex-col items-center gap-1 rounded-xl px-1 py-2.5 transition-[color,transform,opacity] duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] active:scale-[0.96] ${
-          active ? 'text-primary' : 'text-slate-500/90 hover:text-slate-600'
+          active ? 'text-primary' : 'text-slate-500/90 hover:text-slate-600 dark:text-slate-400 dark:hover:text-slate-200'
         }`
       }}
       aria-label={badge > 0 ? `${label} (${badge} sin ver)` : label}
@@ -227,11 +229,13 @@ function NavRail({
   layout,
   className = '',
   footerItems,
+  footerLeading,
 }: {
   items: NavItemConfig[]
   layout: 'vertical' | 'horizontal'
   className?: string
   footerItems?: NavItemConfig[]
+  footerLeading?: ReactNode
 }) {
   const { pathname } = useLocation()
   const navigate = useNavigate()
@@ -380,7 +384,10 @@ function NavRail({
       ) : footerItems ? (
         <>
           <div className="flex flex-col items-center gap-0.5">{items.map(renderItem)}</div>
-          <div className="mt-auto flex flex-col items-center pt-2">{footerItems.map(renderItem)}</div>
+          <div className="mt-auto flex flex-col items-center gap-1 pt-2">
+            {footerLeading}
+            {footerItems.map(renderItem)}
+          </div>
         </>
       ) : (
         <div className="flex flex-col items-center gap-0.5">{items.map(renderItem)}</div>
@@ -413,6 +420,7 @@ export function SidebarNav() {
           <NavRail
             items={mainItems}
             footerItems={[SETTINGS_ITEM]}
+            footerLeading={<SidebarThemeToggle />}
             layout="vertical"
             className="h-full"
           />
