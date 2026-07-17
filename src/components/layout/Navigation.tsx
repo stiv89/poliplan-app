@@ -428,6 +428,7 @@ export function BottomNav() {
       ...MAIN_NAV_ITEMS[0],
       end: true,
     },
+    MAIN_NAV_ITEMS[1],
     MAIN_NAV_ITEMS[2],
     MAIN_NAV_ITEMS[3],
     SETTINGS_ITEM,

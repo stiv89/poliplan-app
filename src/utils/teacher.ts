@@ -127,3 +127,31 @@ export function buildStructuredReviewBody(
   const trimmed = comment.trim()
   return trimmed ? `${summary}\n\n${trimmed}` : summary
 }
+
+/** Etiqueta corta para agrupar electivas (p. ej. "Inteligencia Artificial"). */
+export function normalizeTeacherCourseLabel(courseName: string): string {
+  const trimmed = courseName.trim()
+  const elective = trimmed.match(/^Electiva\s+(?:\d+|[IVXLC]+)\s*-?\s*(.+)$/i)
+  if (elective?.[1]) return elective[1].trim()
+  const optative = trimmed.match(/^Optativa\s+(?:\d+|[IVXLC]+)\s*-?\s*(.+)$/i)
+  if (optative?.[1]) return optative[1].trim()
+  return trimmed
+}
+
+export function teacherCourseGroupKey(courseName: string): string {
+  return normalizeTeacherCourseLabel(courseName).toLowerCase()
+}
+
+export function extractReviewCourseFromBody(body: string): string | null {
+  const match = body.match(/(?:\n\n|^)Materia:\s*(.+)$/m)
+  return match?.[1]?.trim() ?? null
+}
+
+export function formatReviewComment(body: string): string {
+  const parts = body.split('\n\n').filter(Boolean)
+  if (parts.length === 0) return body
+  const commentParts = parts.slice(1).filter((part) => !part.startsWith('Materia:'))
+  if (commentParts.length > 0) return commentParts.join('\n\n').trim()
+  if (parts[0]?.includes('/5')) return ''
+  return body
+}

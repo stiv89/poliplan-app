@@ -5,7 +5,6 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Flag, LoaderCircle, PenLine, Star, X } from 'lucide-react'
 import { useAuth } from '@/features/auth/AuthContext'
-import { useSchedule } from '@/hooks/useSchedule'
 import { Button } from '@/components/ui/Button'
 import { ROUTES } from '@/config/constants'
 import {
@@ -25,6 +24,10 @@ import {
   defaultDimensionRatings,
   formatRelativeReviewDate,
   formatReviewRatingAverage,
+  formatReviewComment,
+  extractReviewCourseFromBody,
+  normalizeTeacherCourseLabel,
+  teacherCourseGroupKey,
   type ReviewDimensionId,
   type ReviewDimensionRatings,
 } from '@/utils/teacher'
@@ -37,11 +40,10 @@ interface ProfessorProfileModalProps {
 export function ProfessorProfileModal({ input, onClose }: ProfessorProfileModalProps) {
   const navigate = useNavigate()
   const { user, isConfigured } = useAuth()
-  const { activePeriod } = useSchedule()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [profile, setProfile] = useState<TeacherProfile | null>(null)
-  const [courseFilter, setCourseFilter] = useState<string | 'all'>(input.courseId ?? 'all')
+  const [courseFilter, setCourseFilter] = useState<string | 'all'>('all')
   const [sort, setSort] = useState<ReviewSort>('recent')
   const [showReviewForm, setShowReviewForm] = useState(false)
   const [dimensions, setDimensions] = useState<ReviewDimensionRatings>(defaultDimensionRatings)
@@ -83,7 +85,6 @@ export function ProfessorProfileModal({ input, onClose }: ProfessorProfileModalP
         const data = await fetchTeacherProfile(teacherId, input.academicPeriodId)
         if (!cancelled) {
           setProfile(data)
-          setCourseFilter(input.courseId ?? 'all')
         }
       } catch (err) {
         if (!cancelled) {
@@ -100,8 +101,6 @@ export function ProfessorProfileModal({ input, onClose }: ProfessorProfileModalP
     }
   }, [input, isConfigured])
 
-  const periodName = activePeriod?.name ?? null
-
   const primarySection = useMemo(() => {
     if (!profile) return null
     if (input.courseId) {
@@ -112,16 +111,22 @@ export function ProfessorProfileModal({ input, onClose }: ProfessorProfileModalP
 
   const courseOptions = useMemo(() => {
     if (!profile) return []
-    const map = new Map<string, string>()
+    const map = new Map<string, { id: string; label: string }>()
     for (const section of profile.sections) {
-      map.set(section.courseId, section.courseName)
+      const label = normalizeTeacherCourseLabel(section.courseName)
+      const key = teacherCourseGroupKey(section.courseName)
+      if (!map.has(key)) {
+        map.set(key, { id: section.courseId, label })
+      }
     }
     for (const review of profile.reviews) {
       if (review.courseId && !map.has(review.courseId)) {
-        map.set(review.courseId, 'Materia')
+        const fromBody = extractReviewCourseFromBody(review.body)
+        const label = fromBody ?? 'Materia'
+        map.set(teacherCourseGroupKey(label), { id: review.courseId, label })
       }
     }
-    return [...map.entries()].map(([id, label]) => ({ id, label }))
+    return [...map.values()].sort((a, b) => a.label.localeCompare(b.label, 'es'))
   }, [profile])
 
   const filteredReviews = useMemo(() => {
@@ -129,13 +134,23 @@ export function ProfessorProfileModal({ input, onClose }: ProfessorProfileModalP
     const base =
       courseFilter === 'all'
         ? profile.reviews
-        : profile.reviews.filter((review) => review.courseId === courseFilter)
+        : profile.reviews.filter((review) => {
+            if (!review.courseId) return true
+            if (review.courseId === courseFilter) return true
+            const selected = courseOptions.find((course) => course.id === courseFilter)
+            if (!selected) return false
+            const selectedKey = teacherCourseGroupKey(selected.label)
+            const reviewLabel =
+              courseOptions.find((course) => course.id === review.courseId)?.label ??
+              extractReviewCourseFromBody(review.body)
+            return reviewLabel ? teacherCourseGroupKey(reviewLabel) === selectedKey : false
+          })
 
     if (sort === 'helpful') {
       return [...base].sort((a, b) => b.rating - a.rating || b.createdAt.localeCompare(a.createdAt))
     }
     return base
-  }, [courseFilter, profile, sort])
+  }, [courseFilter, courseOptions, profile, sort])
 
   const showSummary = (profile?.reviewCount ?? 0) >= REVIEW_MIN_FOR_SUMMARY
   const reviewsRemaining = Math.max(0, REVIEW_MIN_FOR_SUMMARY - (profile?.reviewCount ?? 0))
@@ -300,33 +315,27 @@ export function ProfessorProfileModal({ input, onClose }: ProfessorProfileModalP
                 </div>
               )}
 
-              <div>
-                <div className="flex flex-wrap gap-1.5">
-                  {REVIEW_SUMMARY_CHIPS.map((chip) => (
-                    <span
-                      key={chip}
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                        showSummary
-                          ? 'bg-slate-100 text-slate-600'
-                          : 'bg-slate-50 text-slate-400'
-                      }`}
-                    >
-                      {chip}
-                    </span>
-                  ))}
-                </div>
-                {!showSummary && (
-                  <p className="mt-2 text-xs text-muted">
-                    Estos valores aparecerán cuando haya suficientes reseñas.
-                  </p>
-                )}
-              </div>
-
-              {profile.sections.length > 0 && (
-                <div className="flex flex-wrap gap-2">
-                  {profile.sections.map((section) => (
-                    <SectionTag key={section.sectionId} section={section} periodName={periodName} />
-                  ))}
+              {profile.reviewCount > 0 && (
+                <div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {REVIEW_SUMMARY_CHIPS.map((chip) => (
+                      <span
+                        key={chip}
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                          showSummary
+                            ? 'bg-slate-100 text-slate-600'
+                            : 'bg-slate-50 text-slate-400'
+                        }`}
+                      >
+                        {chip}
+                      </span>
+                    ))}
+                  </div>
+                  {!showSummary && (
+                    <p className="mt-2 text-xs text-muted">
+                      Estos valores aparecerán cuando haya suficientes reseñas.
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -377,7 +386,7 @@ export function ProfessorProfileModal({ input, onClose }: ProfessorProfileModalP
                       review={review}
                       courseLabel={
                         courseOptions.find((course) => course.id === review.courseId)?.label ??
-                        null
+                        extractReviewCourseFromBody(review.body)
                       }
                       onReport={() => setReportReviewId(review.id)}
                     />
@@ -456,25 +465,6 @@ export function ProfessorProfileModal({ input, onClose }: ProfessorProfileModalP
           </div>
         )}
       </div>
-    </div>
-  )
-}
-
-function SectionTag({
-  section,
-  periodName,
-}: {
-  section: TeacherProfile['sections'][number]
-  periodName: string | null
-}) {
-  const meta = [section.courseCode, `Sección ${section.sectionCode}`, periodName]
-    .filter(Boolean)
-    .join(' ')
-
-  return (
-    <div className="rounded-xl border border-slate-100 bg-slate-50/60 px-3 py-2">
-      <p className="text-sm font-medium text-text">{section.courseName}</p>
-      {meta && <p className="mt-0.5 text-xs text-muted">{meta}</p>}
     </div>
   )
 }
@@ -683,8 +673,7 @@ function ReviewCard({
   courseLabel: string | null
   onReport: () => void
 }) {
-  const bodyParts = review.body.split('\n\n')
-  const comment = bodyParts.length > 1 ? bodyParts.slice(1).join('\n\n') : review.body
+  const comment = formatReviewComment(review.body)
 
   return (
     <article className="rounded-2xl border border-slate-100 bg-background px-4 py-3.5">
@@ -704,7 +693,9 @@ function ReviewCard({
           <Flag className="h-3.5 w-3.5" />
         </button>
       </div>
-      <p className="mt-2 text-sm leading-relaxed text-text">{comment}</p>
+      <p className="mt-2 text-sm leading-relaxed text-text">
+        {comment || 'Reseña sin comentario escrito.'}
+      </p>
       <div className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-muted">
         {courseLabel && <span>{courseLabel}</span>}
         {courseLabel && <span aria-hidden="true">·</span>}
