@@ -1,10 +1,11 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import examsEmptyIllustration from '../../logos/empty.png'
 import { ExamAgenda, ExamAgendaEmpty } from '@/components/exams/ExamAgenda'
 import { ExamDetailPanel } from '@/components/exams/ExamDetailPanel'
 import { ExamMonthCalendar } from '@/components/exams/ExamMonthCalendar'
 import { LoadingState } from '@/components/feedback/LoadingState'
+import { BottomSheet } from '@/components/ui/BottomSheet'
 import { useDataTrustInfo } from '@/components/ui/DataTrustBanner'
 import { ROUTES } from '@/config/constants'
 import { useChanges } from '@/hooks/useChanges'
@@ -202,21 +203,21 @@ export function ExamsPage() {
         )}
       </div>
 
-      {detailExam && (
-        <ExamDetailOverlay
-          exam={detailExam}
-          changes={changes}
-          isOnline={isOnline}
-          dataIsStale={dataIsStale}
-          lastUpdated={lastUpdated ?? trustInfo?.downloadedAt ?? null}
-          onClose={() => setDetailExam(null)}
-        />
-      )}
+      <ExamDetailOverlay
+        open={detailExam != null}
+        exam={detailExam}
+        changes={changes}
+        isOnline={isOnline}
+        dataIsStale={dataIsStale}
+        lastUpdated={lastUpdated ?? trustInfo?.downloadedAt ?? null}
+        onClose={() => setDetailExam(null)}
+      />
     </div>
   )
 }
 
 function ExamDetailOverlay({
+  open,
   exam,
   changes,
   isOnline,
@@ -224,7 +225,8 @@ function ExamDetailOverlay({
   lastUpdated,
   onClose,
 }: {
-  exam: ExamItem
+  open: boolean
+  exam: ExamItem | null
   changes: ScheduleChange[]
   isOnline: boolean
   dataIsStale: boolean
@@ -232,31 +234,68 @@ function ExamDetailOverlay({
   onClose: () => void
 }) {
   const panelRef = useRef<HTMLDivElement>(null)
-  useFocusTrap(true, panelRef, onClose)
+  const [isDesktop, setIsDesktop] = useState(() =>
+    window.matchMedia('(min-width: 768px)').matches,
+  )
+
+  useEffect(() => {
+    const media = window.matchMedia('(min-width: 768px)')
+    const sync = () => setIsDesktop(media.matches)
+    sync()
+    media.addEventListener('change', sync)
+    return () => media.removeEventListener('change', sync)
+  }, [])
+
+  useFocusTrap(open && isDesktop, panelRef, onClose)
 
   return (
     <>
-      <div
-        className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm md:bg-black/[0.06] md:backdrop-blur-none"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-      <div
-        ref={panelRef}
-        className="exam-detail-panel-enter fixed inset-x-0 bottom-0 z-50 flex max-h-[92dvh] flex-col rounded-t-2xl border-t border-slate-200 bg-surface shadow-2xl md:inset-x-auto md:inset-y-0 md:right-0 md:bottom-auto md:top-0 md:h-full md:max-h-none md:w-[380px] md:rounded-none md:border-l md:border-t-0 md:shadow-[-12px_0_32px_rgba(15,23,42,0.12)]"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Detalle de examen"
+      <BottomSheet
+        open={open}
+        onClose={onClose}
+        ariaLabel="Detalle de examen"
+        bare
+        showHandle
+        mobileOnly
+        maxHeight="92dvh"
       >
-        <ExamDetailPanel
-          exam={exam}
-          changes={changes}
-          isOnline={isOnline}
-          dataIsStale={dataIsStale}
-          lastUpdated={lastUpdated}
-          onClose={onClose}
-        />
-      </div>
+        {exam ? (
+          <ExamDetailPanel
+            exam={exam}
+            changes={changes}
+            isOnline={isOnline}
+            dataIsStale={dataIsStale}
+            lastUpdated={lastUpdated}
+            onClose={onClose}
+          />
+        ) : null}
+      </BottomSheet>
+
+      {isDesktop && open && exam ? (
+        <>
+          <div
+            className="fixed inset-0 z-40 bg-black/[0.06]"
+            onClick={onClose}
+            aria-hidden="true"
+          />
+          <div
+            ref={panelRef}
+            className="exam-detail-panel-enter fixed inset-y-0 right-0 z-50 flex h-full w-[380px] flex-col border-l border-slate-200 bg-surface shadow-[-12px_0_32px_rgba(15,23,42,0.12)]"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Detalle de examen"
+          >
+            <ExamDetailPanel
+              exam={exam}
+              changes={changes}
+              isOnline={isOnline}
+              dataIsStale={dataIsStale}
+              lastUpdated={lastUpdated}
+              onClose={onClose}
+            />
+          </div>
+        </>
+      ) : null}
     </>
   )
 }

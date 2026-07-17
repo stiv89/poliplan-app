@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { ChangeDetailPanel } from '@/components/changes/ChangeDetailPanel'
+import { BottomSheet } from '@/components/ui/BottomSheet'
 import { ChangeListItem } from '@/components/changes/ChangeListItem'
 import { ChangesEmptyState } from '@/components/changes/ChangesEmptyState'
 import { ChangesFilterBar } from '@/components/changes/ChangesFilterBar'
@@ -174,26 +175,23 @@ export function ChangesPage() {
         )}
       </div>
 
-      {detailChange && (
-        <>
-          <div
-            className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm md:hidden"
-            onClick={() => setDetailChange(null)}
-            aria-hidden="true"
+      <BottomSheet
+        open={detailChange != null}
+        onClose={() => setDetailChange(null)}
+        ariaLabel="Detalle de novedad"
+        bare
+        showHandle
+        mobileOnly
+        maxHeight="92dvh"
+      >
+        {detailChange ? (
+          <ChangeDetailPanel
+            change={detailChange}
+            onClose={() => setDetailChange(null)}
+            onMarkSeen={() => void handleMarkSeen(detailChange.id)}
           />
-          <div
-            className="fixed inset-x-0 bottom-0 z-50 flex max-h-[92dvh] flex-col rounded-t-2xl border-t border-slate-200 bg-surface shadow-2xl md:hidden"
-            role="dialog"
-            aria-label="Detalle de novedad"
-          >
-            <ChangeDetailPanel
-              change={detailChange}
-              onClose={() => setDetailChange(null)}
-              onMarkSeen={() => void handleMarkSeen(detailChange.id)}
-            />
-          </div>
-        </>
-      )}
+        ) : null}
+      </BottomSheet>
     </div>
   )
 }

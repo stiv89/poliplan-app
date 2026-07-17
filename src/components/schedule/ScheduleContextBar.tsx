@@ -20,7 +20,7 @@ interface ScheduleContextBarProps {
   schedulePicker: Omit<SchedulePickerPanelProps, 'open' | 'onClose' | 'periodName'>
   titleClassName?: string
   compact?: boolean
-  onShareSchedule?: () => void
+  onShareSchedule?: () => Promise<string>
 }
 
 /** Desktop schedule context entry — unified two-line selector. */

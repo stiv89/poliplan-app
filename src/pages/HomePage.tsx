@@ -15,12 +15,10 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import {
   Plus,
   Bell,
-  X,
   Cloud,
   CircleHelp,
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import logoMark from '../../logos/logo-sidebar.png'
 import scheduleEmptyIllustration from '../../logos/schedule-empty-illustration.webp'
 import { DAYS_OF_WEEK, ROUTES } from '@/config/constants'
 import { ScheduleSaveStatus } from '@/components/guest/ScheduleSaveStatus'
@@ -29,7 +27,6 @@ import { useGuestExperience } from '@/features/guest/GuestExperienceContext'
 import { useChanges } from '@/hooks/useChanges'
 import { useSchedule } from '@/hooks/useSchedule'
 import { SectionSearchPanel } from '@/components/schedule/SectionSearchPanel'
-import { ShareScheduleDialog } from '@/components/schedule/ShareScheduleDialog'
 import { ScheduleContextBar } from '@/components/schedule/ScheduleContextBar'
 import { ScheduleContextSelector } from '@/components/schedule/ScheduleContextSelector'
 import {
@@ -38,6 +35,9 @@ import {
 } from '@/components/schedule/SchedulePickerSheet'
 import { WeeklyScheduleGrid } from '@/components/schedule/WeeklyScheduleGrid'
 import { DayScheduleView } from '@/components/schedule/DayScheduleView'
+import { MobileDaySelector } from '@/components/schedule/MobileDaySelector'
+import { BottomSheet } from '@/components/ui/BottomSheet'
+import { useHorizontalDaySwipe } from '@/hooks/useHorizontalDaySwipe'
 import { scheduleRepository } from '@/repositories/SupabaseScheduleRepository'
 import { DEFAULT_SCHEDULE_VIEW_FILTERS } from '@/types/scheduleFilters'
 import type { ScheduleViewFilters } from '@/types/scheduleFilters'
@@ -84,7 +84,6 @@ export function HomePage() {
   // Drawer state
   const [searchOpen, setSearchOpen] = useState(false)
   const [searchPrefill, setSearchPrefill] = useState('')
-  const [shareDialogUrl, setShareDialogUrl] = useState<string | null>(null)
   const [shareError, setShareError] = useState<string | null>(null)
 
   // Mobile state
@@ -109,11 +108,10 @@ export function HomePage() {
   }, [])
 
   const handleShareSchedule = useCallback(
-    async (scheduleId: string) => {
+    async (scheduleId: string): Promise<string> => {
       setShareError(null)
       try {
-        const url = await shareSchedule(scheduleId)
-        setShareDialogUrl(url)
+        return await shareSchedule(scheduleId)
       } catch (error) {
         const code = error instanceof Error ? error.message : 'unknown'
         if (code === 'empty') {
@@ -123,6 +121,7 @@ export function HomePage() {
         } else {
           setShareError('No pudimos generar el link. Intentá de nuevo.')
         }
+        throw error
       }
     },
     [shareSchedule],
@@ -263,6 +262,42 @@ export function HomePage() {
 
   const hasScheduleSections = selectedSections.length > 0
 
+  const mobileDayValues = useMemo(() => DAYS_OF_WEEK.map((day) => day.value), [])
+
+  const goToPreviousMobileDay = useCallback(() => {
+    setMobileDay((current) => {
+      const index = mobileDayValues.indexOf(current as (typeof mobileDayValues)[number])
+      if (index <= 0) return current
+      return mobileDayValues[index - 1]!
+    })
+  }, [mobileDayValues])
+
+  const goToNextMobileDay = useCallback(() => {
+    setMobileDay((current) => {
+      const index = mobileDayValues.indexOf(current as (typeof mobileDayValues)[number])
+      if (index < 0 || index >= mobileDayValues.length - 1) return current
+      return mobileDayValues[index + 1]!
+    })
+  }, [mobileDayValues])
+
+  const hasMeetingsForDay = useCallback(
+    (day: number) =>
+      selectedSections.some((section) =>
+        section.meetings.some((meeting) => meeting.dayOfWeek === day),
+      ),
+    [selectedSections],
+  )
+
+  const {
+    ref: daySwipeRef,
+    offsetX: daySwipeOffsetX,
+    isAnimating: daySwipeAnimating,
+  } = useHorizontalDaySwipe({
+    onPrevious: goToPreviousMobileDay,
+    onNext: goToNextMobileDay,
+    enabled: hasScheduleSections,
+  })
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       {/* ── BANNERS ─────────────────────────────────────────────────── */}
@@ -310,7 +345,7 @@ export function HomePage() {
             onSync={requestScheduleSync}
             onShareSchedule={
               activeSchedule?.id
-                ? () => void handleShareSchedule(activeSchedule.id)
+                ? () => handleShareSchedule(activeSchedule.id)
                 : undefined
             }
           />
@@ -369,80 +404,74 @@ export function HomePage() {
           officialDataSyncing={syncStatus === 'downloading' || syncStatus === 'checking'}
           onSync={requestScheduleSync}
           onShareSchedule={
-            activeSchedule?.id ? () => void handleShareSchedule(activeSchedule.id) : undefined
+            activeSchedule?.id ? () => handleShareSchedule(activeSchedule.id) : undefined
           }
           isEmpty={!hasScheduleSections}
         />
 
-        {hasScheduleSections && (
-          <div className="shrink-0 px-2 py-2" data-tour="day-selector">
-            <div className="grid grid-cols-6 gap-1">
-              {DAYS_OF_WEEK.map((day) => {
-                const hasMeetings = selectedSections.some((s) =>
-                  s.meetings.some((m) => m.dayOfWeek === day.value),
-                )
-                const isActive = mobileDay === day.value
-                return (
-                  <button
-                    key={day.value}
-                    onClick={() => setMobileDay(day.value)}
-                    className={`flex min-h-10 w-full flex-col items-center justify-center rounded-lg px-1 py-1.5 text-xs font-normal transition ${
-                      isActive ? 'bg-slate-800 text-white' : 'text-slate-500 hover:bg-slate-100/80'
-                    }`}
-                    aria-pressed={isActive}
-                  >
-                    <span>{day.label.slice(0, 3)}</span>
-                    {hasMeetings && (
-                      <span
-                        className={`mt-0.5 h-1.5 w-1.5 rounded-full ${isActive ? 'bg-white/70' : 'bg-slate-400/70'}`}
-                        aria-hidden="true"
-                      />
-                    )}
-                  </button>
-                )
-              })}
+        {hasScheduleSections ? (
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            <MobileDaySelector
+              days={DAYS_OF_WEEK}
+              activeDay={mobileDay}
+              onDayChange={setMobileDay}
+              hasMeetingsForDay={hasMeetingsForDay}
+            />
+
+            <div className="day-content relative">
+              <div
+                ref={daySwipeRef}
+                className="day-content-swipe"
+                style={{
+                  transform: daySwipeOffsetX
+                    ? `translateX(${daySwipeOffsetX}px)`
+                    : undefined,
+                  transition: daySwipeAnimating
+                    ? 'transform 220ms cubic-bezier(0.32, 0.72, 0, 1)'
+                    : 'none',
+                }}
+              >
+                <DayScheduleView
+                  key={mobileDay}
+                  day={mobileDay}
+                  selectedSections={selectedSections}
+                  conflicts={conflicts}
+                  coursesById={coursesMeta}
+                  onRemoveSection={(id) => void handleRemove(id)}
+                  onViewAlternatives={handleViewAlternatives}
+                  removingId={removingId}
+                />
+              </div>
+
+              <button
+                onClick={() => openSearch()}
+                data-tour="add-course-fab"
+                className="bottom-above-dock fixed right-4 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white shadow-lg transition hover:bg-primary/90 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                aria-label="Agregar materia"
+              >
+                <Plus className="h-6 w-6" aria-hidden="true" />
+              </button>
             </div>
           </div>
-        )}
-
-        <div className="relative min-h-0 flex-1 overflow-y-auto">
-          {!hasScheduleSections ? (
+        ) : (
+          <div className="flex min-h-0 flex-1 items-center justify-center px-6">
             <EmptyScheduleMobileOnboarding
               hasCareer={Boolean(settings?.selectedCareerId)}
               onAddFirst={() => openSearch()}
               onSync={isOnline ? requestScheduleSync : undefined}
               onShowTour={() => window.dispatchEvent(new Event('poliplan:show-schedule-tour'))}
             />
-          ) : (
-            <DayScheduleView
-              day={mobileDay}
-              selectedSections={selectedSections}
-              conflicts={conflicts}
-              coursesById={coursesMeta}
-              onRemoveSection={(id) => void handleRemove(id)}
-              onViewAlternatives={handleViewAlternatives}
-              removingId={removingId}
-            />
-          )}
-
-          {hasScheduleSections && (
-            <button
-              onClick={() => openSearch()}
-              data-tour="add-course-fab"
-              className="bottom-above-dock fixed right-4 z-30 flex min-h-11 items-center gap-2 rounded-full bg-primary px-4 py-3 text-sm font-medium text-white shadow-lg hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
-              aria-label="Agregar materia"
-            >
-              <Plus className="h-5 w-5" aria-hidden="true" />
-              <span>Agregar materia</span>
-            </button>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* Bottom sheet: Búsqueda */}
         <BottomSheet
           open={searchOpen}
           onClose={() => setSearchOpen(false)}
+          ariaLabel="Agregar materia"
           title="Agregar materia"
+          tall
+          className="overflow-hidden"
         >
           <SectionSearchPanel
             key={searchPrefill}
@@ -459,12 +488,6 @@ export function HomePage() {
           onDismiss={dismissPendingDelete}
         />
       )}
-
-      <ShareScheduleDialog
-        open={Boolean(shareDialogUrl)}
-        url={shareDialogUrl ?? ''}
-        onClose={() => setShareDialogUrl(null)}
-      />
 
       {shareError && (
         <div className="fixed bottom-6 left-1/2 z-50 max-w-sm -translate-x-1/2 rounded-xl border border-red-200 bg-white px-4 py-3 text-sm text-red-700 shadow-lg">
@@ -519,10 +542,10 @@ function ScheduleHeader({
   userSyncAt: string | null
   officialDataSyncing: boolean
   onSync: () => void
-  onShareSchedule?: () => void
+  onShareSchedule?: () => Promise<string>
 }) {
   return (
-    <header className="shrink-0 border-b border-slate-200/50 bg-slate-50/45 px-6 py-2">
+    <header className="shrink-0 px-6 py-3">
       <ScheduleContextBar
         scheduleName={scheduleName}
         periodName={periodName}
@@ -536,7 +559,7 @@ function ScheduleHeader({
         schedulePicker={schedulePicker}
         onShareSchedule={onShareSchedule}
       />
-      <div className="mt-1">
+      <div className="mt-2">
         <ScheduleSaveStatus
           isOnline={isOnline}
           isAuthenticated={isAuthenticated}
@@ -584,23 +607,11 @@ function MobileHeader({
   userSyncAt: string | null
   officialDataSyncing: boolean
   onSync: () => void
-  onShareSchedule?: () => void
+  onShareSchedule?: () => Promise<string>
   isEmpty?: boolean
 }) {
   return (
-    <header className={`shrink-0 px-4 ${isEmpty ? 'pt-2.5 pb-3' : 'py-2'}`}>
-      <div className="mb-1.5 flex items-center gap-2">
-        <img
-          src={logoMark}
-          alt=""
-          className={`shrink-0 select-none rounded-lg object-contain opacity-90 ${
-            isEmpty ? 'h-7 w-7' : 'h-8 w-8'
-          }`}
-          draggable={false}
-          aria-hidden="true"
-        />
-        <h1 className="text-lg font-bold tracking-tight text-text">PoliPlan</h1>
-      </div>
+    <header className={`schedule-mobile-header shrink-0 ${isEmpty ? 'schedule-mobile-header--empty' : ''}`}>
       <ScheduleContextSelector
         presentation="sheet"
         scheduleName={scheduleName}
@@ -616,7 +627,7 @@ function MobileHeader({
       />
 
       {!isEmpty && (
-        <div className="mt-1.5">
+        <div className="schedule-mobile-sync">
           <ScheduleSaveStatus
             isOnline={isOnline}
             isAuthenticated={isAuthenticated}
@@ -625,72 +636,10 @@ function MobileHeader({
             officialDataSyncing={officialDataSyncing}
             onSync={onSync}
             compact
-            hiddenUnlessNotable
           />
         </div>
       )}
     </header>
-  )
-}
-
-// ── Bottom sheet (móvil) ──────────────────────────────────────────────────────
-
-function BottomSheet({
-  open,
-  onClose,
-  title,
-  minimal = false,
-  tall = false,
-  children,
-}: {
-  open: boolean
-  onClose: () => void
-  title?: string
-  minimal?: boolean
-  tall?: boolean
-  children: React.ReactNode
-}) {
-  if (!open) return null
-  return (
-    <>
-      <div
-        className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-      <div
-        className={`fixed inset-x-0 bottom-0 z-50 flex flex-col rounded-t-[24px] border-t border-slate-200 bg-surface shadow-2xl ${
-          tall ? 'h-[90dvh] max-h-[90dvh]' : 'max-h-[85dvh]'
-        }`}
-        role="dialog"
-        aria-label={title ?? 'Panel'}
-      >
-        {minimal ? (
-          <div className="relative shrink-0 pt-2">
-            <div
-              className="mx-auto h-1 w-10 rounded-full bg-slate-200"
-              aria-hidden="true"
-            />
-          </div>
-        ) : (
-          <div className="relative flex shrink-0 items-center justify-between border-b border-slate-100 px-4 py-3">
-            <div
-              className="absolute left-1/2 top-3 h-1 w-10 -translate-x-1/2 rounded-full bg-slate-200"
-              aria-hidden="true"
-            />
-            <p className="text-sm font-semibold text-text">{title}</p>
-            <button
-              onClick={onClose}
-              className="rounded-lg p-1.5 hover:bg-slate-100"
-              aria-label="Cerrar"
-            >
-              <X className="h-4 w-4 text-muted" />
-            </button>
-          </div>
-        )}
-        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">{children}</div>
-      </div>
-    </>
   )
 }
 
@@ -759,13 +708,13 @@ function EmptyScheduleMobileOnboarding({
   const isPassive = !hasCareer
 
   return (
-    <div className="flex min-h-full -translate-y-10 flex-col items-center justify-center px-6 pb-10 pt-6 text-center">
+    <div className="flex w-full max-w-[20rem] flex-col items-center text-center">
       <img
         src={scheduleEmptyIllustration}
         alt="Ilustración de un horario académico"
         width={520}
         height={520}
-        className={`mb-8 h-auto max-h-[230px] w-[clamp(200px,58vw,230px)] object-contain ${
+        className={`mb-6 h-auto max-h-[210px] w-[min(58vw,210px)] object-contain ${
           isPassive ? 'opacity-[0.65]' : 'opacity-90'
         }`}
         draggable={false}
@@ -780,7 +729,7 @@ function EmptyScheduleMobileOnboarding({
         {isPassive ? 'Tu horario aparecerá acá' : 'Agregá tu primera materia'}
       </h2>
       <p
-        className={`mt-2 max-w-[18rem] leading-relaxed ${
+        className={`mt-2 leading-relaxed ${
           isPassive ? 'text-sm text-slate-400' : 'text-sm text-muted'
         }`}
       >
@@ -792,12 +741,12 @@ function EmptyScheduleMobileOnboarding({
         <button
           type="button"
           onClick={onAddFirst}
-          className="mt-6 flex h-[62px] w-[84%] max-w-[18rem] items-center justify-center rounded-xl bg-primary px-5 text-sm font-medium text-white shadow-[0_6px_18px_rgba(11,59,143,0.18)] hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+          className="mt-6 flex h-[62px] w-full items-center justify-center rounded-xl bg-primary px-5 text-sm font-medium text-white shadow-[0_6px_18px_rgba(11,59,143,0.18)] hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
         >
           Agregar mi primera materia
         </button>
       )}
-      <div className={`flex flex-wrap items-center justify-center gap-x-5 gap-y-2 ${isPassive ? 'mt-6' : 'mt-5'}`}>
+      <div className={`flex w-full flex-wrap items-center justify-center gap-x-5 gap-y-2 ${isPassive ? 'mt-6' : 'mt-5'}`}>
         {onSync && (
           <button
             type="button"

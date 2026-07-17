@@ -9,6 +9,7 @@ import { CourseFootnoteCardNote } from '@/components/schedule/CourseFootnoteNoti
 import { LandingDoodleBackground } from '@/components/public/LandingDoodleBackground'
 import { SectionListSkeleton } from '@/components/schedule/SectionListSkeleton'
 import { SectionDetailPanel } from '@/components/sections/SectionDetailPanel'
+import { BottomSheet } from '@/components/ui/BottomSheet'
 import { TeacherNameButton } from '@/components/teachers/TeacherNameButton'
 import { ROUTES } from '@/config/constants'
 import { useAcademicHistory } from '@/hooks/useAcademicHistory'
@@ -232,37 +233,34 @@ export function SectionsExplorer({
         )}
       </div>
 
-      {detailSection && detailCourse && (
-        <>
-          <div
-            className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm md:hidden"
-            onClick={() => setDetailSection(null)}
-            aria-hidden="true"
+      <BottomSheet
+        open={detailSection != null && detailCourse != null}
+        onClose={() => setDetailSection(null)}
+        ariaLabel="Detalle de sección"
+        bare
+        showHandle
+        mobileOnly
+        maxHeight="92dvh"
+      >
+        {detailSection && detailCourse ? (
+          <SectionDetailPanel
+            section={detailSection}
+            courseName={detailCourse.name}
+            courseCode={detailCourse.code}
+            selected={isSectionSelected(detailSection.id)}
+            conflicts={conflicts}
+            selectedSections={selectedSections}
+            siblingSections={siblingSections}
+            coursesById={conflictCourseMap}
+            allSectionsById={allSectionsById}
+            toggleLoading={toggleLoading}
+            onToggle={() => onToggle(detailSection)}
+            onSelectSibling={setDetailSection}
+            onClose={() => setDetailSection(null)}
+            progressLabel={detailProgressLabel}
           />
-          <div
-            className="fixed inset-x-0 bottom-0 z-50 flex max-h-[92dvh] flex-col rounded-t-2xl border-t border-slate-200 bg-surface shadow-2xl md:hidden"
-            role="dialog"
-            aria-label="Detalle de sección"
-          >
-            <SectionDetailPanel
-              section={detailSection}
-              courseName={detailCourse.name}
-              courseCode={detailCourse.code}
-              selected={isSectionSelected(detailSection.id)}
-              conflicts={conflicts}
-              selectedSections={selectedSections}
-              siblingSections={siblingSections}
-              coursesById={conflictCourseMap}
-              allSectionsById={allSectionsById}
-              toggleLoading={toggleLoading}
-              onToggle={() => onToggle(detailSection)}
-              onSelectSibling={setDetailSection}
-              onClose={() => setDetailSection(null)}
-              progressLabel={detailProgressLabel}
-            />
-          </div>
-        </>
-      )}
+        ) : null}
+      </BottomSheet>
     </div>
   )
 }

@@ -59,6 +59,34 @@ export const COURSE_COLORS = [
 
 export type CourseColor = (typeof COURSE_COLORS)[number]
 
+/** Acentos más saturados para avatares y títulos en listas mobile. */
+export const MOBILE_COURSE_ACCENTS = [
+  '#0B3B8F',
+  '#1E4FA3',
+  '#2563EB',
+  '#1D4ED8',
+  '#0369A1',
+  '#0E7490',
+  '#4338CA',
+  '#6D28D9',
+] as const
+
+export function getCourseListAccent(courseId: string): string {
+  let hash = 0
+  for (let i = 0; i < courseId.length; i++) {
+    hash = (hash * 31 + courseId.charCodeAt(i)) >>> 0
+  }
+  return MOBILE_COURSE_ACCENTS[hash % MOBILE_COURSE_ACCENTS.length]!
+}
+
+export function getCourseInitial(name: string, code: string | null | undefined): string {
+  const fromName = name.trim().match(/[A-Za-zÁÉÍÓÚáéíóúÑñ]/)?.[0]
+  if (fromName) return fromName.toUpperCase()
+  const fromCode = code?.match(/[A-Za-z]/)?.[0]
+  if (fromCode) return fromCode.toUpperCase()
+  return '?'
+}
+
 /** Devuelve un color determinista para una courseId dada */
 export function getCourseColor(courseId: string): CourseColor {
   let hash = 0

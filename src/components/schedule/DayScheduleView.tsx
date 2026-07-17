@@ -1,15 +1,12 @@
 /**
- * DayScheduleView — Vista diaria para móvil
+ * DayScheduleView — Vista diaria para móvil (lista estilo iOS)
  */
 import { AlertTriangle } from 'lucide-react'
-import { getCourseColor } from '@/config/constants'
+import { getCourseInitial, getCourseListAccent } from '@/config/constants'
 import { ClassBlockPopoverLayer } from '@/components/schedule/ClassBlockPopoverLayer'
-import {
-  shortCourseLabel,
-  type ClassBlockInfo,
-} from '@/components/schedule/ClassBlockDetail'
+import type { ClassBlockInfo } from '@/components/schedule/ClassBlockDetail'
 import { useClassBlockPopover } from '@/components/schedule/useClassBlockPopover'
-import { formatTimeRange } from '@/utils/times'
+import { formatTimeRange, formatTimeRangeEs } from '@/utils/times'
 import { getMeetingConflictDetails } from '@/utils/conflicts'
 import type { CourseSection, ScheduleConflict } from '@/types/academic'
 import { getSectionScheduleTitle } from '@/utils/electiveCourses'
@@ -92,7 +89,7 @@ export function DayScheduleView({
   }
 
   return (
-    <div className="relative space-y-2 px-4 py-3 pb-28">
+    <div className="relative pb-28 pt-1">
       <ClassBlockPopoverLayer
         activeBlock={activeBlock}
         anchorRef={anchorRef}
@@ -116,68 +113,69 @@ export function DayScheduleView({
         onPopoverMouseEnter={handlePopoverMouseEnter}
         onPopoverMouseLeave={handlePopoverMouseLeave}
       />
+
       {dayConflicts.length > 0 && (
-        <div className="rounded-lg border border-red-100/90 border-l-[3px] border-l-red-400 bg-red-50/20 px-3 py-2">
-          <p className="flex items-center gap-1.5 text-xs font-normal text-red-600">
-            <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden="true" />
+        <div className="mx-6 mb-3 rounded-xl border border-red-100/90 bg-red-50/40 px-3 py-2">
+          <p className="flex items-center gap-1.5 text-xs font-medium text-red-600">
+            <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
             {dayConflicts.length} conflicto{dayConflicts.length !== 1 ? 's' : ''} hoy
           </p>
         </div>
       )}
 
-      {dayBlocks.map((block) => {
-        const course = coursesById.get(block.courseId)
-        const color = getCourseColor(block.courseId)
-        const label = shortCourseLabel(block.title, course?.code)
+      <div className="day-schedule-list">
+        {dayBlocks.map((block, index) => {
+          const course = coursesById.get(block.courseId)
+          const displayName = course?.name ?? block.title
+          const accent = block.hasConflict ? '#DC2626' : getCourseListAccent(block.courseId)
+          const initial = getCourseInitial(displayName, course?.code)
+          const metaParts = [formatTimeRangeEs(block.startTime, block.endTime)]
+          if (!block.hasConflict && block.classroom) {
+            metaParts.push(block.classroom)
+          }
 
-        return (
-          <button
-            key={block.id}
-            type="button"
-            className={`flex min-h-11 w-full items-start gap-3 rounded-xl p-3 text-left transition active:scale-[0.995] ${
-              block.hasConflict
-                ? 'border border-red-100/90 border-l-[3px] border-l-red-400 bg-red-50/20'
-                : 'border border-slate-100/80'
-            }`}
-            style={
-              block.hasConflict
-                ? undefined
-                : { backgroundColor: color.bg, borderColor: `${color.border}66` }
-            }
-            onClick={(event) => handleBlockClick(block, event)}
-            onMouseEnter={(event) => handleBlockMouseEnter(block, event)}
-            onMouseLeave={handleBlockMouseLeave}
-          >
-            <div className="min-w-[52px] pt-0.5 text-right">
-              <p className="text-xs font-medium tabular-nums text-slate-600">
-                {block.startTime.slice(0, 5)}
-              </p>
-              <p className="text-[10px] font-normal tabular-nums text-slate-400">
-                {block.endTime.slice(0, 5)}
-              </p>
-            </div>
+          return (
+            <button
+              key={block.id}
+              type="button"
+              className={`day-schedule-row ${index === dayBlocks.length - 1 ? 'day-schedule-row--last' : ''} ${
+                block.hasConflict ? 'day-schedule-row--conflict' : ''
+              }`}
+              onClick={(event) => handleBlockClick(block, event)}
+              onMouseEnter={(event) => handleBlockMouseEnter(block, event)}
+              onMouseLeave={handleBlockMouseLeave}
+            >
+              <span
+                className="day-schedule-avatar"
+                style={{ backgroundColor: accent }}
+                aria-hidden="true"
+              >
+                {block.hasConflict ? (
+                  <AlertTriangle className="h-4 w-4 text-white" strokeWidth={2.25} />
+                ) : (
+                  initial
+                )}
+              </span>
 
-            <div className="min-w-0 flex-1">
-              {block.hasConflict && (
-                <p className="mb-0.5 inline-flex items-center gap-1 text-[10px] font-medium text-red-600">
-                  <AlertTriangle className="h-2.5 w-2.5" aria-hidden="true" />
-                  Conflicto
-                </p>
-              )}
-              <p className="truncate text-sm font-medium text-slate-800">{label}</p>
-              <p className="text-xs font-normal text-slate-500">Sec. {block.sectionCode}</p>
-              {block.classroom && !block.hasConflict && (
-                <p className="text-xs font-normal text-slate-400">{block.classroom}</p>
-              )}
-              {block.hasConflict && (
-                <p className="text-xs font-normal text-red-600/85">
-                  {formatTimeRange(block.startTime, block.endTime)}
-                </p>
-              )}
-            </div>
-          </button>
-        )
-      })}
+              <span className="day-schedule-copy">
+                <span className="day-schedule-title" style={{ color: accent }}>
+                  {displayName}
+                </span>
+                <span className="day-schedule-meta">
+                  {block.hasConflict ? (
+                    <>
+                      <span className="font-medium text-red-600">Conflicto · </span>
+                      {formatTimeRange(block.startTime, block.endTime)}
+                    </>
+                  ) : (
+                    metaParts.join(' · ')
+                  )}
+                </span>
+              </span>
+            </button>
+          )
+        })}
+      </div>
     </div>
   )
 }

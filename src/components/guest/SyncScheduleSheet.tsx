@@ -1,9 +1,8 @@
-import { useRef } from 'react'
 import { X } from 'lucide-react'
 import desktopPhoto from '../../../logos/desktop.png'
 import mobilePhoto from '../../../logos/mobile.png'
 import { Button } from '@/components/ui/Button'
-import { useFocusTrap } from '@/hooks/useFocusTrap'
+import { BottomSheet } from '@/components/ui/BottomSheet'
 
 interface SyncScheduleSheetProps {
   open: boolean
@@ -18,25 +17,18 @@ export function SyncScheduleSheet({
   onCreateAccount,
   onDismiss,
 }: SyncScheduleSheetProps) {
-  const panelRef = useRef<HTMLDivElement>(null)
-  useFocusTrap(open, panelRef, onClose)
-
-  if (!open) return null
-
   return (
-    <>
-      <div
-        className="fixed inset-0 z-50 bg-black/30 backdrop-blur-sm"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-      <div
-        ref={panelRef}
-        className="fixed inset-x-0 bottom-0 z-50 flex max-h-[88dvh] flex-col overflow-hidden rounded-t-2xl border-t border-slate-200 bg-surface shadow-2xl md:inset-x-auto md:bottom-auto md:left-1/2 md:top-1/2 md:max-h-[min(520px,88dvh)] md:w-[min(760px,calc(100vw-2rem))] md:-translate-x-1/2 md:-translate-y-1/2 md:grid md:grid-cols-[42fr_58fr] md:rounded-2xl md:border md:border-slate-200"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="sync-sheet-title"
-      >
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      ariaLabel="Llevá tu horario a todos tus dispositivos"
+      bare
+      showHandle
+      desktop="modal"
+      maxHeight="88dvh"
+      panelClassName="md:grid md:max-h-[min(520px,88dvh)] md:w-[min(760px,calc(100vw-2rem))] md:grid-cols-[42fr_58fr] md:overflow-hidden md:rounded-2xl md:border md:border-slate-200"
+    >
+      <div className="contents">
         <div className="relative hidden min-h-[340px] md:block">
           <img
             src={desktopPhoto}
@@ -101,6 +93,6 @@ export function SyncScheduleSheet({
           </div>
         </div>
       </div>
-    </>
+    </BottomSheet>
   )
 }

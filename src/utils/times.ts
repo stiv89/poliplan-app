@@ -15,6 +15,11 @@ export function formatTimeRange(startTime: string, endTime: string): string {
   return `${startTime.slice(0, 5)} – ${endTime.slice(0, 5)}`
 }
 
+/** Rango horario legible en mobile, estilo iOS: "14:00 a 16:15". */
+export function formatTimeRangeEs(startTime: string, endTime: string): string {
+  return `${startTime.slice(0, 5)} a ${endTime.slice(0, 5)}`
+}
+
 export function doTimesOverlap(
   startA: string,
   endA: string,

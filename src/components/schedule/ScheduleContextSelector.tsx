@@ -2,7 +2,11 @@ import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'rea
 import { ChevronDown, ChevronLeft, Plus, Share2, X } from 'lucide-react'
 import type { AcademicPeriod, Career } from '@/types/academic'
 import { AnimatedPopover } from '@/components/ui/AnimatedPopover'
+import { BottomSheet } from '@/components/ui/BottomSheet'
+import { ShareSchedulePopover } from '@/components/schedule/ShareSchedulePopover'
+import { ScheduleHeaderContextBadges } from '@/components/schedule/ScheduleHeaderContextBadges'
 import { ScheduleContextPanel } from '@/components/schedule/ScheduleContextSheet'
+import { formatScheduleHeaderTitle } from '@/utils/scheduleHeader'
 import {
   SchedulePickerPanel,
   type SchedulePickerMode,
@@ -26,7 +30,7 @@ export interface ScheduleContextSelectorProps {
   leading?: ReactNode
   className?: string
   triggerClassName?: string
-  onShareSchedule?: () => void
+  onShareSchedule?: () => Promise<string>
 }
 
 export function buildContextPillLabel(
@@ -56,13 +60,19 @@ export function ScheduleContextSelector({
   onShareSchedule,
 }: ScheduleContextSelectorProps) {
   const [open, setOpen] = useState(false)
+  const [shareOpen, setShareOpen] = useState(false)
+  const [shareUrl, setShareUrl] = useState<string | null>(null)
+  const [shareLoading, setShareLoading] = useState(false)
   const [view, setView] = useState<ScheduleContextView>('list')
+  const [shareAnimated, setShareAnimated] = useState(false)
   const [resolvedPresentation, setResolvedPresentation] = useState<'popover' | 'sheet'>(() =>
     presentation === 'auto' ? 'popover' : presentation,
   )
 
-  const buttonRef = useRef<HTMLButtonElement>(null)
+  const chevronRef = useRef<HTMLButtonElement>(null)
+  const shareRef = useRef<HTMLButtonElement>(null)
   const popoverRef = useRef<HTMLDivElement>(null)
+  const sharePopoverRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (presentation !== 'auto') {
@@ -82,14 +92,24 @@ export function ScheduleContextSelector({
 
   usePopoverDismiss(
     open && resolvedPresentation === 'popover',
-    [buttonRef],
+    [chevronRef],
     [popoverRef],
     () => setOpen(false),
   )
 
+  usePopoverDismiss(
+    shareOpen,
+    [shareRef],
+    [sharePopoverRef],
+    () => setShareOpen(false),
+  )
+
   const selectedCareer = careers.find((career) => career.id === selectedCareerId)
-  const careerLabel = selectedCareer?.code ?? selectedCareer?.name
-  const contextLabel = buildContextPillLabel(careerLabel, periodName)
+  const headerTitle = formatScheduleHeaderTitle(scheduleName)
+  const contextLabel = buildContextPillLabel(
+    selectedCareer?.code ?? selectedCareer?.name,
+    periodName,
+  )
   const deletedCount = schedulePicker.deletedSchedules.length
   const isSheet = resolvedPresentation === 'sheet'
   const showManage = deletedCount > 0 || schedulePicker.schedules.length > 1
@@ -118,85 +138,137 @@ export function ScheduleContextSelector({
     />
   )
 
+  function closeShare() {
+    setShareOpen(false)
+  }
+
+  async function handleShareClick() {
+    if (!onShareSchedule) return
+
+    if (shareOpen) {
+      closeShare()
+      return
+    }
+
+    setShareAnimated(false)
+    window.requestAnimationFrame(() => setShareAnimated(true))
+    window.setTimeout(() => setShareAnimated(false), 450)
+
+    setShareOpen(true)
+    setShareUrl(null)
+    setShareLoading(true)
+
+    try {
+      const url = await onShareSchedule()
+      setShareUrl(url)
+    } catch {
+      setShareOpen(false)
+    } finally {
+      setShareLoading(false)
+    }
+  }
+
   return (
     <div className={`min-w-0 ${className}`} data-tour="career-picker">
-      <div className="flex min-w-0 items-start gap-2">
+      <div
+        className={`flex min-w-0 justify-between gap-2 ${
+          isSheet ? 'items-center schedule-header-row--compact' : 'items-start gap-3'
+        }`}
+      >
         {leading}
-        <button
-          ref={buttonRef}
-          type="button"
-          onClick={() => setOpen((value) => !value)}
-          aria-label="Tus horarios"
-          data-career-picker-trigger
-          data-schedule-context-trigger
-          aria-expanded={open}
-          aria-haspopup="dialog"
-          className={`group flex max-w-[300px] min-w-0 flex-1 items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-left transition ${
-            open
-              ? 'border-slate-300 bg-white shadow-sm'
-              : 'border-slate-200/80 bg-white/90 hover:border-slate-300 hover:bg-slate-50/70'
-          } ${triggerClassName}`}
-        >
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-[13px] font-semibold leading-tight tracking-tight text-slate-800">
-              {scheduleName}
-            </span>
-            <span
-              className={`mt-px block truncate text-[11px] leading-snug ${
-                selectedCareerId ? 'text-slate-500' : 'font-medium text-primary'
-              }`}
-            >
-              {contextLabel}
-            </span>
-          </span>
-          <ChevronDown
-            className={`h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform group-hover:text-slate-500 ${
-              open ? 'rotate-180' : ''
-            }`}
-            aria-hidden="true"
+        <div className={`min-w-0 flex-1 ${triggerClassName}`}>
+          <h1 className="schedule-header-title truncate">{headerTitle}</h1>
+          <ScheduleHeaderContextBadges
+            careers={careers}
+            selectedCareerId={selectedCareerId}
+            onCareerChange={onCareerChange}
+            academicPeriods={academicPeriods}
+            selectedPeriodId={selectedPeriodId}
+            onPeriodChange={onPeriodChange}
+            compact={isSheet}
           />
-        </button>
-        {onShareSchedule && (
+        </div>
+
+        <div
+          className={`schedule-header-actions flex shrink-0 items-center ${
+            isSheet ? 'gap-1.5' : 'gap-2 pt-0.5'
+          }`}
+        >
           <button
+            ref={chevronRef}
             type="button"
-            onClick={onShareSchedule}
-            className="inline-flex shrink-0 items-center gap-1.5 self-stretch rounded-lg border border-slate-200/80 bg-white/90 px-2.5 py-1.5 text-[12px] font-medium text-slate-600 transition hover:border-slate-300 hover:bg-slate-50/70 hover:text-slate-800"
-            aria-label="Compartir horario"
+            onClick={() => setOpen((value) => !value)}
+            aria-label="Tus horarios"
+            data-career-picker-trigger
+            data-schedule-context-trigger
+            aria-expanded={open}
+            aria-haspopup="dialog"
+            className={`schedule-header-circle-btn ${
+              isSheet ? 'schedule-header-circle-btn--compact' : ''
+            }`}
           >
-            <Share2 className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-            <span>Compartir</span>
+            <ChevronDown
+              className={`h-4 w-4 text-slate-500 transition-transform duration-200 ${
+                open ? 'rotate-180' : ''
+              }`}
+              aria-hidden="true"
+            />
           </button>
-        )}
+
+          {onShareSchedule && (
+            <button
+              ref={shareRef}
+              type="button"
+              onClick={() => void handleShareClick()}
+              className={`schedule-header-share-btn group ${
+                isSheet ? 'schedule-header-share-btn--compact' : ''
+              } ${shareAnimated ? 'schedule-share-pop' : ''}`}
+              aria-label="Compartir horario"
+              aria-expanded={shareOpen}
+              title="Compartir horario"
+            >
+              <Share2
+                className="h-[18px] w-[18px] transition-transform duration-200 group-hover:rotate-[-8deg] group-hover:scale-110"
+                aria-hidden="true"
+              />
+            </button>
+          )}
+        </div>
       </div>
 
       {isSheet ? (
-        open ? (
-          <>
-            <div
-              className="fixed inset-0 z-40 bg-black/30 backdrop-blur-sm"
-              onClick={close}
-              aria-hidden="true"
-            />
-            <div
-              className="fixed inset-x-0 bottom-0 z-50 flex max-h-[78dvh] flex-col rounded-t-2xl border-t border-slate-200 bg-surface shadow-xl"
-              role="dialog"
-              aria-label="Tus horarios"
-            >
-              {panel}
-            </div>
-          </>
-        ) : null
+        <BottomSheet
+          open={open}
+          onClose={close}
+          ariaLabel="Tus horarios"
+          bare
+          showHandle
+          maxHeight="78dvh"
+        >
+          {panel}
+        </BottomSheet>
       ) : (
         <AnimatedPopover
           open={open}
-          anchorRef={buttonRef}
+          anchorRef={chevronRef}
           popoverRef={popoverRef}
-          align="left"
-          offset={6}
+          align="right"
+          offset={8}
           className="flex max-h-[min(26rem,68vh)] w-[min(18.5rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-lg"
         >
           {panel}
         </AnimatedPopover>
+      )}
+
+      {onShareSchedule && (
+        <ShareSchedulePopover
+          open={shareOpen}
+          anchorRef={shareRef}
+          popoverRef={sharePopoverRef}
+          url={shareUrl}
+          loading={shareLoading}
+          onClose={closeShare}
+        />
       )}
     </div>
   )
@@ -252,16 +324,9 @@ function ScheduleContextNavigator({
     <div className={`flex min-h-0 flex-1 flex-col ${isSheet ? '' : 'max-h-[min(26rem,68vh)]'}`}>
       <div
         className={`relative flex shrink-0 items-center gap-1.5 border-b border-slate-100/80 px-2.5 ${
-          isSheet ? 'pb-2.5 pt-3.5' : 'py-2'
+          isSheet ? 'pb-2.5 pt-1' : 'py-2'
         }`}
       >
-        {isSheet && (
-          <div
-            className="absolute left-1/2 top-1.5 h-0.5 w-8 -translate-x-1/2 rounded-full bg-slate-200"
-            aria-hidden="true"
-          />
-        )}
-
         {!isList ? (
           <button
             type="button"

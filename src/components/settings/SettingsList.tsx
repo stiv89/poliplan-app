@@ -376,6 +376,8 @@ export function IOSSwitch({
   )
 }
 
+import { BottomSheet } from '@/components/ui/BottomSheet'
+
 export function SettingsPickerSheet({
   open,
   title,
@@ -391,20 +393,16 @@ export function SettingsPickerSheet({
   onSelect: (value: string) => void
   onClose: () => void
 }) {
-  if (!open) return null
-
   return (
-    <>
-      <div
-        className="fixed inset-0 z-50 bg-black/25 backdrop-blur-[2px]"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-      <div
-        className="fixed inset-x-0 bottom-0 z-50 mx-auto flex max-h-[min(70dvh,420px)] w-full max-w-md flex-col rounded-t-2xl bg-surface shadow-2xl md:inset-x-auto md:left-1/2 md:top-1/2 md:bottom-auto md:max-w-sm md:-translate-x-1/2 md:-translate-y-1/2 md:rounded-2xl"
-        role="dialog"
-        aria-label={title}
-      >
+    <BottomSheet
+      open={open}
+      onClose={onClose}
+      ariaLabel={title}
+      title={title}
+      desktop="modal"
+      maxHeight="min(70dvh, 420px)"
+      panelClassName="md:max-w-sm"
+      header={
         <div className="flex shrink-0 items-center justify-between border-b border-slate-100 px-4 py-3">
           <p className="font-semibold text-text">{title}</p>
           <button
@@ -415,36 +413,37 @@ export function SettingsPickerSheet({
             Listo
           </button>
         </div>
-        <ul className="flex-1 overflow-y-auto py-1">
-          {options.map((option) => {
-            const selected = option.value === selectedValue
-            return (
-              <li key={option.value || '__empty'}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onSelect(option.value)
-                    onClose()
-                  }}
-                  className={`flex min-h-[44px] w-full items-center justify-between gap-3 px-4 py-2.5 text-left transition hover:bg-slate-50 ${
-                    selected ? 'bg-primary/5' : ''
-                  }`}
+      }
+    >
+      <ul className="py-1">
+        {options.map((option) => {
+          const selected = option.value === selectedValue
+          return (
+            <li key={option.value || '__empty'}>
+              <button
+                type="button"
+                onClick={() => {
+                  onSelect(option.value)
+                  onClose()
+                }}
+                className={`flex min-h-[44px] w-full items-center justify-between gap-3 px-4 py-2.5 text-left transition hover:bg-slate-50 ${
+                  selected ? 'bg-primary/5' : ''
+                }`}
+              >
+                <span
+                  className={`text-[15px] ${selected ? 'font-medium text-primary' : 'text-text'}`}
                 >
-                  <span
-                    className={`text-[15px] ${selected ? 'font-medium text-primary' : 'text-text'}`}
-                  >
-                    {option.label}
-                  </span>
-                  {option.subtitle && (
-                    <span className="shrink-0 text-xs text-muted">{option.subtitle}</span>
-                  )}
-                </button>
-              </li>
-            )
-          })}
-        </ul>
-      </div>
-    </>
+                  {option.label}
+                </span>
+                {option.subtitle && (
+                  <span className="shrink-0 text-xs text-muted">{option.subtitle}</span>
+                )}
+              </button>
+            </li>
+          )
+        })}
+      </ul>
+    </BottomSheet>
   )
 }
 
