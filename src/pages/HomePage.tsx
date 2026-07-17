@@ -280,14 +280,6 @@ export function HomePage() {
     })
   }, [mobileDayValues])
 
-  const hasMeetingsForDay = useCallback(
-    (day: number) =>
-      selectedSections.some((section) =>
-        section.meetings.some((meeting) => meeting.dayOfWeek === day),
-      ),
-    [selectedSections],
-  )
-
   const {
     ref: daySwipeRef,
     offsetX: daySwipeOffsetX,
@@ -410,49 +402,50 @@ export function HomePage() {
         />
 
         {hasScheduleSections ? (
-          <div className="min-h-0 flex-1 overflow-y-auto">
+          <>
             <MobileDaySelector
               days={DAYS_OF_WEEK}
               activeDay={mobileDay}
               onDayChange={setMobileDay}
-              hasMeetingsForDay={hasMeetingsForDay}
             />
 
-            <div className="day-content relative">
-              <div
-                ref={daySwipeRef}
-                className="day-content-swipe"
-                style={{
-                  transform: daySwipeOffsetX
-                    ? `translateX(${daySwipeOffsetX}px)`
-                    : undefined,
-                  transition: daySwipeAnimating
-                    ? 'transform 220ms cubic-bezier(0.32, 0.72, 0, 1)'
-                    : 'none',
-                }}
-              >
-                <DayScheduleView
-                  key={mobileDay}
-                  day={mobileDay}
-                  selectedSections={selectedSections}
-                  conflicts={conflicts}
-                  coursesById={coursesMeta}
-                  onRemoveSection={(id) => void handleRemove(id)}
-                  onViewAlternatives={handleViewAlternatives}
-                  removingId={removingId}
-                />
-              </div>
+            <div className="min-h-0 flex-1 overflow-y-auto">
+              <div className="day-content relative">
+                <div
+                  ref={daySwipeRef}
+                  className="day-content-swipe"
+                  style={{
+                    transform: daySwipeOffsetX
+                      ? `translateX(${daySwipeOffsetX}px)`
+                      : undefined,
+                    transition: daySwipeAnimating
+                      ? 'transform 220ms cubic-bezier(0.32, 0.72, 0, 1)'
+                      : 'none',
+                  }}
+                >
+                  <DayScheduleView
+                    key={mobileDay}
+                    day={mobileDay}
+                    selectedSections={selectedSections}
+                    conflicts={conflicts}
+                    coursesById={coursesMeta}
+                    onRemoveSection={(id) => void handleRemove(id)}
+                    onViewAlternatives={handleViewAlternatives}
+                    removingId={removingId}
+                  />
+                </div>
 
-              <button
-                onClick={() => openSearch()}
-                data-tour="add-course-fab"
-                className="bottom-above-dock fixed right-4 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white shadow-lg transition hover:bg-primary/90 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
-                aria-label="Agregar materia"
-              >
-                <Plus className="h-6 w-6" aria-hidden="true" />
-              </button>
+                <button
+                  onClick={() => openSearch()}
+                  data-tour="add-course-fab"
+                  className="bottom-above-dock fixed right-4 z-30 flex h-12 w-12 items-center justify-center rounded-full bg-primary text-white shadow-lg transition hover:bg-primary/90 active:scale-95 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                  aria-label="Agregar materia"
+                >
+                  <Plus className="h-6 w-6" aria-hidden="true" />
+                </button>
+              </div>
             </div>
-          </div>
+          </>
         ) : (
           <div className="flex min-h-0 flex-1 items-center justify-center px-6">
             <EmptyScheduleMobileOnboarding
@@ -624,21 +617,15 @@ function MobileHeader({
         onCareerChange={onCareerChange}
         schedulePicker={schedulePicker}
         onShareSchedule={onShareSchedule}
+        syncStatus={{
+          isOnline,
+          isAuthenticated,
+          localSaveState,
+          userSyncAt,
+          officialDataSyncing,
+          onSync,
+        }}
       />
-
-      {!isEmpty && (
-        <div className="schedule-mobile-sync">
-          <ScheduleSaveStatus
-            isOnline={isOnline}
-            isAuthenticated={isAuthenticated}
-            localSaveState={localSaveState}
-            userSyncAt={userSyncAt}
-            officialDataSyncing={officialDataSyncing}
-            onSync={onSync}
-            compact
-          />
-        </div>
-      )}
     </header>
   )
 }

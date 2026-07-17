@@ -1,12 +1,18 @@
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react'
-import { ChevronDown, ChevronLeft, Plus, Share2, X } from 'lucide-react'
+import { ChevronDown, ChevronLeft, ChevronRight, Plus, Share2, X } from 'lucide-react'
 import type { AcademicPeriod, Career } from '@/types/academic'
 import { AnimatedPopover } from '@/components/ui/AnimatedPopover'
 import { BottomSheet } from '@/components/ui/BottomSheet'
+import { ScheduleSaveStatus } from '@/components/guest/ScheduleSaveStatus'
 import { ShareSchedulePopover } from '@/components/schedule/ShareSchedulePopover'
 import { ScheduleHeaderContextBadges } from '@/components/schedule/ScheduleHeaderContextBadges'
 import { ScheduleContextPanel } from '@/components/schedule/ScheduleContextSheet'
-import { formatScheduleHeaderTitle } from '@/utils/scheduleHeader'
+import {
+  formatCareerCompactLabel,
+  formatCompactPeriodShortLabel,
+  formatScheduleHeaderTitle,
+} from '@/utils/scheduleHeader'
+import type { LocalSaveState } from '@/utils/scheduleSaveStatus'
 import {
   SchedulePickerPanel,
   type SchedulePickerMode,
@@ -31,6 +37,15 @@ export interface ScheduleContextSelectorProps {
   className?: string
   triggerClassName?: string
   onShareSchedule?: () => Promise<string>
+  /** Sync row inside mobile bottom sheet (header stays minimal). */
+  syncStatus?: {
+    isOnline: boolean
+    isAuthenticated: boolean
+    localSaveState: LocalSaveState
+    userSyncAt: string | null
+    officialDataSyncing: boolean
+    onSync: () => void
+  }
 }
 
 export function buildContextPillLabel(
@@ -58,6 +73,7 @@ export function ScheduleContextSelector({
   className = '',
   triggerClassName = '',
   onShareSchedule,
+  syncStatus,
 }: ScheduleContextSelectorProps) {
   const [open, setOpen] = useState(false)
   const [shareOpen, setShareOpen] = useState(false)
@@ -69,7 +85,7 @@ export function ScheduleContextSelector({
     presentation === 'auto' ? 'popover' : presentation,
   )
 
-  const chevronRef = useRef<HTMLButtonElement>(null)
+  const titleTriggerRef = useRef<HTMLButtonElement>(null)
   const shareRef = useRef<HTMLButtonElement>(null)
   const popoverRef = useRef<HTMLDivElement>(null)
   const sharePopoverRef = useRef<HTMLDivElement>(null)
@@ -92,7 +108,7 @@ export function ScheduleContextSelector({
 
   usePopoverDismiss(
     open && resolvedPresentation === 'popover',
-    [chevronRef],
+    [titleTriggerRef],
     [popoverRef],
     () => setOpen(false),
   )
@@ -105,6 +121,7 @@ export function ScheduleContextSelector({
   )
 
   const selectedCareer = careers.find((career) => career.id === selectedCareerId)
+  const selectedPeriod = academicPeriods.find((period) => period.id === selectedPeriodId)
   const headerTitle = formatScheduleHeaderTitle(scheduleName)
   const contextLabel = buildContextPillLabel(
     selectedCareer?.code ?? selectedCareer?.name,
@@ -135,6 +152,17 @@ export function ScheduleContextSelector({
       schedulePicker={schedulePicker}
       periodName={periodName}
       isSheet={isSheet}
+      syncStatus={syncStatus}
+      careerLabel={
+        selectedCareer
+          ? formatCareerCompactLabel(selectedCareer)
+          : 'Elegir carrera'
+      }
+      periodLabel={
+        selectedPeriod
+          ? formatCompactPeriodShortLabel(selectedPeriod)
+          : 'Elegir periodo'
+      }
     />
   )
 
@@ -170,45 +198,22 @@ export function ScheduleContextSelector({
 
   return (
     <div className={`min-w-0 ${className}`} data-tour="career-picker">
-      <div
-        className={`flex min-w-0 justify-between gap-2 ${
-          isSheet ? 'items-center schedule-header-row--compact' : 'items-start gap-3'
-        }`}
-      >
-        {leading}
-        <div className={`min-w-0 flex-1 ${triggerClassName}`}>
-          <h1 className="schedule-header-title truncate">{headerTitle}</h1>
-          <ScheduleHeaderContextBadges
-            careers={careers}
-            selectedCareerId={selectedCareerId}
-            onCareerChange={onCareerChange}
-            academicPeriods={academicPeriods}
-            selectedPeriodId={selectedPeriodId}
-            onPeriodChange={onPeriodChange}
-            compact={isSheet}
-          />
-        </div>
-
-        <div
-          className={`schedule-header-actions flex shrink-0 items-center ${
-            isSheet ? 'gap-1.5' : 'gap-2 pt-0.5'
-          }`}
-        >
+      {isSheet ? (
+        <div className="flex min-w-0 items-center justify-between gap-3">
           <button
-            ref={chevronRef}
+            ref={titleTriggerRef}
             type="button"
             onClick={() => setOpen((value) => !value)}
-            aria-label="Tus horarios"
+            aria-label="Opciones de horario"
             data-career-picker-trigger
             data-schedule-context-trigger
             aria-expanded={open}
             aria-haspopup="dialog"
-            className={`schedule-header-circle-btn ${
-              isSheet ? 'schedule-header-circle-btn--compact' : ''
-            }`}
+            className="schedule-mobile-title-trigger min-w-0"
           >
+            <span className="schedule-header-title truncate">{headerTitle}</span>
             <ChevronDown
-              className={`h-4 w-4 text-slate-500 transition-transform duration-200 ${
+              className={`h-[18px] w-[18px] shrink-0 text-slate-500 transition-transform duration-200 ${
                 open ? 'rotate-180' : ''
               }`}
               aria-hidden="true"
@@ -220,9 +225,9 @@ export function ScheduleContextSelector({
               ref={shareRef}
               type="button"
               onClick={() => void handleShareClick()}
-              className={`schedule-header-share-btn group ${
-                isSheet ? 'schedule-header-share-btn--compact' : ''
-              } ${shareAnimated ? 'schedule-share-pop' : ''}`}
+              className={`schedule-header-share-btn schedule-header-share-btn--compact group ${
+                shareAnimated ? 'schedule-share-pop' : ''
+              }`}
               aria-label="Compartir horario"
               aria-expanded={shareOpen}
               title="Compartir horario"
@@ -234,7 +239,59 @@ export function ScheduleContextSelector({
             </button>
           )}
         </div>
-      </div>
+      ) : (
+        <div className="flex min-w-0 items-start justify-between gap-3">
+          {leading}
+          <div className={`min-w-0 flex-1 ${triggerClassName}`}>
+            <button
+              ref={titleTriggerRef}
+              type="button"
+              onClick={() => setOpen((value) => !value)}
+              aria-label="Opciones de horario"
+              data-career-picker-trigger
+              data-schedule-context-trigger
+              aria-expanded={open}
+              aria-haspopup="dialog"
+              className="schedule-header-title-trigger"
+            >
+              <span className="schedule-header-title truncate">{headerTitle}</span>
+              <ChevronDown
+                className={`h-4 w-4 shrink-0 text-slate-500 transition-transform duration-200 ${
+                  open ? 'rotate-180' : ''
+                }`}
+                aria-hidden="true"
+              />
+            </button>
+            <ScheduleHeaderContextBadges
+              careers={careers}
+              selectedCareerId={selectedCareerId}
+              onCareerChange={onCareerChange}
+              academicPeriods={academicPeriods}
+              selectedPeriodId={selectedPeriodId}
+              onPeriodChange={onPeriodChange}
+            />
+          </div>
+
+          {onShareSchedule && (
+            <button
+              ref={shareRef}
+              type="button"
+              onClick={() => void handleShareClick()}
+              className={`schedule-header-share-btn group shrink-0 ${
+                shareAnimated ? 'schedule-share-pop' : ''
+              }`}
+              aria-label="Compartir horario"
+              aria-expanded={shareOpen}
+              title="Compartir horario"
+            >
+              <Share2
+                className="h-[18px] w-[18px] transition-transform duration-200 group-hover:rotate-[-8deg] group-hover:scale-110"
+                aria-hidden="true"
+              />
+            </button>
+          )}
+        </div>
+      )}
 
       {isSheet ? (
         <BottomSheet
@@ -250,9 +307,9 @@ export function ScheduleContextSelector({
       ) : (
         <AnimatedPopover
           open={open}
-          anchorRef={chevronRef}
+          anchorRef={titleTriggerRef}
           popoverRef={popoverRef}
-          align="right"
+          align="left"
           offset={8}
           className="flex max-h-[min(26rem,68vh)] w-[min(18.5rem,calc(100vw-2rem))] flex-col overflow-hidden rounded-xl border border-slate-200/80 bg-white shadow-lg"
         >
@@ -290,6 +347,9 @@ function ScheduleContextNavigator({
   schedulePicker,
   periodName,
   isSheet,
+  syncStatus,
+  careerLabel,
+  periodLabel,
 }: {
   view: ScheduleContextView
   onViewChange: (view: ScheduleContextView) => void
@@ -306,6 +366,9 @@ function ScheduleContextNavigator({
   schedulePicker: Omit<SchedulePickerPanelProps, 'open' | 'onClose' | 'periodName'>
   periodName: string | null
   isSheet: boolean
+  syncStatus?: ScheduleContextSelectorProps['syncStatus']
+  careerLabel: string
+  periodLabel: string
 }) {
   const isList = view === 'list'
   const title =
@@ -370,6 +433,29 @@ function ScheduleContextNavigator({
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
+        {isSheet && isList && (
+          <div className="schedule-sheet-context">
+            <button
+              type="button"
+              className="schedule-sheet-context-row"
+              onClick={() => onViewChange('career-period')}
+            >
+              <span className="schedule-sheet-context-label">Carrera</span>
+              <span className="schedule-sheet-context-value">{careerLabel}</span>
+              <ChevronRight className="schedule-sheet-context-chevron" aria-hidden="true" />
+            </button>
+            <button
+              type="button"
+              className="schedule-sheet-context-row"
+              onClick={() => onViewChange('career-period')}
+            >
+              <span className="schedule-sheet-context-label">Periodo</span>
+              <span className="schedule-sheet-context-value">{periodLabel}</span>
+              <ChevronRight className="schedule-sheet-context-chevron" aria-hidden="true" />
+            </button>
+          </div>
+        )}
+
         {view === 'career-period' ? (
           <ScheduleContextPanel
             careers={careers}
@@ -415,6 +501,12 @@ function ScheduleContextNavigator({
           />
         )}
       </div>
+
+      {isSheet && isList && syncStatus && (
+        <div className="schedule-sheet-sync shrink-0 border-t border-slate-100/80 px-4 py-3">
+          <ScheduleSaveStatus {...syncStatus} compact />
+        </div>
+      )}
     </div>
   )
 }
