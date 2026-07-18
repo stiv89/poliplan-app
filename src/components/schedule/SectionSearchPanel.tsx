@@ -4,7 +4,6 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   Search,
-  AlertTriangle,
   Check,
   X,
   Plus,
@@ -19,9 +18,9 @@ import { CompactCareerSelect } from '@/components/schedule/CompactCareerSelect'
 import { SectionListSkeleton } from '@/components/schedule/SectionListSkeleton'
 import { useSupportsHover } from '@/components/schedule/useClassBlockPopover'
 import { resolveSectionShift } from '@/utils/sectionCode'
-import { getConflictsForSection } from '@/utils/conflicts'
 import { filterAndRankSections } from '@/utils/fuzzySearch'
-import { formatScheduleCompact, groupSectionsByCourse, type SectionCourseInfo } from '@/utils/sectionDisplay'
+import { formatScheduleCompact, getConflictClusterCourseIds, getSectionConflictMessages, groupSectionsByCourse, findCrossCourseConflictPreview, type SectionCourseInfo } from '@/utils/sectionDisplay'
+import { ScheduleConflictBanner, ScheduleConflictNote } from '@/components/schedule/ScheduleConflictNote'
 import { resolveSectionElectiveName } from '@/utils/electiveCourses'
 import { sectionMatchesViewFilters } from '@/utils/scheduleFilters'
 import type { Career, CourseSection, ScheduleConflict } from '@/types/academic'
@@ -97,6 +96,16 @@ export function SectionSearchPanel({
   const hasSearch = search.trim().length > 0
   const isMobileSheet = Boolean(onClose)
 
+  const allSectionsById = useMemo(
+    () => new Map(allSections.map((section) => [section.id, section])),
+    [allSections],
+  )
+
+  const selectedSections = useMemo(
+    () => allSections.filter((section) => isSectionSelected(section.id)),
+    [allSections, isSectionSelected],
+  )
+
   const searchMatches = useMemo(() => {
     if (!hasCareer) return []
 
@@ -150,13 +159,19 @@ export function SectionSearchPanel({
   const browseContextKey = `${selectedCareerId ?? ''}:${semesterBlocks.length}`
 
   useEffect(() => {
+    if (hasSearch) {
+      // En búsqueda, abrir la mejor coincidencia (ya viene rankeada arriba).
+      const top = courseGroups[0]
+      setExpandedGroups(top ? new Set([top.groupKey]) : new Set())
+      return
+    }
     setExpandedGroups(new Set())
-  }, [browseContextKey, hasSearch])
+  }, [browseContextKey, hasSearch, search, courseGroups])
 
   useEffect(() => {
     setExpandedSemesters((current) => {
       if (hasSearch) {
-        return new Set(semesterBlocks.map((block) => block.semester))
+        return new Set()
       }
       if (current.size > 0) return current
       const next = new Set<number>()
@@ -245,8 +260,11 @@ export function SectionSearchPanel({
   const courseCountLabel = useMemo(() => {
     if (catalogLoading) return 'Cargando…'
     if (courseGroups.length === 0) return 'Sin resultados'
+    if (hasSearch) {
+      return `${courseGroups.length} materia${courseGroups.length !== 1 ? 's' : ''} encontrada${courseGroups.length !== 1 ? 's' : ''}`
+    }
     return `${semesterBlocks.length} semestre${semesterBlocks.length !== 1 ? 's' : ''} · ${courseGroups.length} materia${courseGroups.length !== 1 ? 's' : ''}`
-  }, [catalogLoading, courseGroups.length, semesterBlocks.length])
+  }, [catalogLoading, courseGroups.length, hasSearch, semesterBlocks.length])
 
   function renderCourseGroup(group: (typeof courseGroups)[number]) {
     const pinned = expandedGroups.has(group.groupKey)
@@ -266,6 +284,8 @@ export function SectionSearchPanel({
         onHoverStart={() => handleGroupHoverStart(group.groupKey)}
         onHoverEnd={() => handleGroupHoverEnd(group.groupKey)}
         conflicts={conflicts}
+        selectedSections={selectedSections}
+        allSectionsById={allSectionsById}
         isSectionSelected={isSectionSelected}
         toggleLoading={toggleLoading}
         onToggle={onToggle}
@@ -313,7 +333,7 @@ export function SectionSearchPanel({
                   <span className="flex min-w-0 items-center gap-1.5">
                     <Layers className="h-3.5 w-3.5 shrink-0 text-slate-500" aria-hidden="true" />
                     <span className="min-w-0 truncate text-[11px] font-medium text-slate-700 sm:text-xs">
-                      Por semestre
+                      {hasSearch ? 'Por relevancia' : 'Por semestre'}
                     </span>
                   </span>
                 </div>
@@ -348,6 +368,10 @@ export function SectionSearchPanel({
                   ? 'No hay materias cargadas para esta carrera.'
                   : 'No se encontraron resultados.'}
               </p>
+            </div>
+          ) : hasSearch ? (
+            <div className={`course-explorer-list ${isMobileSheet ? 'space-y-2' : 'space-y-1.5'}`}>
+              {courseGroups.map((group) => renderCourseGroup(group))}
             </div>
           ) : (
             <div className={isMobileSheet ? 'space-y-2' : 'space-y-1.5'}>
@@ -558,6 +582,8 @@ function CourseGroupCard({
   hideSemesterMeta = false,
   onToggleExpanded,
   conflicts,
+  selectedSections,
+  allSectionsById,
   isSectionSelected,
   toggleLoading,
   onToggle,
@@ -577,16 +603,24 @@ function CourseGroupCard({
   onHoverStart?: () => void
   onHoverEnd?: () => void
   conflicts: ScheduleConflict[]
+  selectedSections: CourseSection[]
+  allSectionsById: Map<string, CourseSection>
   isSectionSelected: (id: string) => boolean
   toggleLoading: boolean
   onToggle: (section: CourseSection) => void
   onPreview?: (section: CourseSection | null) => void
   previewSectionId?: string | null
 }) {
-  const selectedSections = group.sections.filter((section) => isSectionSelected(section.id))
-  const selectedCount = selectedSections.length
+  const selectedInGroup = group.sections.filter((section) => isSectionSelected(section.id))
+  const selectedCount = selectedInGroup.length
   const allSelected = selectedCount > 0 && selectedCount === group.sections.length
   const someSelected = selectedCount > 0 && !allSelected
+  const conflictCluster = getConflictClusterCourseIds(
+    group.courseId,
+    selectedSections,
+    conflicts,
+  )
+  const showConflictBanner = expanded && conflictCluster.size >= 2
   const semesterLabel =
     !hideSemesterMeta && group.courseSemester ? `${group.courseSemester}.º` : null
   const sectionCountLabel = `${group.sections.length} sección${group.sections.length !== 1 ? 'es' : ''}`
@@ -606,7 +640,7 @@ function CourseGroupCard({
     }
 
     if (selectedCount > 0) {
-      for (const section of selectedSections) {
+      for (const section of selectedInGroup) {
         onToggle(section)
       }
       return
@@ -685,6 +719,21 @@ function CourseGroupCard({
           : 'space-y-2 px-3 pb-3'
       }`}
     >
+      {showConflictBanner && (
+        <li className="schedule-conflict-banner-wrap">
+          <ScheduleConflictBanner
+            courseCount={conflictCluster.size}
+            onViewDetail={() => {
+              const target = findCrossCourseConflictPreview(
+                group.courseId,
+                selectedSections,
+                conflicts,
+              )
+              if (target) onPreview?.(target)
+            }}
+          />
+        </li>
+      )}
       {group.sections.map((section) => (
         <SectionGroupRow
           key={section.id}
@@ -693,6 +742,9 @@ function CourseGroupCard({
           isFinalExamOnly={group.courseFootnote === 'final_exam_only'}
           selected={isSectionSelected(section.id)}
           conflicts={conflicts}
+          selectedSections={selectedSections}
+          allSectionsById={allSectionsById}
+          coursesById={coursesById}
           toggleLoading={toggleLoading}
           onToggle={() => onToggle(section)}
           onPreview={onPreview}
@@ -756,6 +808,9 @@ function SectionGroupRow({
   isFinalExamOnly,
   selected,
   conflicts,
+  selectedSections,
+  allSectionsById,
+  coursesById,
   toggleLoading,
   onToggle,
   onPreview,
@@ -768,6 +823,9 @@ function SectionGroupRow({
   isFinalExamOnly: boolean
   selected: boolean
   conflicts: ScheduleConflict[]
+  selectedSections: CourseSection[]
+  allSectionsById: Map<string, CourseSection>
+  coursesById: Map<string, SectionCourseInfo>
   toggleLoading: boolean
   onToggle: () => void
   onPreview?: (section: CourseSection | null) => void
@@ -776,8 +834,15 @@ function SectionGroupRow({
   compact?: boolean
   dense?: boolean
 }) {
-  const sectionConflicts = getConflictsForSection(section.id, conflicts)
-  const hasConflict = sectionConflicts.length > 0
+  const conflictMessages = getSectionConflictMessages(
+    section,
+    selected,
+    selectedSections,
+    conflicts,
+    coursesById,
+    allSectionsById,
+  )
+  const hasConflict = conflictMessages.length > 0
   const isPreviewTarget = previewSectionId === section.id
   const shift = resolveSectionShift(section)
   const specificName = resolveSectionElectiveName(section, course)
@@ -785,6 +850,7 @@ function SectionGroupRow({
 
   const scheduleLabel = formatScheduleCompact(section.meetings, { isFinalExamOnly })
   const sectionTitle = [sectionLabel, shift].filter(Boolean).join(' · ')
+  const overlapNote = conflictMessages[0]
 
   if (compact) {
     return (
@@ -793,13 +859,13 @@ function SectionGroupRow({
           'section-cell',
           dense ? 'section-cell--dense' : '',
           selected ? 'is-selected' : '',
-          hasConflict && !selected ? 'is-conflict' : '',
+          hasConflict ? 'is-conflict' : '',
           isPreviewTarget && !selected ? 'is-preview' : '',
         ]
           .filter(Boolean)
           .join(' ')}
         onMouseEnter={() => {
-          if (!selected) onPreview?.(section)
+          onPreview?.(selected ? null : section)
         }}
         onMouseLeave={() => onPreview?.(null)}
       >
@@ -809,7 +875,10 @@ function SectionGroupRow({
             className="section-cell-checkbox"
             checked={selected}
             disabled={toggleLoading}
-            onChange={() => onToggle()}
+            onChange={() => {
+              onPreview?.(null)
+              onToggle()
+            }}
             aria-label={
               selected
                 ? `Quitar sección ${section.sectionCode}`
@@ -820,14 +889,7 @@ function SectionGroupRow({
             <span className="section-cell-top">
               <span className="section-cell-code">{sectionLabel}</span>
               {shift && <span className="section-cell-shift">{shift}</span>}
-              {hasConflict && (
-                <span className="section-cell-conflict">
-                  <AlertTriangle className="h-3 w-3" aria-hidden="true" />
-                  Conflicto
-                </span>
-              )}
             </span>
-            <span className="section-cell-schedule">{scheduleLabel}</span>
             <span className="section-cell-teacher">
               {section.teacherName ? (
                 <TeacherNameButton
@@ -842,6 +904,8 @@ function SectionGroupRow({
                 <span className="text-slate-400">Sin docente</span>
               )}
             </span>
+            <span className="section-cell-schedule">{scheduleLabel}</span>
+            {overlapNote && <ScheduleConflictNote message={overlapNote} />}
           </span>
         </label>
       </li>
@@ -853,6 +917,7 @@ function SectionGroupRow({
       type="button"
       onClick={(event) => {
         event.stopPropagation()
+        onPreview?.(null)
         onToggle()
       }}
       disabled={toggleLoading}
@@ -877,7 +942,7 @@ function SectionGroupRow({
     'section-row-surface',
     selected ? 'is-selected' : '',
     isPreviewTarget && !selected ? 'is-preview' : '',
-    hasConflict && !selected ? 'is-conflict' : '',
+    hasConflict ? 'is-conflict' : '',
   ]
     .filter(Boolean)
     .join(' ')
@@ -886,7 +951,7 @@ function SectionGroupRow({
     <li
       className={rowClassName}
       onMouseEnter={() => {
-        if (!selected) onPreview?.(section)
+        onPreview?.(selected ? null : section)
       }}
       onMouseLeave={() => onPreview?.(null)}
     >
@@ -894,11 +959,6 @@ function SectionGroupRow({
         <p className="min-w-0 text-sm font-medium text-slate-800">{sectionTitle}</p>
         {toggleButton}
       </div>
-
-      <p className="mt-1 flex items-center gap-1.5 text-xs font-normal text-slate-500">
-        <Clock className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden="true" />
-        <span className="truncate">{scheduleLabel}</span>
-      </p>
 
       <div className="mt-1 min-w-0">
         {section.teacherName ? (
@@ -908,19 +968,19 @@ function SectionGroupRow({
             teacherEmail={section.teacherEmail}
             courseId={section.courseId}
             academicPeriodId={section.academicPeriodId}
-            className="block max-w-full truncate text-left text-xs"
+            className="block max-w-full truncate text-left text-xs text-slate-500"
           />
         ) : (
           <span className="text-xs text-slate-400">Sin docente</span>
         )}
       </div>
 
-      {hasConflict && (
-        <p className="mt-1.5 flex items-center gap-1 text-[11px] font-normal text-amber-700/85">
-          <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden="true" />
-          Conflicto de horario
-        </p>
-      )}
+      <p className="mt-1 flex items-center gap-1.5 text-xs font-normal text-slate-500">
+        <Clock className="h-3.5 w-3.5 shrink-0 text-slate-400" aria-hidden="true" />
+        <span className="truncate">{scheduleLabel}</span>
+      </p>
+
+      {overlapNote && <ScheduleConflictNote message={overlapNote} className="mt-1.5" />}
     </li>
   )
 }

@@ -277,7 +277,9 @@ export function BottomSheet({
   if (!mounted) return null
   if (mobileOnly && !isMobileSheet) return null
 
-  const shouldShowHandle = showHandle ?? (!header && !bare)
+  // Handle = affordance de sheet arrastrable; en modal desktop no tiene sentido.
+  const shouldShowHandle =
+    !isModalDesktop && (showHandle ?? (!header && !bare))
   const resolvedMaxHeight = tall ? '90dvh' : maxHeight
 
   const isSheetVisible = phase === 'open'
@@ -361,10 +363,18 @@ export function BottomSheet({
         <div
           ref={scrollRef}
           className={`bottom-sheet-body ${className}`}
-          onPointerDown={shouldShowHandle ? undefined : onContentPointerDown}
-          onPointerMove={shouldShowHandle ? undefined : onContentPointerMove}
-          onPointerUp={shouldShowHandle ? undefined : onContentPointerUp}
-          onPointerCancel={shouldShowHandle ? undefined : onContentPointerUp}
+          onPointerDown={
+            isModalDesktop || shouldShowHandle ? undefined : onContentPointerDown
+          }
+          onPointerMove={
+            isModalDesktop || shouldShowHandle ? undefined : onContentPointerMove
+          }
+          onPointerUp={
+            isModalDesktop || shouldShowHandle ? undefined : onContentPointerUp
+          }
+          onPointerCancel={
+            isModalDesktop || shouldShowHandle ? undefined : onContentPointerUp
+          }
         >
           {children}
         </div>

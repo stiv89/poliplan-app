@@ -1,7 +1,8 @@
-const STROKE = '#0B3B8F'
-const STROKE_LIGHT = '#2563EB'
-const FILL_SOFT = '#BFDBFE'
-const ACCENT = '#FBBF24'
+const STROKE = 'var(--doodle-stroke)'
+const STROKE_LIGHT = 'var(--doodle-stroke-light)'
+const FILL_SOFT = 'var(--doodle-fill-soft)'
+const ACCENT = 'var(--doodle-accent)'
+const FILL_WHITE = 'var(--doodle-fill-white)'
 
 function GradCap({ className }: { className?: string }) {
   return (
@@ -58,7 +59,7 @@ function Pencil({ className }: { className?: string }) {
 function MiniCalendar({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 52 52" fill="none" className={className} aria-hidden="true">
-      <rect x="8" y="12" width="36" height="32" rx="4" stroke={STROKE} strokeWidth="2" fill="white" fillOpacity="0.45" />
+      <rect x="8" y="12" width="36" height="32" rx="4" stroke={STROKE} strokeWidth="2" fill={FILL_WHITE} fillOpacity="0.45" />
       <path d="M8 20H44" stroke={STROKE} strokeWidth="2" />
       <path d="M18 8V16M34 8V16" stroke={STROKE_LIGHT} strokeWidth="2" strokeLinecap="round" />
       <rect x="14" y="26" width="6" height="5" rx="1" fill={STROKE_LIGHT} fillOpacity="0.25" />
@@ -74,7 +75,7 @@ function Calculator({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 44 56" fill="none" className={className} aria-hidden="true">
       <rect x="6" y="4" width="32" height="48" rx="5" stroke={STROKE} strokeWidth="2" fill={FILL_SOFT} fillOpacity="0.3" />
-      <rect x="10" y="10" width="24" height="10" rx="2" stroke={STROKE_LIGHT} strokeWidth="1.5" fill="white" fillOpacity="0.5" />
+      <rect x="10" y="10" width="24" height="10" rx="2" stroke={STROKE_LIGHT} strokeWidth="1.5" fill={FILL_WHITE} fillOpacity="0.5" />
       <circle cx="14" cy="30" r="2.5" fill={STROKE_LIGHT} fillOpacity="0.35" />
       <circle cx="22" cy="30" r="2.5" fill={STROKE_LIGHT} fillOpacity="0.35" />
       <circle cx="30" cy="30" r="2.5" fill={STROKE_LIGHT} fillOpacity="0.35" />
@@ -99,7 +100,7 @@ function Laptop({ className }: { className?: string }) {
   return (
     <svg viewBox="0 0 64 44" fill="none" className={className} aria-hidden="true">
       <rect x="10" y="8" width="44" height="26" rx="3" stroke={STROKE} strokeWidth="2" fill={FILL_SOFT} fillOpacity="0.28" />
-      <path d="M4 34H60L54 40H10L4 34Z" stroke={STROKE} strokeWidth="2" strokeLinejoin="round" fill="white" fillOpacity="0.35" />
+      <path d="M4 34H60L54 40H10L4 34Z" stroke={STROKE} strokeWidth="2" strokeLinejoin="round" fill={FILL_WHITE} fillOpacity="0.35" />
       <path d="M18 18H46M18 24H38" stroke={STROKE_LIGHT} strokeWidth="1.5" strokeLinecap="round" opacity="0.4" />
     </svg>
   )
@@ -165,13 +166,13 @@ function BrushBlob({ className }: { className?: string }) {
     <svg viewBox="0 0 120 80" fill="none" className={className} aria-hidden="true">
       <path
         d="M18 42C10 28 22 12 44 10C66 8 88 18 96 34C104 50 88 66 62 68C36 70 26 56 18 42Z"
-        fill="#0B3B8F"
-        fillOpacity="0.06"
+        fill="var(--doodle-blob-primary)"
+        style={{ fillOpacity: 'var(--doodle-blob-fill-a)' }}
       />
       <path
         d="M28 40C22 30 32 18 48 17C64 16 78 24 82 36C86 48 74 56 58 57C42 58 34 50 28 40Z"
-        fill="#2563EB"
-        fillOpacity="0.05"
+        fill="var(--doodle-blob-secondary)"
+        style={{ fillOpacity: 'var(--doodle-blob-fill-b)' }}
       />
     </svg>
   )
@@ -180,10 +181,10 @@ function BrushBlob({ className }: { className?: string }) {
 export function LandingDoodleBackground({ className = '' }: { className?: string }) {
   return (
     <div
-      className={`pointer-events-none absolute inset-0 overflow-hidden ${className}`}
+      className={`landing-doodle-bg pointer-events-none absolute inset-0 overflow-hidden ${className}`}
       aria-hidden="true"
     >
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_15%,rgba(11,59,143,0.05),transparent_42%),radial-gradient(circle_at_85%_20%,rgba(37,99,235,0.05),transparent_38%),radial-gradient(circle_at_50%_100%,rgba(251,191,36,0.06),transparent_40%)]" />
+      <div className="landing-doodle-glows absolute inset-0" />
 
       <BrushBlob className="absolute -left-8 top-[12%] h-32 w-48 rotate-[-18deg] opacity-90" />
       <BrushBlob className="absolute -right-10 top-[38%] h-36 w-52 rotate-[24deg] opacity-80" />

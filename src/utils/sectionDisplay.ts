@@ -144,9 +144,60 @@ export function getSectionConflictMessages(
         : conflict.firstSectionId
     const otherSection = allSectionsById.get(otherId)
     const course = otherSection ? coursesById.get(otherSection.courseId) : null
-    messages.add(course ? `Conflicto con ${course.name}` : 'Conflicto de horario')
+    messages.add(course ? `Se superpone con ${course.name}` : 'Conflicto de horario')
   }
   return [...messages]
+}
+
+/** Course IDs connected to `courseId` through schedule conflicts among selected sections. */
+export function getConflictClusterCourseIds(
+  courseId: string,
+  selectedSections: CourseSection[],
+  conflicts: ScheduleConflict[],
+): Set<string> {
+  const sectionById = new Map(selectedSections.map((section) => [section.id, section]))
+  const edges = new Map<string, Set<string>>()
+
+  for (const conflict of conflicts) {
+    const first = sectionById.get(conflict.firstSectionId)
+    const second = sectionById.get(conflict.secondSectionId)
+    if (!first || !second || first.courseId === second.courseId) continue
+
+    if (!edges.has(first.courseId)) edges.set(first.courseId, new Set())
+    if (!edges.has(second.courseId)) edges.set(second.courseId, new Set())
+    edges.get(first.courseId)!.add(second.courseId)
+    edges.get(second.courseId)!.add(first.courseId)
+  }
+
+  const visited = new Set<string>()
+  const stack = [courseId]
+  while (stack.length > 0) {
+    const current = stack.pop()!
+    if (visited.has(current)) continue
+    visited.add(current)
+    for (const neighbor of edges.get(current) ?? []) {
+      if (!visited.has(neighbor)) stack.push(neighbor)
+    }
+  }
+
+  return visited
+}
+
+export function findCrossCourseConflictPreview(
+  courseId: string,
+  selectedSections: CourseSection[],
+  conflicts: ScheduleConflict[],
+): CourseSection | null {
+  const sectionById = new Map(selectedSections.map((section) => [section.id, section]))
+
+  for (const conflict of conflicts) {
+    const first = sectionById.get(conflict.firstSectionId)
+    const second = sectionById.get(conflict.secondSectionId)
+    if (first?.courseId === courseId && second && second.courseId !== courseId) return second
+    if (second?.courseId === courseId && first && first.courseId !== courseId) return first
+  }
+
+  return null
 }
 
 export function sectionHasConflicts(

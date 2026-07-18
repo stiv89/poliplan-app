@@ -47,10 +47,10 @@ export function GradingPage() {
   }
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-[#f4f7fb]">
-      <LandingDoodleBackground className="opacity-70" />
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
+      <LandingDoodleBackground className="opacity-70 dark:opacity-45" />
 
-      <header className="relative z-10 shrink-0 border-b border-slate-200/40 bg-white/75 px-4 py-2 backdrop-blur-md md:px-6">
+      <header className="relative z-10 shrink-0 border-b border-slate-200/40 bg-surface/80 px-4 py-2 backdrop-blur-md md:px-6 dark:border-[var(--app-border-subtle)] dark:bg-[color-mix(in_srgb,var(--app-surface)_82%,transparent)]">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="min-w-0">
             <h1 className="text-base font-bold tracking-tight text-text md:text-lg">

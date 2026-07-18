@@ -29,6 +29,8 @@ import { useSchedule } from '@/hooks/useSchedule'
 import { SectionSearchPanel } from '@/components/schedule/SectionSearchPanel'
 import { ScheduleContextBar } from '@/components/schedule/ScheduleContextBar'
 import { ScheduleContextSelector } from '@/components/schedule/ScheduleContextSelector'
+import type { ScheduleShareData } from '@/components/schedule/ShareSchedulePopover'
+import { formatCareerCompactLabel } from '@/utils/scheduleHeader'
 import {
   ScheduleUndoToast,
   type SchedulePickerPanelProps,
@@ -143,6 +145,8 @@ export function HomePage() {
 
   const handleToggle = useCallback(
     async (section: CourseSection) => {
+      // Si se agrega/quita la sección del preview, no tiene sentido seguir mostrando solape.
+      setPreviewSection((current) => (current?.id === section.id ? null : current))
       setToggleLoading(true)
       try {
         await toggleSection(section)
@@ -152,6 +156,13 @@ export function HomePage() {
     },
     [toggleSection],
   )
+
+  // Nunca previsualizar una sección que ya está en el horario (evita “conflicto” consigo misma).
+  const activePreviewSection = useMemo(() => {
+    if (!previewSection) return null
+    if (selectedSections.some((section) => section.id === previewSection.id)) return null
+    return previewSection
+  }, [previewSection, selectedSections])
 
   // Cerrar drawers con Escape
   useEffect(() => {
@@ -199,6 +210,31 @@ export function HomePage() {
     }
     return careers.filter((career) => careerIds.has(career.id))
   }, [careers, coursesById, selectedSections, settings?.selectedCareerId])
+
+  const shareData = useMemo<ScheduleShareData>(() => {
+    const career = careers.find((item) => item.id === settings?.selectedCareerId)
+    const careerLabel = career ? formatCareerCompactLabel(career) : null
+    const subtitle = [careerLabel, activePeriod?.name].filter(Boolean).join(' · ') || null
+
+    return {
+      scheduleName: activeSchedule?.name ?? 'Mi horario',
+      subtitle,
+      selectedSections,
+      coursesById: new Map(
+        [...coursesById.entries()].map(([id, course]) => [
+          id,
+          { name: course.name, code: course.code ?? null },
+        ]),
+      ),
+    }
+  }, [
+    activePeriod?.name,
+    activeSchedule?.name,
+    careers,
+    coursesById,
+    selectedSections,
+    settings?.selectedCareerId,
+  ])
 
   const handleViewAlternatives = useCallback(
     (courseId: string) => {
@@ -254,7 +290,7 @@ export function HomePage() {
     toggleLoading,
     initialSearch: searchPrefill,
     onPreviewSection: setPreviewSection,
-    previewSectionId: previewSection?.id ?? null,
+    previewSectionId: activePreviewSection?.id ?? null,
     viewFilters,
     catalogLoading,
     onCareerChange: (careerId: string | null) => void setSelectedCareer(careerId),
@@ -340,6 +376,7 @@ export function HomePage() {
                 ? () => handleShareSchedule(activeSchedule.id)
                 : undefined
             }
+            shareData={shareData}
           />
 
           <div className="relative min-h-0 flex-1 overflow-hidden" data-tour="schedule-grid">
@@ -350,10 +387,10 @@ export function HomePage() {
               onRemoveSection={(id) => void handleRemove(id)}
               onViewAlternatives={handleViewAlternatives}
               removingId={removingId}
-              previewSection={previewSection}
+              previewSection={activePreviewSection}
               viewFilters={viewFilters}
             />
-            {selectedSections.length === 0 && !previewSection && (
+            {selectedSections.length === 0 && !activePreviewSection && (
               <div
                 className={`pointer-events-none absolute inset-0 flex items-center justify-center px-6 ${
                   settings?.selectedCareerId ? 'bg-background/55' : 'bg-background/40'
@@ -365,7 +402,7 @@ export function HomePage() {
                 />
               </div>
             )}
-            {selectedSections.length === 0 && previewSection && (
+            {selectedSections.length === 0 && activePreviewSection && (
               <div className="pointer-events-none absolute inset-x-0 top-4 flex justify-center px-4">
                 <p className="rounded-full bg-white/90 px-3 py-1 text-xs text-muted shadow-sm">
                   Vista previa — agregá la materia para confirmar
@@ -398,11 +435,12 @@ export function HomePage() {
           onShareSchedule={
             activeSchedule?.id ? () => handleShareSchedule(activeSchedule.id) : undefined
           }
+          shareData={shareData}
           isEmpty={!hasScheduleSections}
         />
 
         {hasScheduleSections ? (
-          <>
+          <div className="mobile-day-panel flex min-h-0 flex-1 flex-col overflow-hidden">
             <MobileDaySelector
               days={DAYS_OF_WEEK}
               activeDay={mobileDay}
@@ -445,7 +483,7 @@ export function HomePage() {
                 </button>
               </div>
             </div>
-          </>
+          </div>
         ) : (
           <div className="flex min-h-0 flex-1 items-center justify-center px-6">
             <EmptyScheduleMobileOnboarding
@@ -518,6 +556,7 @@ function ScheduleHeader({
   officialDataSyncing,
   onSync,
   onShareSchedule,
+  shareData,
 }: {
   scheduleName: string
   periodName: string | null
@@ -536,6 +575,7 @@ function ScheduleHeader({
   officialDataSyncing: boolean
   onSync: () => void
   onShareSchedule?: () => Promise<string>
+  shareData?: ScheduleShareData
 }) {
   return (
     <header className="shrink-0 px-6 py-3">
@@ -551,6 +591,7 @@ function ScheduleHeader({
         scheduleCareers={scheduleCareers}
         schedulePicker={schedulePicker}
         onShareSchedule={onShareSchedule}
+        shareData={shareData}
       />
       <div className="mt-2">
         <ScheduleSaveStatus
@@ -583,6 +624,7 @@ function MobileHeader({
   officialDataSyncing,
   onSync,
   onShareSchedule,
+  shareData,
   isEmpty = false,
 }: {
   scheduleName: string
@@ -601,6 +643,7 @@ function MobileHeader({
   officialDataSyncing: boolean
   onSync: () => void
   onShareSchedule?: () => Promise<string>
+  shareData?: ScheduleShareData
   isEmpty?: boolean
 }) {
   return (
@@ -617,6 +660,7 @@ function MobileHeader({
         onCareerChange={onCareerChange}
         schedulePicker={schedulePicker}
         onShareSchedule={onShareSchedule}
+        shareData={shareData}
         syncStatus={{
           isOnline,
           isAuthenticated,

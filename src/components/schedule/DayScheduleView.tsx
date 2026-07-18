@@ -1,12 +1,12 @@
 /**
  * DayScheduleView — Vista diaria para móvil (lista estilo iOS)
  */
-import { AlertTriangle } from 'lucide-react'
 import { getCourseInitial, getCourseListAccent } from '@/config/constants'
 import { ClassBlockPopoverLayer } from '@/components/schedule/ClassBlockPopoverLayer'
+import { ScheduleConflictNote } from '@/components/schedule/ScheduleConflictNote'
 import type { ClassBlockInfo } from '@/components/schedule/ClassBlockDetail'
 import { useClassBlockPopover } from '@/components/schedule/useClassBlockPopover'
-import { formatTimeRange, formatTimeRangeEs } from '@/utils/times'
+import { formatTimeRangeEs } from '@/utils/times'
 import { getMeetingConflictDetails } from '@/utils/conflicts'
 import type { CourseSection, ScheduleConflict } from '@/types/academic'
 import { getSectionScheduleTitle } from '@/utils/electiveCourses'
@@ -79,6 +79,13 @@ export function DayScheduleView({
     .sort((a, b) => a.startTime.localeCompare(b.startTime))
 
   const dayConflicts = conflicts.filter((c) => c.dayOfWeek === day)
+  const conflictCourseIds = new Set<string>()
+  for (const conflict of dayConflicts) {
+    const first = sectionsById.get(conflict.firstSectionId)
+    const second = sectionsById.get(conflict.secondSectionId)
+    if (first) conflictCourseIds.add(first.courseId)
+    if (second) conflictCourseIds.add(second.courseId)
+  }
 
   if (dayBlocks.length === 0) {
     return (
@@ -89,7 +96,7 @@ export function DayScheduleView({
   }
 
   return (
-    <div className="relative pb-28 pt-1">
+    <div className="relative pb-28">
       <ClassBlockPopoverLayer
         activeBlock={activeBlock}
         anchorRef={anchorRef}
@@ -114,12 +121,12 @@ export function DayScheduleView({
         onPopoverMouseLeave={handlePopoverMouseLeave}
       />
 
-      {dayConflicts.length > 0 && (
-        <div className="mx-6 mb-3 rounded-xl border border-red-100/90 bg-red-50/40 px-3 py-2">
-          <p className="flex items-center gap-1.5 text-xs font-medium text-red-600">
-            <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-            {dayConflicts.length} conflicto{dayConflicts.length !== 1 ? 's' : ''} hoy
-          </p>
+      {conflictCourseIds.size >= 2 && (
+        <div className="schedule-conflict-banner mx-5 my-3" role="status">
+          <span className="schedule-conflict-banner-text">
+            <span aria-hidden="true">⚠️ </span>
+            {conflictCourseIds.size} materias tienen un conflicto horario
+          </span>
         </div>
       )}
 
@@ -127,12 +134,22 @@ export function DayScheduleView({
         {dayBlocks.map((block, index) => {
           const course = coursesById.get(block.courseId)
           const displayName = course?.name ?? block.title
-          const accent = block.hasConflict ? '#DC2626' : getCourseListAccent(block.courseId)
+          const accent = getCourseListAccent(block.courseId)
           const initial = getCourseInitial(displayName, course?.code)
           const metaParts = [formatTimeRangeEs(block.startTime, block.endTime)]
-          if (!block.hasConflict && block.classroom) {
+          if (block.classroom) {
             metaParts.push(block.classroom)
           }
+          const overlapCourseName = block.conflictDetails[0]
+            ? coursesById.get(
+                sectionsById.get(block.conflictDetails[0].otherSectionId)?.courseId ?? '',
+              )?.name
+            : null
+          const overlapNote = overlapCourseName
+            ? `Se superpone con ${overlapCourseName}`
+            : block.hasConflict
+              ? 'Conflicto de horario'
+              : null
 
           return (
             <button
@@ -150,27 +167,18 @@ export function DayScheduleView({
                 style={{ backgroundColor: accent }}
                 aria-hidden="true"
               >
-                {block.hasConflict ? (
-                  <AlertTriangle className="h-4 w-4 text-white" strokeWidth={2.25} />
-                ) : (
-                  initial
-                )}
+                {initial}
               </span>
 
               <span className="day-schedule-copy">
                 <span className="day-schedule-title" style={{ color: accent }}>
                   {displayName}
                 </span>
-                <span className="day-schedule-meta">
-                  {block.hasConflict ? (
-                    <>
-                      <span className="font-medium text-red-600">Conflicto · </span>
-                      {formatTimeRange(block.startTime, block.endTime)}
-                    </>
-                  ) : (
-                    metaParts.join(' · ')
-                  )}
-                </span>
+                {block.teacherName && (
+                  <span className="day-schedule-meta">{block.teacherName}</span>
+                )}
+                <span className="day-schedule-meta">{metaParts.join(' · ')}</span>
+                {overlapNote && <ScheduleConflictNote message={overlapNote} className="mt-0.5" />}
               </span>
             </button>
           )

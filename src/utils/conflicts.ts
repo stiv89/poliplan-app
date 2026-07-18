@@ -217,8 +217,10 @@ export function getPreviewConflicts(
   previewSection: CourseSection,
   selectedSections: CourseSection[],
 ): ScheduleConflict[] {
-  if (selectedSections.length === 0) return []
-  return detectScheduleConflicts([previewSection, ...selectedSections]).filter(
+  // No comparar una sección consigo misma (p. ej. hover tras haberla agregado).
+  const others = selectedSections.filter((section) => section.id !== previewSection.id)
+  if (others.length === 0) return []
+  return detectScheduleConflicts([previewSection, ...others]).filter(
     (conflict) =>
       conflict.firstSectionId === previewSection.id ||
       conflict.secondSectionId === previewSection.id,

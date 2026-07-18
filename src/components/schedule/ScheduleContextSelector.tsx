@@ -4,7 +4,10 @@ import type { AcademicPeriod, Career } from '@/types/academic'
 import { AnimatedPopover } from '@/components/ui/AnimatedPopover'
 import { BottomSheet } from '@/components/ui/BottomSheet'
 import { ScheduleSaveStatus } from '@/components/guest/ScheduleSaveStatus'
-import { ShareSchedulePopover } from '@/components/schedule/ShareSchedulePopover'
+import {
+  ShareSchedulePopover,
+  type ScheduleShareData,
+} from '@/components/schedule/ShareSchedulePopover'
 import { ScheduleHeaderContextBadges } from '@/components/schedule/ScheduleHeaderContextBadges'
 import { ScheduleContextPanel } from '@/components/schedule/ScheduleContextSheet'
 import {
@@ -37,6 +40,7 @@ export interface ScheduleContextSelectorProps {
   className?: string
   triggerClassName?: string
   onShareSchedule?: () => Promise<string>
+  shareData?: ScheduleShareData
   /** Sync row inside mobile bottom sheet (header stays minimal). */
   syncStatus?: {
     isOnline: boolean
@@ -73,6 +77,7 @@ export function ScheduleContextSelector({
   className = '',
   triggerClassName = '',
   onShareSchedule,
+  shareData,
   syncStatus,
 }: ScheduleContextSelectorProps) {
   const [open, setOpen] = useState(false)
@@ -168,10 +173,11 @@ export function ScheduleContextSelector({
 
   function closeShare() {
     setShareOpen(false)
+    setShareLoading(false)
   }
 
-  async function handleShareClick() {
-    if (!onShareSchedule) return
+  function handleShareClick() {
+    if (!onShareSchedule || !shareData) return
 
     if (shareOpen) {
       closeShare()
@@ -183,14 +189,19 @@ export function ScheduleContextSelector({
     window.setTimeout(() => setShareAnimated(false), 450)
 
     setShareOpen(true)
-    setShareUrl(null)
-    setShareLoading(true)
+  }
 
+  async function requestShareLink(): Promise<string | null> {
+    if (!onShareSchedule) return null
+    if (shareUrl) return shareUrl
+
+    setShareLoading(true)
     try {
       const url = await onShareSchedule()
       setShareUrl(url)
+      return url
     } catch {
-      setShareOpen(false)
+      return null
     } finally {
       setShareLoading(false)
     }
@@ -220,11 +231,11 @@ export function ScheduleContextSelector({
             />
           </button>
 
-          {onShareSchedule && (
+          {onShareSchedule && shareData && (
             <button
               ref={shareRef}
               type="button"
-              onClick={() => void handleShareClick()}
+              onClick={handleShareClick}
               className={`schedule-header-share-btn schedule-header-share-btn--compact group ${
                 shareAnimated ? 'schedule-share-pop' : ''
               }`}
@@ -272,11 +283,11 @@ export function ScheduleContextSelector({
             />
           </div>
 
-          {onShareSchedule && (
+          {onShareSchedule && shareData && (
             <button
               ref={shareRef}
               type="button"
-              onClick={() => void handleShareClick()}
+              onClick={handleShareClick}
               className={`schedule-header-share-btn group shrink-0 ${
                 shareAnimated ? 'schedule-share-pop' : ''
               }`}
@@ -317,13 +328,16 @@ export function ScheduleContextSelector({
         </AnimatedPopover>
       )}
 
-      {onShareSchedule && (
+      {onShareSchedule && shareData && (
         <ShareSchedulePopover
           open={shareOpen}
           anchorRef={shareRef}
           popoverRef={sharePopoverRef}
+          presentation={isSheet ? 'sheet' : 'popover'}
+          shareData={shareData}
           url={shareUrl}
-          loading={shareLoading}
+          linkLoading={shareLoading}
+          onRequestLink={requestShareLink}
           onClose={closeShare}
         />
       )}

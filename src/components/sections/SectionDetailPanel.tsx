@@ -1,8 +1,9 @@
 import type { ReactNode } from 'react'
-import { AlertTriangle, Check, X } from 'lucide-react'
+import { Check, X } from 'lucide-react'
 import { TeacherNameButton } from '@/components/teachers/TeacherNameButton'
 import { Button } from '@/components/ui/Button'
 import { CourseFootnoteCardNote } from '@/components/schedule/CourseFootnoteNotice'
+import { ScheduleConflictNote } from '@/components/schedule/ScheduleConflictNote'
 import type { CourseSection, ScheduleConflict } from '@/types/academic'
 import { getCourseFootnote } from '@/utils/courseFootnotes'
 import { formatDate } from '@/utils/dates'
@@ -142,12 +143,9 @@ export function SectionDetailPanel({
         )}
 
         {conflictMessages.length > 0 && (
-          <div className="mt-5 rounded-lg border border-amber-200/80 bg-amber-50/60 px-3 py-2.5">
+          <div className="mt-5 rounded-lg bg-[#fffbf2] px-3 py-2.5">
             {conflictMessages.map((message) => (
-              <p key={message} className="flex items-center gap-1.5 text-xs text-amber-800">
-                <AlertTriangle className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-                {message}
-              </p>
+              <ScheduleConflictNote key={message} message={message} />
             ))}
           </div>
         )}

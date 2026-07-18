@@ -2,7 +2,6 @@
  * WeeklyScheduleGrid — Calendario semanal protagonista
  */
 import { useEffect, useMemo, useRef } from 'react'
-import { AlertTriangle } from 'lucide-react'
 import { DAYS_OF_WEEK, getCourseColor } from '@/config/constants'
 import { useEffectiveTheme } from '@/hooks/useEffectiveTheme'
 import { DEFAULT_SCHEDULE_VIEW_FILTERS } from '@/types/scheduleFilters'
@@ -301,22 +300,21 @@ export function WeeklyScheduleGrid({
                     }
 
                     const isConflict = block.hasConflict || isPreviewOverlap
-                    const isPreviewOnly = isPreviewOverlap && !block.hasConflict
 
                     return (
                       <button
                         key={block.id}
                         className={`schedule-course-block absolute inset-x-1 z-10 overflow-hidden rounded-md px-2 py-1 text-left transition-[background-color,border-color,opacity,filter] duration-300 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary/40 ${blockOpacity} ${
                           isConflict
-                            ? 'border border-red-100/90 border-l-[3px] border-l-red-400 bg-red-50/25 hover:bg-red-50/40'
+                            ? 'is-schedule-conflict border hover:brightness-[0.98]'
                             : 'border hover:brightness-[0.98]'
                         }`}
                         style={{
                           top,
                           height,
-                          backgroundColor: isConflict ? undefined : color.bg,
-                          borderColor: isConflict ? undefined : color.border,
-                          color: isConflict ? undefined : color.text,
+                          backgroundColor: isConflict ? '#FFFBF2' : color.bg,
+                          borderColor: isConflict ? 'rgba(161, 112, 48, 0.14)' : color.border,
+                          color: isConflict ? 'rgba(92, 64, 28, 0.88)' : color.text,
                         }}
                         onClick={(event) => handleBlockClick(block, event)}
                         onMouseEnter={(event) => handleBlockMouseEnter(block, event)}
@@ -324,9 +322,8 @@ export function WeeklyScheduleGrid({
                         aria-label={`${block.title} — ${formatTimeRange(block.startTime, block.endTime)}${isConflict ? ' — conflicto' : ''}`}
                       >
                         {isConflict && height >= 36 && (
-                          <span className="mb-0.5 inline-flex items-center gap-0.5 text-[9px] font-medium text-red-600">
-                            <AlertTriangle className="h-2.5 w-2.5" aria-hidden="true" />
-                            {isPreviewOnly ? 'Solapa' : 'Conflicto'}
+                          <span className="mb-0.5 block text-[9px] font-normal text-[rgba(161,112,48,0.78)]">
+                            ⚠ Conflicto
                           </span>
                         )}
                         <p className="truncate text-[11px] font-medium leading-tight">
@@ -335,17 +332,17 @@ export function WeeklyScheduleGrid({
                         {height >= 44 && (
                           <p
                             className="truncate text-[10px] font-normal leading-tight"
-                            style={{ color: isConflict ? undefined : color.subtext }}
+                            style={{
+                              color: isConflict ? 'rgba(120,84,36,0.72)' : color.subtext,
+                            }}
                           >
                             Sec. {block.sectionCode}
                           </p>
                         )}
                         {height >= 52 && (
                           <p
-                            className={`truncate text-[10px] leading-tight ${
-                              isConflict ? 'font-normal text-red-600/85' : 'font-normal'
-                            }`}
-                            style={{ color: isConflict ? undefined : color.faint }}
+                            className="truncate text-[10px] font-normal leading-tight"
+                            style={{ color: isConflict ? 'rgba(120,84,36,0.62)' : color.faint }}
                           >
                             {isConflict
                               ? formatTimeRange(block.startTime, block.endTime)

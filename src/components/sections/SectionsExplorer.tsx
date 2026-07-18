@@ -143,10 +143,10 @@ export function SectionsExplorer({
         : `${groupedSections.length} materia${groupedSections.length !== 1 ? 's' : ''} · ${filteredSections.length} sección${filteredSections.length !== 1 ? 'es' : ''}`
 
   return (
-    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden bg-[#f4f7fb]">
-      <LandingDoodleBackground className="opacity-70" />
+    <div className="sections-explorer-surface relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background">
+      <LandingDoodleBackground className="opacity-70 dark:opacity-45" />
 
-      <header className="relative z-10 shrink-0 border-b border-slate-200/40 bg-white/75 px-4 py-2 backdrop-blur-md md:px-6">
+      <header className="relative z-10 shrink-0 border-b border-slate-200/40 bg-surface/80 px-4 py-2 backdrop-blur-md md:px-6 dark:border-[var(--app-border-subtle)] dark:bg-[color-mix(in_srgb,var(--app-surface)_82%,transparent)]">
         <div className="flex items-center justify-between gap-3">
           <div className="flex min-w-0 flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
             <h1 className="text-base font-bold tracking-tight text-text md:text-lg">Secciones</h1>
@@ -165,7 +165,7 @@ export function SectionsExplorer({
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               placeholder="Buscar materia o docente…"
-              className="w-full rounded-lg border border-slate-200 bg-white py-1.5 pl-9 pr-3 text-sm outline-none focus:border-primary-light"
+              className="w-full rounded-lg border border-slate-200 bg-surface py-1.5 pl-9 pr-3 text-sm outline-none focus:border-primary-light dark:border-[var(--app-border-subtle)]"
               aria-label="Buscar materia o docente"
             />
           </div>
@@ -189,8 +189,8 @@ export function SectionsExplorer({
               No se encontraron secciones.
             </p>
           ) : (
-            <div className="max-w-3xl overflow-hidden rounded-2xl border border-slate-200/60 bg-white/88 backdrop-blur-sm">
-              <div className="divide-y divide-slate-100">
+            <div className="max-w-3xl overflow-hidden rounded-2xl border border-slate-200/60 bg-surface/90 backdrop-blur-sm dark:border-[var(--app-border-subtle)] dark:bg-[color-mix(in_srgb,var(--app-surface)_88%,transparent)]">
+              <div className="divide-y divide-slate-100 dark:divide-[var(--app-border-subtle)]">
                 {groupedSections.map((group) => (
                   <CourseGroupBlock
                     key={group.courseId}
@@ -212,7 +212,7 @@ export function SectionsExplorer({
         </div>
 
         {detailSection && detailCourse && (
-          <aside className="relative z-10 hidden w-[min(360px,34vw)] shrink-0 border-l border-slate-200/40 bg-white/80 backdrop-blur-md md:flex md:flex-col">
+          <aside className="relative z-10 hidden w-[min(360px,34vw)] shrink-0 border-l border-slate-200/40 bg-surface/85 backdrop-blur-md md:flex md:flex-col dark:border-[var(--app-border-subtle)] dark:bg-[color-mix(in_srgb,var(--app-surface)_85%,transparent)]">
             <SectionDetailPanel
               section={detailSection}
               courseName={detailCourse.name}
@@ -281,7 +281,7 @@ function SectionsEmptyState() {
         alt="Ilustración de materias y secciones"
         width={480}
         height={480}
-        className="mb-6 h-auto max-h-[220px] w-[clamp(180px,42vw,240px)] object-contain opacity-90"
+        className="mb-6 h-auto max-h-[220px] w-[clamp(180px,42vw,240px)] object-contain opacity-90 dark:opacity-75 dark:brightness-[0.92]"
         draggable={false}
       />
       <h2 className="text-base font-semibold tracking-tight text-text md:text-lg">
@@ -429,12 +429,8 @@ function SectionCompactRow({
   const hasConflict = conflictMessages.length > 0
 
   return (
-    <li>
-      <div
-        className={`group flex items-start gap-3 border-b border-slate-50 py-3 last:border-b-0 ${
-          hasConflict ? 'border-l-2 border-l-amber-400 pl-2' : ''
-        }`}
-      >
+    <li className="section-explorer-row">
+      <div className="group flex items-start gap-3 border-b border-slate-50 py-3 last:border-b-0 dark:border-[var(--app-border-subtle)]">
         <button
           type="button"
           onClick={onOpenDetail}
@@ -459,6 +455,14 @@ function SectionCompactRow({
                       </span>
                     )}
                   </span>
+                  {hasConflict && conflictMessages[0] && (
+                    <span title={conflictMessages[0]}>
+                      <AlertTriangle
+                        className="h-3.5 w-3.5 shrink-0 text-[rgba(161,112,48,0.72)] dark:text-[rgba(214,180,120,0.75)]"
+                        aria-label={conflictMessages[0]}
+                      />
+                    </span>
+                  )}
                   {careerLabel && <CareerPill label={careerLabel} />}
                 </span>
                 {courseFootnote && (
@@ -469,9 +473,19 @@ function SectionCompactRow({
               </>
             )}
             {!showCourseName && (
-              <span className="block text-sm font-medium text-text">
-                Sección {section.sectionCode}
-                {courseCode && <span className="font-normal text-muted"> · {courseCode}</span>}
+              <span className="flex flex-wrap items-center gap-1.5">
+                <span className="text-sm font-medium text-text">
+                  Sección {section.sectionCode}
+                  {courseCode && <span className="font-normal text-muted"> · {courseCode}</span>}
+                </span>
+                {hasConflict && conflictMessages[0] && (
+                  <span title={conflictMessages[0]}>
+                    <AlertTriangle
+                      className="h-3.5 w-3.5 shrink-0 text-[rgba(161,112,48,0.72)] dark:text-[rgba(214,180,120,0.75)]"
+                      aria-label={conflictMessages[0]}
+                    />
+                  </span>
+                )}
               </span>
             )}
 
@@ -510,13 +524,6 @@ function SectionCompactRow({
                 </>
               )}
             </span>
-
-            {hasConflict && (
-              <span className="mt-1 flex items-center gap-1 text-[11px] text-amber-700">
-                <AlertTriangle className="h-3 w-3 shrink-0" aria-hidden="true" />
-                {conflictMessages[0]}
-              </span>
-            )}
           </span>
         </button>
 

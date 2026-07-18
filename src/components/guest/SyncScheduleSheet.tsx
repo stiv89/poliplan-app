@@ -25,11 +25,12 @@ export function SyncScheduleSheet({
       bare
       showHandle
       desktop="modal"
-      maxHeight="88dvh"
-      panelClassName="md:grid md:max-h-[min(520px,88dvh)] md:w-[min(760px,calc(100vw-2rem))] md:grid-cols-[42fr_58fr] md:overflow-hidden md:rounded-2xl md:border md:border-slate-200"
+      maxHeight="90dvh"
+      panelClassName="sync-schedule-sheet md:w-[min(760px,calc(100vw-2rem))] md:max-h-[min(90dvh,640px)] md:rounded-2xl md:border md:border-slate-200"
+      className="p-0"
     >
-      <div className="contents">
-        <div className="relative hidden min-h-[340px] md:block">
+      <div className="flex flex-col md:grid md:grid-cols-[minmax(0,42fr)_minmax(0,58fr)]">
+        <div className="relative hidden overflow-hidden md:block md:min-h-full">
           <img
             src={desktopPhoto}
             alt=""
@@ -42,12 +43,12 @@ export function SyncScheduleSheet({
           />
         </div>
 
-        <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-          <div className="relative h-40 shrink-0 overflow-hidden md:hidden">
+        <div className="flex flex-col">
+          <div className="relative shrink-0 overflow-hidden md:hidden">
             <img
               src={mobilePhoto}
               alt=""
-              className="h-full w-full object-cover object-center"
+              className="h-[180px] max-h-[42vw] w-full object-cover object-center sm:h-[200px]"
               draggable={false}
             />
             <div className="absolute inset-0 bg-black/10" aria-hidden="true" />
@@ -61,13 +62,16 @@ export function SyncScheduleSheet({
             </button>
           </div>
 
-          <div className="flex flex-1 flex-col px-5 py-5">
+          <div className="flex flex-col px-5 pb-[max(1.25rem,env(safe-area-inset-bottom))] pt-4 md:px-7 md:pb-7 md:pt-7">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <h2 id="sync-sheet-title" className="text-lg font-semibold tracking-tight text-text">
+                <h2
+                  id="sync-sheet-title"
+                  className="text-lg font-semibold tracking-tight text-text md:text-xl"
+                >
                   Llevá tu horario a todos tus dispositivos
                 </h2>
-                <p className="mt-2 text-sm leading-relaxed text-muted">
+                <p className="mt-2.5 text-sm leading-relaxed text-muted md:mt-3">
                   Tu horario ya está guardado en este dispositivo. Creá una cuenta para respaldarlo y
                   acceder desde tu celular o computadora.
                 </p>
@@ -82,7 +86,7 @@ export function SyncScheduleSheet({
               </button>
             </div>
 
-            <div className="mt-6 flex flex-col gap-2">
+            <div className="mt-6 flex flex-col gap-2 md:mt-8">
               <Button className="justify-center" onClick={onCreateAccount}>
                 Crear cuenta
               </Button>

@@ -92,6 +92,7 @@ html {
   html.theme-transition .liquid-glass-dock,
   html.theme-transition .course-panel-surface,
   html.theme-transition .schedule-main-surface,
+  html.theme-transition .mobile-day-panel,
   html.theme-transition .mobile-days,
   html.theme-transition .day-schedule-list,
   html.theme-transition .bottom-sheet,
@@ -425,18 +426,20 @@ select {
     background: rgba(248, 250, 252, 0.92);
   }
 
+  .mobile-day-panel {
+    background: var(--app-surface);
+  }
+
   .mobile-days {
-    padding: 8px 0 10px;
-    background: rgba(255, 255, 255, 0.72);
+    padding: 10px 0 12px;
+    background: transparent;
     border-bottom: 1px solid rgba(15, 23, 42, 0.06);
-    backdrop-filter: blur(18px);
-    -webkit-backdrop-filter: blur(18px);
   }
 
   .mobile-days-scroll {
     display: flex;
     align-items: center;
-    gap: 1.125rem;
+    gap: 1.25rem;
     overflow-x: auto;
     padding: 0 1.5rem;
     -webkit-overflow-scrolling: touch;
@@ -493,14 +496,15 @@ select {
   }
 
   .day-content {
-    padding-top: 18px;
+    padding-top: 0;
+    min-height: 100%;
+    background: transparent;
   }
 
   .day-schedule-list {
     overflow: hidden;
-    border-top: 1px solid rgba(15, 23, 42, 0.06);
-    border-bottom: 1px solid rgba(15, 23, 42, 0.06);
-    background: rgba(255, 255, 255, 0.92);
+    border: none;
+    background: transparent;
   }
 
   .day-schedule-row {
@@ -525,7 +529,7 @@ select {
   }
 
   .day-schedule-row--conflict {
-    background: rgba(254, 242, 242, 0.45);
+    background: #fffbf2;
   }
 
   .day-schedule-avatar {
@@ -953,7 +957,7 @@ select {
 }
 
 .section-row-flat.is-conflict {
-  background: color-mix(in srgb, #d97706 4%, white);
+  background: #fffbf2;
   border-radius: 8px;
 }
 
@@ -995,7 +999,11 @@ select {
 }
 
 .section-cell.is-conflict .section-cell-label {
-  background: color-mix(in srgb, #d97706 4%, white);
+  background: #fffbf2;
+}
+
+.section-cell.is-selected.is-conflict .section-cell-label {
+  background: color-mix(in srgb, #fffbf2 82%, var(--color-primary) 5%);
 }
 
 .section-cell-checkbox {
@@ -1050,12 +1058,61 @@ select {
 }
 
 .section-cell-conflict {
-  display: inline-flex;
+  display: none;
+}
+
+.section-conflict-note {
+  margin-top: 0.2rem;
+  font-size: 0.6875rem;
+  line-height: 1.35;
+  font-weight: 400;
+  color: rgba(161, 112, 48, 0.78);
+}
+
+.schedule-conflict-banner-wrap {
+  list-style: none;
+  padding: 0.35rem 0.4rem 0.15rem;
+}
+
+.schedule-conflict-banner {
+  display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  gap: 0.2rem;
-  font-size: 0.625rem;
+  gap: 0.25rem 0.35rem;
+  border-radius: 10px;
+  background: #fffbf2;
+  padding: 0.45rem 0.55rem;
+  font-size: 0.6875rem;
+  line-height: 1.35;
+  color: rgba(120, 84, 36, 0.88);
+}
+
+.schedule-conflict-banner-text {
   font-weight: 500;
-  color: #b45309;
+}
+
+.schedule-conflict-banner-sep {
+  color: rgba(120, 84, 36, 0.45);
+}
+
+.schedule-conflict-banner-action {
+  border: none;
+  background: transparent;
+  padding: 0;
+  font: inherit;
+  font-weight: 500;
+  color: rgba(120, 84, 36, 0.92);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.schedule-conflict-banner-action:hover {
+  color: rgba(92, 64, 28, 0.98);
+}
+
+.schedule-course-block.is-schedule-conflict {
+  box-shadow: none;
 }
 
 .section-cell-schedule {
@@ -1313,8 +1370,12 @@ select {
 }
 
 .section-row-surface.is-conflict {
-  border-color: color-mix(in srgb, #d97706 28%, transparent);
-  background: color-mix(in srgb, #d97706 3%, white);
+  border-color: rgba(20, 40, 80, 0.1);
+  background: #fffbf2;
+}
+
+.section-row-surface.is-selected.is-conflict {
+  background: color-mix(in srgb, #fffbf2 78%, var(--color-primary) 4%);
 }
 
 .add-section-btn {
@@ -1513,8 +1574,13 @@ html.bottom-sheet-open .app-content {
   left: 50%;
   bottom: auto;
   width: min(calc(100vw - 2rem), 28rem);
-  max-height: min(85dvh, 520px);
+  height: auto;
+  max-height: min(90dvh, 640px);
   border-radius: 20px;
+  padding-bottom: 0;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.06),
+    0 18px 48px rgba(15, 23, 42, 0.16);
   transform: translate(-50%, -50%) scale(0.96);
   opacity: 0;
   transition:
@@ -1525,6 +1591,15 @@ html.bottom-sheet-open .app-content {
 .bottom-sheet--modal.bottom-sheet--open {
   transform: translate(-50%, -50%) scale(1);
   opacity: 1;
+}
+
+/* Modal con imagen: crece con el contenido; un solo scroll en el sheet si hace falta */
+.bottom-sheet.sync-schedule-sheet {
+  height: auto;
+}
+
+.bottom-sheet.sync-schedule-sheet .bottom-sheet-body {
+  flex: 0 1 auto;
 }
 
 .sheet-handle-area {
@@ -1654,10 +1729,17 @@ html.bottom-sheet-open .app-content {
     inset 0 -1px 0 rgba(255, 255, 255, 0.02);
 }
 
-.dark .mobile-days,
-.dark .day-schedule-list {
-  background: rgba(18, 24, 32, 0.92);
+.dark .mobile-day-panel {
+  background: var(--app-surface);
+}
+
+.dark .mobile-days {
+  background: transparent;
   border-color: var(--app-border-subtle);
+}
+
+.dark .day-schedule-list {
+  background: transparent;
 }
 
 .dark .mobile-day-label-text {
@@ -1673,7 +1755,23 @@ html.bottom-sheet-open .app-content {
 }
 
 .dark .day-schedule-row--conflict {
-  background: rgba(127, 29, 29, 0.18);
+  background: rgba(255, 251, 242, 0.05);
+}
+
+.dark .section-cell.is-conflict .section-cell-label,
+.dark .section-row-surface.is-conflict,
+.dark .section-row-flat.is-conflict,
+.dark .schedule-conflict-banner {
+  background: rgba(255, 251, 242, 0.05);
+}
+
+.dark .section-conflict-note,
+.dark .schedule-conflict-banner {
+  color: rgba(214, 180, 120, 0.78);
+}
+
+.dark .schedule-conflict-banner-action {
+  color: rgba(214, 180, 120, 0.88);
 }
 
 .dark .bottom-sheet {
@@ -1740,9 +1838,10 @@ html.bottom-sheet-open .app-content {
   border-color: var(--app-border-strong) !important;
 }
 
-.dark .schedule-course-block.border-red-100\/90 {
-  background: rgba(127, 29, 29, 0.22) !important;
-  border-color: rgba(248, 113, 113, 0.35) !important;
+.dark .schedule-course-block.border-red-100\/90,
+.dark .schedule-course-block.is-schedule-conflict {
+  background: rgba(255, 251, 242, 0.05) !important;
+  border-color: rgba(214, 180, 120, 0.14) !important;
 }
 
 .dark .course-card-surface {
@@ -1842,4 +1941,43 @@ html.bottom-sheet-open .app-content {
   .dark .nav-rail-indicator {
     background: rgba(255, 255, 255, 0.08);
   }
+}
+
+/* ── Landing doodle backgrounds (Secciones, Calculadora, etc.) ─────────────── */
+
+.landing-doodle-bg {
+  --doodle-stroke: #0b3b8f;
+  --doodle-stroke-light: #2563eb;
+  --doodle-fill-soft: #bfdbfe;
+  --doodle-accent: #fbbf24;
+  --doodle-fill-white: #ffffff;
+  --doodle-blob-primary: #0b3b8f;
+  --doodle-blob-secondary: #2563eb;
+  --doodle-blob-fill-a: 0.06;
+  --doodle-blob-fill-b: 0.05;
+  --doodle-glow-a: rgba(11, 59, 143, 0.05);
+  --doodle-glow-b: rgba(37, 99, 235, 0.05);
+  --doodle-glow-c: rgba(251, 191, 36, 0.06);
+}
+
+.dark .landing-doodle-bg {
+  --doodle-stroke: rgba(158, 190, 255, 0.38);
+  --doodle-stroke-light: rgba(126, 179, 255, 0.3);
+  --doodle-fill-soft: rgba(126, 179, 255, 0.12);
+  --doodle-accent: rgba(251, 211, 96, 0.34);
+  --doodle-fill-white: rgba(255, 255, 255, 0.07);
+  --doodle-blob-primary: #5b9aff;
+  --doodle-blob-secondary: #7eb3ff;
+  --doodle-blob-fill-a: 0.1;
+  --doodle-blob-fill-b: 0.08;
+  --doodle-glow-a: rgba(91, 154, 255, 0.08);
+  --doodle-glow-b: rgba(126, 179, 255, 0.06);
+  --doodle-glow-c: rgba(251, 211, 96, 0.04);
+}
+
+.landing-doodle-glows {
+  background:
+    radial-gradient(circle at 20% 15%, var(--doodle-glow-a), transparent 42%),
+    radial-gradient(circle at 85% 20%, var(--doodle-glow-b), transparent 38%),
+    radial-gradient(circle at 50% 100%, var(--doodle-glow-c), transparent 40%);
 }

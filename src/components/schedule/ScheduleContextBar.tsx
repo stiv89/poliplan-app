@@ -1,5 +1,6 @@
 import type { AcademicPeriod, Career } from '@/types/academic'
 import type { SchedulePickerPanelProps } from '@/components/schedule/SchedulePickerSheet'
+import type { ScheduleShareData } from '@/components/schedule/ShareSchedulePopover'
 import {
   ScheduleContextSelector,
   buildContextPillLabel,
@@ -21,6 +22,7 @@ interface ScheduleContextBarProps {
   titleClassName?: string
   compact?: boolean
   onShareSchedule?: () => Promise<string>
+  shareData?: ScheduleShareData
 }
 
 /** Desktop schedule context entry — unified two-line selector. */
@@ -36,6 +38,7 @@ export function ScheduleContextBar({
   scheduleCareers,
   schedulePicker,
   onShareSchedule,
+  shareData,
 }: ScheduleContextBarProps) {
   return (
     <div className="min-w-0 flex-1">
@@ -51,6 +54,7 @@ export function ScheduleContextBar({
         onCareerChange={onCareerChange}
         schedulePicker={schedulePicker}
         onShareSchedule={onShareSchedule}
+        shareData={shareData}
       />
 
       {scheduleCareers.length > 1 && (
