@@ -38,6 +38,15 @@ export function parseTimeRange(value: unknown): {
     }
   }
 
+  // Avoid matching HH:mm inside ISO datetimes (e.g. 1899-12-30T21:50:40.000Z → 21:50).
+  if (/^\d{4}-\d{2}-\d{2}T/.test(raw)) {
+    const isoDate = new Date(raw)
+    if (!Number.isNaN(isoDate.getTime())) {
+      return dateToRange(isoDate)
+    }
+    return null
+  }
+
   const normalized = raw
     .replace(/\u2013|\u2014|–|—/g, '-')
     .replace(/\s+/g, ' ')

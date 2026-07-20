@@ -40,6 +40,16 @@ export function cellToRawString(value: unknown): string {
   }
 
   if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) {
+      return ''
+    }
+    // Excel time-only cells decoded as Date (SheetJS epoch ~1899/1900).
+    // Emit HH:mm so TimeNormalizer does not scrape UTC from toISOString().
+    if (value.getFullYear() <= 1900) {
+      const hours = String(value.getHours()).padStart(2, '0')
+      const minutes = String(value.getMinutes()).padStart(2, '0')
+      return `${hours}:${minutes}`
+    }
     return value.toISOString()
   }
 

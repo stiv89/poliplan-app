@@ -36,58 +36,90 @@ function buildExamGroups(
   secondaryRow: unknown[],
   format: HeaderMap['format'],
 ): ExamColumnGroup[] {
-  const groups: ExamColumnGroup[] = []
   const examTypes: Array<{ type: string; labels: string[] }> = [
-    { type: 'partial1', labels: IMPORTER_CONFIG.examGroupAliases.partial1 },
-    { type: 'partial2', labels: IMPORTER_CONFIG.examGroupAliases.partial2 },
-    { type: 'final1', labels: IMPORTER_CONFIG.examGroupAliases.final1 },
-    { type: 'revision1', labels: IMPORTER_CONFIG.examGroupAliases.revision1 },
-    { type: 'final2', labels: IMPORTER_CONFIG.examGroupAliases.final2 },
-    { type: 'revision2', labels: ['revision', 'revisión'] },
-    { type: 'board', labels: IMPORTER_CONFIG.examGroupAliases.board },
+    { type: 'partial1', labels: [...IMPORTER_CONFIG.examGroupAliases.partial1] },
+    { type: 'partial2', labels: [...IMPORTER_CONFIG.examGroupAliases.partial2] },
+    { type: 'final1', labels: [...IMPORTER_CONFIG.examGroupAliases.final1] },
+    { type: 'revision1', labels: [...IMPORTER_CONFIG.examGroupAliases.revision1] },
+    { type: 'final2', labels: [...IMPORTER_CONFIG.examGroupAliases.final2] },
+    { type: 'revision2', labels: [...IMPORTER_CONFIG.examGroupAliases.revision2] },
+    { type: 'board', labels: [...IMPORTER_CONFIG.examGroupAliases.board] },
   ]
 
+  // Locate each exam block by its primary header, advancing only past the label.
+  // Column ownership is bounded by the next block (or Monday), so "Revisión"
+  // cannot steal AULA from "2do. Final" / "Mesa Examinadora".
+  const starts: Array<{ type: string; label: string; startCol: number }> = []
   let searchStart = 0
   for (const examType of examTypes) {
-    let startCol = -1
     for (let col = searchStart; col < primaryRow.length; col += 1) {
       const label = normalizeComparable(primaryRow[col])
       if (examType.labels.some((candidate) => label.includes(candidate))) {
-        startCol = col
+        starts.push({
+          type: examType.type,
+          label: String(primaryRow[col] ?? examType.type),
+          startCol: col,
+        })
+        searchStart = col + 1
         break
       }
     }
-    if (startCol < 0) continue
+  }
 
-    if (examType.type === 'board') {
+  const mondayCol = findColumn(secondaryRow, ['lunes'])
+  const groups: ExamColumnGroup[] = []
+
+  for (let index = 0; index < starts.length; index += 1) {
+    const current = starts[index]!
+    const nextStart = starts[index + 1]?.startCol
+    const endCol = (nextStart ?? mondayCol ?? secondaryRow.length) - 1
+    if (endCol < current.startCol) continue
+
+    if (current.type === 'board') {
+      const presidentCol = findColumnInRange(
+        secondaryRow,
+        ['presidente'],
+        current.startCol,
+        endCol,
+      )
+      const memberCols: number[] = []
+      for (let col = current.startCol; col <= endCol; col += 1) {
+        if (normalizeComparable(secondaryRow[col]) === 'miembro') {
+          memberCols.push(col)
+        }
+      }
+      const boardMemberCols = [
+        ...(presidentCol != null ? [presidentCol] : [current.startCol]),
+        ...memberCols,
+      ].slice(0, 3)
       groups.push({
-        examType: examType.type,
-        label: String(primaryRow[startCol] ?? examType.type),
-        boardMemberCols: [startCol, startCol + 1, startCol + 2].filter((col) => col < secondaryRow.length),
-        classroomCol: format === 'standard' ? startCol + 3 : undefined,
+        examType: current.type,
+        label: current.label,
+        boardMemberCols,
+        classroomCol:
+          format === 'standard'
+            ? findColumnInRange(secondaryRow, ['aula'], current.startCol, endCol)
+            : undefined,
       })
-      searchStart = startCol + 4
       continue
     }
 
-    const dateCol = findColumnInRange(secondaryRow, ['dia', 'día'], startCol, startCol + 6)
-    const timeCol = findColumnInRange(secondaryRow, ['hora'], startCol, startCol + 6)
+    const dateCol = findColumnInRange(secondaryRow, ['dia', 'día'], current.startCol, endCol)
+    const timeCol = findColumnInRange(secondaryRow, ['hora'], current.startCol, endCol)
     const classroomCol =
       format === 'standard'
-        ? findColumnInRange(secondaryRow, ['aula'], startCol, startCol + 6)
+        ? findColumnInRange(secondaryRow, ['aula'], current.startCol, endCol)
         : undefined
 
     if (dateCol != null || timeCol != null) {
       groups.push({
-        examType: examType.type,
-        label: String(primaryRow[startCol] ?? examType.type),
+        examType: current.type,
+        label: current.label,
         dateCol,
         timeCol,
         classroomCol,
       })
     }
-
-    searchStart = (classroomCol ?? timeCol ?? dateCol ?? startCol) + 1
   }
 
   return groups

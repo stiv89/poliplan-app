@@ -55,6 +55,7 @@ export const IMPORTER_CONFIG = {
     final1: ['1er. final', '1er final', 'primera final'],
     revision1: ['revision', 'revisión'],
     final2: ['2do. final', '2do final', 'segunda final'],
+    revision2: ['revision', 'revisión'],
     board: ['mesa examinadora', 'mesa'],
   },
   ignoredValues: ['s/d', 'n/a', '-', '--', '---', '-- --', ''],

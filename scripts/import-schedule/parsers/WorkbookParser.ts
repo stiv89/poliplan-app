@@ -24,7 +24,10 @@ export class WorkbookParser {
 
   parse(filePath: string, options?: { sheet?: string; allSheets?: boolean }): ParsedWorkbook {
     const buffer = readFileSync(filePath)
-    const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: true, dense: false })
+    // cellDates:false keeps Excel times as serial fractions (e.g. 0.75 = 18:00).
+    // With cellDates:true they become Date objects; cellToRawString → toISOString()
+    // then yields UTC clock times like 21:50 instead of the wall-clock 18:00.
+    const workbook = XLSX.read(buffer, { type: 'buffer', cellDates: false, dense: false })
 
     const targetSheets = options?.sheet
       ? [options.sheet]
