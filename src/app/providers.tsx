@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { RefreshCw } from 'lucide-react'
-import { useRegisterSW } from 'virtual:pwa-register/react'
 import { Button } from '@/components/ui/Button'
 import { AppOnboarding } from '@/components/onboarding/AppOnboarding'
 import { ScheduleProvider } from '@/features/schedule/ScheduleContext'
@@ -12,24 +11,6 @@ import type { StartupMode } from '@/features/schedule/ScheduleContext'
 import loaderGif from '../../logos/loader.gif'
 
 const BLOCKING_STARTUP_MODES = new Set<StartupMode>(['offline-no-cache', 'updating-app'])
-
-/** Applies a waiting PWA update automatically (no manual click). */
-function PwaAutoUpdate() {
-  const {
-    needRefresh: [needRefresh],
-    updateServiceWorker,
-  } = useRegisterSW()
-  const triggeredRef = useRef(false)
-
-  useEffect(() => {
-    if (!needRefresh || triggeredRef.current) return
-    triggeredRef.current = true
-    window.sessionStorage.setItem('poliplan:startup-mode', 'updating-app')
-    void updateServiceWorker(true)
-  }, [needRefresh, updateServiceWorker])
-
-  return null
-}
 
 function StartupOverlay() {
   const { startupMode, retryStartup } = useSchedule()
@@ -95,10 +76,5 @@ export function AppProviders({ children }: { children: ReactNode }) {
     return null
   }
 
-  return (
-    <AuthProvider>
-      {children}
-      <PwaAutoUpdate />
-    </AuthProvider>
-  )
+  return <AuthProvider>{children}</AuthProvider>
 }

@@ -10,7 +10,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
       includeAssets: ['favicon.png', 'icons/*.png'],
       manifest: {
         name: 'PoliPlan',
@@ -43,6 +43,7 @@ export default defineConfig({
         ],
       },
       workbox: {
+        cleanupOutdatedCaches: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,xml,txt}'],
         navigateFallback: '/index.html',
         navigateFallbackDenylist: [/^\/sitemap\.xml$/, /^\/robots\.txt$/],

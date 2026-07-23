@@ -206,8 +206,6 @@ export function ScheduleProvider({ children }: ScheduleProviderProps) {
       const currentSettings = await localScheduleRepository.getSettings()
       setSettings(currentSettings)
 
-      const allPeriods = await scheduleRepository.getAcademicPeriods()
-
       let period: AcademicPeriod | null | undefined
       let schedule: SavedScheduleRecord | null = null
 
@@ -216,11 +214,37 @@ export function ScheduleProvider({ children }: ScheduleProviderProps) {
           currentSettings.activeScheduleId,
         )
         if (preferred && preferred.deletedAt == null) {
-          period = allPeriods.find((item) => item.id === preferred.academicPeriodId)
-          if (period) {
-            schedule = preferred
-          }
+          schedule = preferred
+          const localPeriods = await localScheduleRepository.getAcademicPeriods()
+          period = localPeriods.find((item) => item.id === preferred.academicPeriodId)
         }
+      }
+
+      // Restore the user's schedule from IndexedDB immediately (before remote catalog).
+      if (period && schedule) {
+        setActivePeriod(period)
+        const [selectedEntities, activeSchedules, trashedSchedules, localPeriodCourses] =
+          await Promise.all([
+            localScheduleRepository.getSelectedSectionEntities(schedule.id),
+            localScheduleRepository.getSavedSchedules(),
+            localScheduleRepository
+              .getSavedSchedules({ includeDeleted: true })
+              .then((items) => items.filter((item) => item.deletedAt != null)),
+            localScheduleRepository.getCoursesForPeriod(period.id),
+          ])
+        setActiveSchedule(schedule)
+        setSelectedSections(selectedEntities)
+        setSavedSchedules(activeSchedules)
+        setDeletedSchedules(trashedSchedules)
+        if (localPeriodCourses.length > 0) {
+          setCoursesById(new Map(localPeriodCourses.map((course) => [course.id, course])))
+        }
+      }
+
+      const allPeriods = await scheduleRepository.getAcademicPeriods()
+
+      if (schedule) {
+        period = allPeriods.find((item) => item.id === schedule!.academicPeriodId) ?? period
       }
 
       if (!period) {
@@ -250,6 +274,17 @@ export function ScheduleProvider({ children }: ScheduleProviderProps) {
           currentSettings.activeScheduleId,
           currentSettings.selectedCareerId,
         )
+        const [selectedEntities, activeSchedules, trashedSchedules] = await Promise.all([
+          localScheduleRepository.getSelectedSectionEntities(schedule.id),
+          localScheduleRepository.getSavedSchedules(),
+          localScheduleRepository
+            .getSavedSchedules({ includeDeleted: true })
+            .then((items) => items.filter((item) => item.deletedAt != null)),
+        ])
+        setActiveSchedule(schedule)
+        setSelectedSections(selectedEntities)
+        setSavedSchedules(activeSchedules)
+        setDeletedSchedules(trashedSchedules)
       }
 
       const careerId = schedule.selectedCareerId ?? currentSettings.selectedCareerId ?? undefined
@@ -269,28 +304,17 @@ export function ScheduleProvider({ children }: ScheduleProviderProps) {
           : currentSettings
       setSettings(nextSettings)
 
-      const [nextCareers, nextSections, selectedEntities, version, periodCourses, activeSchedules, trashedSchedules] =
-        await Promise.all([
-          scheduleRepository.getCareers(period.id),
-          careerId
-            ? scheduleRepository.getAllSections(period.id, careerId)
-            : Promise.resolve([]),
-          localScheduleRepository.getSelectedSectionEntities(schedule.id),
-          scheduleRepository.getActiveScheduleVersion(period.id),
-          scheduleRepository.getCoursesForPeriod(period.id),
-          localScheduleRepository.getSavedSchedules(),
-          localScheduleRepository
-            .getSavedSchedules({ includeDeleted: true })
-            .then((items) => items.filter((item) => item.deletedAt != null)),
-        ])
-
-      setActiveSchedule(schedule)
-      setSavedSchedules(activeSchedules)
-      setDeletedSchedules(trashedSchedules)
+      const [nextCareers, nextSections, version, periodCourses] = await Promise.all([
+        scheduleRepository.getCareers(period.id),
+        careerId
+          ? scheduleRepository.getAllSections(period.id, careerId)
+          : Promise.resolve([]),
+        scheduleRepository.getActiveScheduleVersion(period.id),
+        scheduleRepository.getCoursesForPeriod(period.id),
+      ])
 
       setCareers(nextCareers)
       setAllSections(nextSections)
-      setSelectedSections(selectedEntities)
       setLastUpdated(version?.importedAt ?? null)
       setCoursesById(new Map(periodCourses.map((course) => [course.id, course])))
 
@@ -365,12 +389,14 @@ export function ScheduleProvider({ children }: ScheduleProviderProps) {
   }, [settings?.autoSyncEnabled, settings])
 
   useEffect(() => {
-    if (!settings || initialSyncDoneRef.current) return
+    // Wait until local schedule hydration finished so sync-on-open cannot
+    // clear IndexedDB caches before the first paint of selected sections.
+    if (!settings || startupMode !== 'ready' || initialSyncDoneRef.current) return
     initialSyncDoneRef.current = true
     if (settings.syncOnOpen) {
       void scheduleSyncService.syncPeriod(settings.selectedAcademicPeriodId)
     }
-  }, [settings])
+  }, [settings, startupMode])
 
   useEffect(() => {
     if (isOnline && wasOffline) {

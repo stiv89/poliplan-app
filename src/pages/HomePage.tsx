@@ -49,6 +49,8 @@ import type { AcademicPeriod, CourseSection, Career } from '@/types/academic'
 
 export function HomePage() {
   const {
+    loading,
+    startupMode,
     activePeriod,
     activeSchedule,
     savedSchedules,
@@ -297,6 +299,9 @@ export function HomePage() {
   }
 
   const hasScheduleSections = selectedSections.length > 0
+  // Avoid flashing empty onboarding while Dexie restore / bootstrap is still running.
+  const showEmptySchedule =
+    !hasScheduleSections && !loading && startupMode === 'ready' && !activePreviewSection
 
   const mobileDayValues = useMemo(() => DAYS_OF_WEEK.map((day) => day.value), [])
 
@@ -390,7 +395,7 @@ export function HomePage() {
               previewSection={activePreviewSection}
               viewFilters={viewFilters}
             />
-            {selectedSections.length === 0 && !activePreviewSection && (
+            {showEmptySchedule && (
               <div
                 className={`pointer-events-none absolute inset-0 flex items-center justify-center px-6 ${
                   settings?.selectedCareerId ? 'bg-background/55' : 'bg-background/40'
@@ -402,7 +407,7 @@ export function HomePage() {
                 />
               </div>
             )}
-            {selectedSections.length === 0 && activePreviewSection && (
+            {!hasScheduleSections && activePreviewSection && (
               <div className="pointer-events-none absolute inset-x-0 top-4 flex justify-center px-4">
                 <p className="rounded-full bg-white/90 px-3 py-1 text-xs text-muted shadow-sm">
                   Vista previa — agregá la materia para confirmar
@@ -436,7 +441,7 @@ export function HomePage() {
             activeSchedule?.id ? () => handleShareSchedule(activeSchedule.id) : undefined
           }
           shareData={shareData}
-          isEmpty={!hasScheduleSections}
+          isEmpty={showEmptySchedule}
         />
 
         {hasScheduleSections ? (
@@ -484,7 +489,7 @@ export function HomePage() {
               </div>
             </div>
           </div>
-        ) : (
+        ) : showEmptySchedule ? (
           <div className="flex min-h-0 flex-1 items-center justify-center px-6">
             <EmptyScheduleMobileOnboarding
               hasCareer={Boolean(settings?.selectedCareerId)}
@@ -492,6 +497,10 @@ export function HomePage() {
               onSync={isOnline ? requestScheduleSync : undefined}
               onShowTour={() => window.dispatchEvent(new Event('poliplan:show-schedule-tour'))}
             />
+          </div>
+        ) : (
+          <div className="flex min-h-0 flex-1 items-center justify-center" aria-busy="true">
+            <span className="sr-only">Cargando tu horario…</span>
           </div>
         )}
 
