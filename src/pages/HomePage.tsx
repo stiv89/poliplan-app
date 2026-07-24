@@ -745,8 +745,6 @@ function EmptyScheduleMobileOnboarding({
   onSync?: () => void
   onShowTour: () => void
 }) {
-  const isPassive = !hasCareer
-
   return (
     <div className="flex w-full max-w-[20rem] flex-col items-center text-center">
       <img
@@ -754,39 +752,27 @@ function EmptyScheduleMobileOnboarding({
         alt="Ilustración de un horario académico"
         width={520}
         height={520}
-        className={`mb-6 h-auto max-h-[210px] w-[min(58vw,210px)] object-contain ${
-          isPassive ? 'opacity-[0.65]' : 'opacity-90'
-        }`}
+        className="mb-6 h-auto max-h-[210px] w-[min(58vw,210px)] object-contain opacity-90"
         draggable={false}
       />
-      <h2
-        className={`tracking-tight ${
-          isPassive
-            ? 'text-base font-semibold text-slate-500'
-            : 'text-lg font-semibold text-text'
-        }`}
-      >
-        {isPassive ? 'Tu horario aparecerá acá' : 'Agregá tu primera materia'}
+      <h2 className="text-lg font-semibold tracking-tight text-text">
+        {hasCareer ? 'Agregá tu primera materia' : 'Armá tu horario'}
       </h2>
-      <p
-        className={`mt-2 leading-relaxed ${
-          isPassive ? 'text-sm text-slate-400' : 'text-sm text-muted'
-        }`}
-      >
-        {isPassive
-          ? 'Cuando agregues una materia, vas a verla organizada por día.'
-          : 'Elegí una materia y sección para empezar.'}
+      <p className="mt-2 text-sm leading-relaxed text-muted">
+        {hasCareer
+          ? 'Elegí una materia y sección para empezar.'
+          : 'Primero elegí tu carrera y después agregá las materias.'}
       </p>
-      {!isPassive && (
-        <button
-          type="button"
-          onClick={onAddFirst}
-          className="mt-6 flex h-[62px] w-full items-center justify-center rounded-xl bg-primary px-5 text-sm font-medium text-white shadow-[0_6px_18px_rgba(11,59,143,0.18)] hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
-        >
-          Agregar mi primera materia
-        </button>
-      )}
-      <div className={`flex w-full flex-wrap items-center justify-center gap-x-5 gap-y-2 ${isPassive ? 'mt-6' : 'mt-5'}`}>
+      <button
+        type="button"
+        onClick={onAddFirst}
+        data-tour={hasCareer ? 'add-first-course' : 'choose-career'}
+        className="mt-6 flex h-[62px] w-full items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-medium text-white shadow-[0_6px_18px_rgba(11,59,143,0.18)] hover:bg-primary/90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+      >
+        <Plus className="h-4 w-4" aria-hidden="true" />
+        {hasCareer ? 'Agregar mi primera materia' : 'Elegir carrera'}
+      </button>
+      <div className="mt-5 flex w-full flex-wrap items-center justify-center gap-x-5 gap-y-2">
         {onSync && (
           <button
             type="button"
