@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { FEATURE_FLAGS } from '@/config/features'
 import { getSupabaseClient } from '@/lib/supabase'
 import type { AuthUser } from '@/features/settings/auth.types'
 import { formatAuthError, getAuthErrorCode } from '@/utils/authErrors'
@@ -108,6 +109,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
       },
       signUp: async ({ email, password, name }) => {
+        if (!FEATURE_FLAGS.authSignupEnabled) {
+          return {
+            error: 'El registro está temporalmente deshabilitado. Pronto vas a poder crear una cuenta.',
+            needsVerification: false,
+          }
+        }
+
         if (!client) {
           return { error: 'Supabase no está configurado.', needsVerification: false }
         }

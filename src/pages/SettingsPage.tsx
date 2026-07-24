@@ -248,7 +248,7 @@ export function SettingsPage() {
                 description={
                   canEditEmailPrefs
                     ? 'Te escribimos si la Facultad publica una versión nueva del periodo de alguno de tus horarios.'
-                    : 'Iniciá sesión para recibir avisos por correo.'
+                    : 'Requiere iniciar sesión. Los avisos en la app (arriba) funcionan sin cuenta.'
                 }
                 checked={notifyScheduleUpdates}
                 disabled={!canEditEmailPrefs || emailPrefsLoading || emailPrefsSaving}

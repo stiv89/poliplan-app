@@ -144,7 +144,15 @@ export function getSectionConflictMessages(
         : conflict.firstSectionId
     const otherSection = allSectionsById.get(otherId)
     const course = otherSection ? coursesById.get(otherSection.courseId) : null
-    messages.add(course ? `Se superpone con ${course.name}` : 'Conflicto de horario')
+    messages.add(
+      conflict.type === 'exam'
+        ? course
+          ? `Examen el mismo día / horario que ${course.name}`
+          : 'Conflicto de examen'
+        : course
+          ? `Se superpone con ${course.name}`
+          : 'Conflicto de horario',
+    )
   }
   return [...messages]
 }

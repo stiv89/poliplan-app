@@ -202,3 +202,95 @@ describe('getMeetingConflictDetails', () => {
     expect(details[0]?.otherSectionId).toBe('compiladores')
   })
 })
+
+describe('detectScheduleConflicts — exámenes', () => {
+  it('detecta exámenes el mismo día sin horario', () => {
+    const a = createSection('s1', [])
+    a.exams = [
+      {
+        id: 'e1',
+        sectionId: 's1',
+        examType: 'partial1',
+        examDate: '2026-09-10',
+        startTime: null,
+        endTime: null,
+        classroom: null,
+      },
+    ]
+    const b = createSection('s2', [])
+    b.exams = [
+      {
+        id: 'e2',
+        sectionId: 's2',
+        examType: 'partial1',
+        examDate: '2026-09-10',
+        startTime: null,
+        endTime: null,
+        classroom: null,
+      },
+    ]
+
+    const conflicts = detectScheduleConflicts([a, b])
+    expect(conflicts).toHaveLength(1)
+    expect(conflicts[0]?.type).toBe('exam')
+  })
+
+  it('detecta solapamiento de horario de exámenes', () => {
+    const a = createSection('s1', [])
+    a.exams = [
+      {
+        id: 'e1',
+        sectionId: 's1',
+        examType: 'final1',
+        examDate: '2026-11-05',
+        startTime: '18:00:00',
+        endTime: '20:00:00',
+        classroom: null,
+      },
+    ]
+    const b = createSection('s2', [])
+    b.exams = [
+      {
+        id: 'e2',
+        sectionId: 's2',
+        examType: 'final1',
+        examDate: '2026-11-05',
+        startTime: '19:00:00',
+        endTime: '21:00:00',
+        classroom: null,
+      },
+    ]
+
+    const conflicts = detectScheduleConflicts([a, b])
+    expect(conflicts.some((c) => c.type === 'exam')).toBe(true)
+  })
+
+  it('no marca conflicto si los exámenes no se solapan', () => {
+    const a = createSection('s1', [])
+    a.exams = [
+      {
+        id: 'e1',
+        sectionId: 's1',
+        examType: 'final1',
+        examDate: '2026-11-05',
+        startTime: '08:00:00',
+        endTime: '10:00:00',
+        classroom: null,
+      },
+    ]
+    const b = createSection('s2', [])
+    b.exams = [
+      {
+        id: 'e2',
+        sectionId: 's2',
+        examType: 'final1',
+        examDate: '2026-11-05',
+        startTime: '18:00:00',
+        endTime: '20:00:00',
+        classroom: null,
+      },
+    ]
+
+    expect(detectScheduleConflicts([a, b])).toHaveLength(0)
+  })
+})

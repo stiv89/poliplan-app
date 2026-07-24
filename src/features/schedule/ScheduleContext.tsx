@@ -697,19 +697,27 @@ export function ScheduleProvider({ children }: ScheduleProviderProps) {
     try {
       if (isSelected) {
         await localScheduleRepository.removeSelectedSection(section.id, activeSchedule.id)
+        setSelectedSections((prev) => prev.filter((item) => item.id !== section.id))
       } else {
+        // El catálogo remoto no siempre está en Dexie; sin esto, al rehidratar la materia
+        // “desaparece” justo después de agregarla.
+        await localScheduleRepository.cacheSectionEntity(section)
         await localScheduleRepository.addSelectedSection({
           scheduleId: activeSchedule.id,
           sectionId: section.id,
           courseId: section.courseId,
           academicPeriodId: activePeriod.id,
         })
+        const nextSelected = await localScheduleRepository.getSelectedSectionEntities(
+          activeSchedule.id,
+        )
+        if (nextSelected.some((item) => item.id === section.id)) {
+          setSelectedSections(nextSelected)
+        } else {
+          setSelectedSections([...nextSelected, section])
+        }
       }
 
-      const nextSelected = await localScheduleRepository.getSelectedSectionEntities(
-        activeSchedule.id,
-      )
-      setSelectedSections(nextSelected)
       markScheduleSaved()
     } catch (error) {
       setLocalSaveState('idle')

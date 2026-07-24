@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from 'react'
 import { ArrowLeft, X } from 'lucide-react'
+import { FEATURE_FLAGS } from '@/config/features'
 import { isEmailRateLimitError, toAuthErrorMessage } from '@/utils/authErrors'
 import { useAuth } from '@/features/auth/AuthContext'
 import { useGuestExperience } from '@/features/guest/GuestExperienceContext'
@@ -95,17 +96,27 @@ export function SettingsAccountPanel() {
       <AccountCard>
         <h3 className="text-[15px] font-semibold text-text">Guardá y sincronizá tu horario</h3>
         <p className="mt-1.5 max-w-lg text-sm leading-relaxed text-muted">
-          Iniciá sesión para acceder a tu horario desde otros dispositivos y mantener una copia
-          segura.
+          {FEATURE_FLAGS.authSignupEnabled
+            ? 'Iniciá sesión para acceder a tu horario desde otros dispositivos y mantener una copia segura.'
+            : 'Si ya tenés cuenta, iniciá sesión para sincronizar. El registro de cuentas nuevas está temporalmente pausado.'}
         </p>
 
         <Button className="mt-4 justify-center sm:w-auto" onClick={() => setAuthOpen(true)}>
-          Iniciar sesión o crear cuenta
+          Iniciar sesión
         </Button>
 
-        <p className="mt-3 text-xs leading-relaxed text-muted">
-          Tu horario actual seguirá disponible en este dispositivo.
-        </p>
+        {!FEATURE_FLAGS.authSignupEnabled && (
+          <p className="mt-3 text-xs leading-relaxed text-muted">
+            Pronto vas a poder crear una cuenta. Mientras tanto tu horario sigue guardado en este
+            dispositivo.
+          </p>
+        )}
+
+        {FEATURE_FLAGS.authSignupEnabled && (
+          <p className="mt-3 text-xs leading-relaxed text-muted">
+            Tu horario actual seguirá disponible en este dispositivo.
+          </p>
+        )}
       </AccountCard>
 
       <AuthAccountModal
@@ -333,21 +344,27 @@ function AuthAccountModal({
             >
               {submitting ? 'Ingresando…' : 'Iniciar sesión'}
             </Button>
-            <button
-              type="button"
-              onClick={() => {
-                setStep('create')
-                setError(null)
-                setStatus(null)
-              }}
-              className="w-full text-center text-xs text-muted hover:text-text"
-            >
-              ¿No tenés cuenta? Crear una cuenta
-            </button>
+            {FEATURE_FLAGS.authSignupEnabled ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setStep('create')
+                  setError(null)
+                  setStatus(null)
+                }}
+                className="w-full text-center text-xs text-muted hover:text-text"
+              >
+                ¿No tenés cuenta? Crear una cuenta
+              </button>
+            ) : (
+              <p className="text-center text-xs leading-relaxed text-muted">
+                El registro está pausado por ahora. Si ya tenés cuenta, podés iniciar sesión.
+              </p>
+            )}
           </div>
         )}
 
-        {step === 'create' && (
+        {FEATURE_FLAGS.authSignupEnabled && step === 'create' && (
           <div className="mt-4 space-y-3">
             <AuthField
               id="auth-create-name"

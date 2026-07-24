@@ -1,6 +1,7 @@
 import { X } from 'lucide-react'
 import desktopPhoto from '../../../logos/desktop.png'
 import mobilePhoto from '../../../logos/mobile.png'
+import { FEATURE_FLAGS } from '@/config/features'
 import { Button } from '@/components/ui/Button'
 import { BottomSheet } from '@/components/ui/BottomSheet'
 
@@ -17,6 +18,7 @@ export function SyncScheduleSheet({
   onCreateAccount,
   onDismiss,
 }: SyncScheduleSheetProps) {
+  const signupEnabled = FEATURE_FLAGS.authSignupEnabled
   return (
     <BottomSheet
       open={open}
@@ -72,8 +74,9 @@ export function SyncScheduleSheet({
                   Llevá tu horario a todos tus dispositivos
                 </h2>
                 <p className="mt-2.5 text-sm leading-relaxed text-muted md:mt-3">
-                  Tu horario ya está guardado en este dispositivo. Creá una cuenta para respaldarlo y
-                  acceder desde tu celular o computadora.
+                  {signupEnabled
+                    ? 'Tu horario ya está guardado en este dispositivo. Creá una cuenta para respaldarlo y acceder desde tu celular o computadora.'
+                    : 'Tu horario ya está guardado en este dispositivo. Si ya tenés cuenta, iniciá sesión para sincronizarlo. El registro de cuentas nuevas está pausado por ahora.'}
                 </p>
               </div>
               <button
@@ -88,7 +91,7 @@ export function SyncScheduleSheet({
 
             <div className="mt-6 flex flex-col gap-2 md:mt-8">
               <Button className="justify-center" onClick={onCreateAccount}>
-                Crear cuenta
+                {signupEnabled ? 'Crear cuenta' : 'Iniciar sesión'}
               </Button>
               <Button variant="secondary" className="justify-center" onClick={onDismiss}>
                 Ahora no

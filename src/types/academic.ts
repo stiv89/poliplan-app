@@ -82,7 +82,7 @@ export interface UserSchedule {
   sectionIds: string[]
 }
 
-export type ScheduleConflictType = 'exact' | 'partial' | 'contained' | 'duplicate'
+export type ScheduleConflictType = 'exact' | 'partial' | 'contained' | 'duplicate' | 'exam'
 
 export interface ScheduleConflict {
   id: string
@@ -92,6 +92,8 @@ export interface ScheduleConflict {
   overlapStart: string
   overlapEnd: string
   type: ScheduleConflictType
+  /** Presente cuando el conflicto es entre exámenes (YYYY-MM-DD). */
+  examDate?: string
 }
 
 export type SyncStatus =

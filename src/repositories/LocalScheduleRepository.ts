@@ -514,6 +514,20 @@ export class LocalScheduleRepository implements ScheduleRepository {
     return record
   }
 
+  /** Persiste una sección del catálogo en caché local para poder resolverla al rehidratar. */
+  async cacheSectionEntity(section: CourseSection): Promise<void> {
+    await db.cachedSections.put(section)
+    if (section.meetings?.length) {
+      await db.cachedMeetings.bulkPut(section.meetings)
+    }
+    if (section.exams?.length) {
+      await db.transaction('rw', db.cachedExams, async () => {
+        await db.cachedExams.where('sectionId').equals(section.id).delete()
+        await db.cachedExams.bulkPut(section.exams)
+      })
+    }
+  }
+
   async removeSelectedSection(
     sectionId: string,
     scheduleId: string,

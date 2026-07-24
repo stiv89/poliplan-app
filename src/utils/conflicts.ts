@@ -13,6 +13,14 @@ interface MeetingRef {
   endTime: string
 }
 
+interface ExamRef {
+  sectionId: string
+  examId: string
+  examDate: string
+  startTime: string | null
+  endTime: string | null
+}
+
 function flattenMeetings(sections: CourseSection[]): MeetingRef[] {
   return sections.flatMap((section) =>
     section.meetings.map((meeting) => ({
@@ -23,6 +31,28 @@ function flattenMeetings(sections: CourseSection[]): MeetingRef[] {
       endTime: meeting.endTime,
     })),
   )
+}
+
+function flattenExams(sections: CourseSection[]): ExamRef[] {
+  return sections.flatMap((section) =>
+    section.exams
+      .filter((exam): exam is typeof exam & { examDate: string } => Boolean(exam.examDate))
+      .map((exam) => ({
+        sectionId: section.id,
+        examId: exam.id,
+        examDate: exam.examDate,
+        startTime: exam.startTime,
+        endTime: exam.endTime,
+      })),
+  )
+}
+
+function weekdayFromDate(date: string): number {
+  const [year, month, day] = date.split('-').map(Number)
+  if (!year || !month || !day) return 0
+  // Date.UTC + getUTCDay: 0=dom … 6=sáb. Clases usan 1=lun … 6=sáb.
+  const weekday = new Date(Date.UTC(year, month - 1, day)).getUTCDay()
+  return weekday === 0 ? 7 : weekday
 }
 
 function buildConflictId(
@@ -36,9 +66,7 @@ function buildConflictId(
   return `${ordered}:${dayOfWeek}:${overlapStart}-${overlapEnd}`
 }
 
-export function detectScheduleConflicts(
-  sections: CourseSection[],
-): ScheduleConflict[] {
+function detectClassConflicts(sections: CourseSection[]): ScheduleConflict[] {
   const meetings = flattenMeetings(sections)
   const conflicts: ScheduleConflict[] = []
   const seen = new Set<string>()
@@ -107,7 +135,93 @@ export function detectScheduleConflicts(
     }
   }
 
+  return conflicts
+}
+
+function examsOverlap(first: ExamRef, second: ExamRef): boolean {
+  if (first.examDate !== second.examDate) return false
+
+  const firstHasTime = Boolean(first.startTime && first.endTime)
+  const secondHasTime = Boolean(second.startTime && second.endTime)
+
+  // Sin horario publicado: mismo día ya es riesgo (p. ej. etapas).
+  if (!firstHasTime || !secondHasTime) return true
+
+  return doTimesOverlap(
+    first.startTime!,
+    first.endTime!,
+    second.startTime!,
+    second.endTime!,
+  )
+}
+
+function detectExamConflicts(sections: CourseSection[]): ScheduleConflict[] {
+  const exams = flattenExams(sections)
+  const conflicts: ScheduleConflict[] = []
+  const seen = new Set<string>()
+
+  for (let i = 0; i < exams.length; i += 1) {
+    for (let j = i + 1; j < exams.length; j += 1) {
+      const first = exams[i]
+      const second = exams[j]
+      if (!first || !second) continue
+      if (first.sectionId === second.sectionId) continue
+      if (!examsOverlap(first, second)) continue
+
+      const firstHasTime = Boolean(first.startTime && first.endTime)
+      const secondHasTime = Boolean(second.startTime && second.endTime)
+      const overlapStart =
+        firstHasTime && secondHasTime
+          ? getOverlapRange(
+              first.startTime!,
+              first.endTime!,
+              second.startTime!,
+              second.endTime!,
+            ).overlapStart
+          : first.startTime ?? second.startTime ?? '00:00:00'
+      const overlapEnd =
+        firstHasTime && secondHasTime
+          ? getOverlapRange(
+              first.startTime!,
+              first.endTime!,
+              second.startTime!,
+              second.endTime!,
+            ).overlapEnd
+          : first.endTime ?? second.endTime ?? '23:59:59'
+
+      const dayOfWeek = weekdayFromDate(first.examDate)
+      const id = `exam:${[first.sectionId, second.sectionId].sort().join(':')}:${first.examDate}:${overlapStart}-${overlapEnd}`
+
+      if (seen.has(id)) continue
+      seen.add(id)
+
+      conflicts.push({
+        id,
+        firstSectionId: first.sectionId,
+        secondSectionId: second.sectionId,
+        dayOfWeek,
+        overlapStart,
+        overlapEnd,
+        type: 'exam',
+        examDate: first.examDate,
+      })
+    }
+  }
+
+  return conflicts
+}
+
+export function detectScheduleConflicts(
+  sections: CourseSection[],
+): ScheduleConflict[] {
+  const conflicts = [...detectClassConflicts(sections), ...detectExamConflicts(sections)]
+
   return conflicts.sort((a, b) => {
+    if (a.type === 'exam' && b.type !== 'exam') return 1
+    if (a.type !== 'exam' && b.type === 'exam') return -1
+    if (a.examDate && b.examDate && a.examDate !== b.examDate) {
+      return a.examDate.localeCompare(b.examDate)
+    }
     if (a.dayOfWeek !== b.dayOfWeek) {
       return a.dayOfWeek - b.dayOfWeek
     }
@@ -143,6 +257,7 @@ export function getMeetingConflictDetails(
   const byOtherSection = new Map<string, MeetingConflictDetail>()
 
   for (const conflict of conflicts) {
+    if (conflict.type === 'exam') continue
     if (conflict.dayOfWeek !== dayOfWeek) continue
 
     const otherSectionId =
