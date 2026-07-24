@@ -123,13 +123,33 @@ export function compareTimes(left: string, right: string): number {
   return toMinutes(left) - toMinutes(right)
 }
 
+/** Excel serial day → YYYY-MM-DD (epoch 1899-12-30, ignoring legacy 1900 leap bug). */
+export function excelSerialToDateString(serial: number): string | null {
+  if (!Number.isFinite(serial)) return null
+  const day = Math.floor(serial)
+  // Reasonable academic-window guard (≈ 1990–2060).
+  if (day < 32874 || day > 58400) return null
+  const utc = Date.UTC(1899, 11, 30) + day * 86_400_000
+  return new Date(utc).toISOString().slice(0, 10)
+}
+
+function isPlausibleAcademicDate(isoDate: string): boolean {
+  const year = Number(isoDate.slice(0, 4))
+  return year >= 1990 && year <= 2100
+}
+
 export function parseExamDate(value: unknown): string | null {
   if (value == null) {
     return null
   }
 
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return excelSerialToDateString(value)
+  }
+
   if (value instanceof Date && !Number.isNaN(value.getTime())) {
-    return value.toISOString().slice(0, 10)
+    const iso = value.toISOString().slice(0, 10)
+    return isPlausibleAcademicDate(iso) ? iso : null
   }
 
   const raw = cellToRawString(value)
@@ -145,12 +165,20 @@ export function parseExamDate(value: unknown): string | null {
     if (year.length === 2) {
       year = Number(year) >= 70 ? `19${year}` : `20${year}`
     }
-    return `${year}-${month}-${day}`
+    const iso = `${year}-${month}-${day}`
+    return isPlausibleAcademicDate(iso) ? iso : null
+  }
+
+  // Bare Excel serial stored as text (e.g. "46360") — never feed to Date(), which
+  // treats it as a year and yields "+046360-01".
+  if (/^\d+(\.\d+)?$/.test(raw.trim())) {
+    return excelSerialToDateString(Number(raw))
   }
 
   const parsed = new Date(raw)
-  if (!Number.isNaN(parsed.getTime()) && parsed.getFullYear() > 1980) {
-    return parsed.toISOString().slice(0, 10)
+  if (!Number.isNaN(parsed.getTime())) {
+    const iso = parsed.toISOString().slice(0, 10)
+    return isPlausibleAcademicDate(iso) ? iso : null
   }
 
   return null

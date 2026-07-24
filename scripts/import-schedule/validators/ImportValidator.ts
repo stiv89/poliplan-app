@@ -66,16 +66,15 @@ export class ImportValidator {
       }
     }
 
+    // Filas individuales rechazadas no abortan el import (el umbral % sí).
     for (const rejected of bundle.rejectedRows) {
-      if (rejected.severity === 'critical') {
-        issues.push({
-          code: 'REJECTED_ROW',
-          message: rejected.reason,
-          severity: 'critical',
-          sheetName: rejected.sheetName,
-          rowNumber: rejected.rowNumber,
-        })
-      }
+      issues.push({
+        code: 'REJECTED_ROW',
+        message: rejected.reason,
+        severity: 'warning',
+        sheetName: rejected.sheetName,
+        rowNumber: rejected.rowNumber,
+      })
     }
 
     return issues

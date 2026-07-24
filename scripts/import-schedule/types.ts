@@ -28,10 +28,11 @@ export interface HeaderMap {
     plan: number
     shift: number
     sectionCode: number
-    teacherTitle: number
-    teacherLastName: number
-    teacherFirstName: number
-    teacherEmail: number
+    /** Ausentes en el formato 2026-2 (docentes van en hoja aparte). */
+    teacherTitle?: number
+    teacherLastName?: number
+    teacherFirstName?: number
+    teacherEmail?: number
   }
   weekdays: WeekdayColumnGroup[]
   exams: ExamColumnGroup[]
@@ -64,6 +65,7 @@ export interface ParsedSheetRow {
   level: RawValue
   semesterGroup: RawValue
   careerSigla: RawValue
+  plan: RawValue
   shift: RawValue
   sectionCode: RawValue
   teacherName: RawValue

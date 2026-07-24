@@ -170,13 +170,23 @@ export function detectHeaderMap(matrix: unknown[][]): HeaderMap | null {
 
   for (let rowIndex = 0; rowIndex < Math.min(matrix.length, 20); rowIndex += 1) {
     const row = matrix[rowIndex] ?? []
-    const score = ['asignatura', 'seccion', 'turno', 'docente', 'lunes', 'parcial'].reduce(
-      (total, token) => {
-        const matches = row.some((cell) => normalizeComparable(cell).includes(token))
-        return total + (matches ? 1 : 0)
-      },
-      0,
-    )
+    // Prefer the secondary header row (Item/Asignatura/Lunes...). Avoid scoring
+    // "1er. Final" on the primary group row as if it were the column header row.
+    const score = [
+      'asignatura',
+      'seccion',
+      'turno',
+      'docente',
+      'lunes',
+      'item',
+      'hora',
+    ].reduce((total, token) => {
+      const matches = row.some((cell) => {
+        const text = normalizeComparable(cell)
+        return text === token || (token !== 'item' && text.includes(token))
+      })
+      return total + (matches ? 1 : 0)
+    }, 0)
 
     if (!best || score > best.score) {
       best = { score, primary: Math.max(0, rowIndex - 1), secondary: rowIndex }
@@ -191,6 +201,8 @@ export function detectHeaderMap(matrix: unknown[][]): HeaderMap | null {
   const secondaryRow = matrix[best.secondary] ?? []
   const format = detectFormat(secondaryRow, primaryRow)
 
+  // No usar defaults para columnas de docente: en el formato 2026-2 no existen
+  // y caer en 11–14 pisaría fechas de evaluación/examen.
   const columns = {
     item: findColumn(secondaryRow, IMPORTER_CONFIG.headerAliases.item) ?? 0,
     department: findColumn(secondaryRow, IMPORTER_CONFIG.headerAliases.department) ?? 1,
@@ -202,10 +214,10 @@ export function detectHeaderMap(matrix: unknown[][]): HeaderMap | null {
     plan: findColumn(secondaryRow, ['plan']) ?? 7,
     shift: findColumn(secondaryRow, IMPORTER_CONFIG.headerAliases.shift) ?? 8,
     sectionCode: findColumn(secondaryRow, IMPORTER_CONFIG.headerAliases.sectionCode) ?? 9,
-    teacherTitle: findColumn(secondaryRow, IMPORTER_CONFIG.headerAliases.teacherTitle) ?? 11,
-    teacherLastName: findColumn(secondaryRow, IMPORTER_CONFIG.headerAliases.teacherLastName) ?? 12,
-    teacherFirstName: findColumn(secondaryRow, IMPORTER_CONFIG.headerAliases.teacherFirstName) ?? 13,
-    teacherEmail: findColumn(secondaryRow, IMPORTER_CONFIG.headerAliases.teacherEmail) ?? 14,
+    teacherTitle: findColumn(secondaryRow, IMPORTER_CONFIG.headerAliases.teacherTitle),
+    teacherLastName: findColumn(secondaryRow, IMPORTER_CONFIG.headerAliases.teacherLastName),
+    teacherFirstName: findColumn(secondaryRow, IMPORTER_CONFIG.headerAliases.teacherFirstName),
+    teacherEmail: findColumn(secondaryRow, IMPORTER_CONFIG.headerAliases.teacherEmail),
   }
 
   const weekdays = buildWeekdayGroups(secondaryRow, format)

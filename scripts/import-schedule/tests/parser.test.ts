@@ -42,6 +42,82 @@ describe('HeaderDetector', () => {
       classroomCol: 34,
     })
   })
+
+  it('detecta Evaluación primera/segunda etapa del formato 2026-2', () => {
+    const matrix = [
+      [],
+      [
+        null,
+        'ASIGNATURA',
+        null,
+        null,
+        null,
+        'CARRERA',
+        null,
+        null,
+        null,
+        null,
+        'Evaluación primera etapa',
+        'Evaluación segunda etapa',
+        '1er. Final',
+        null,
+        null,
+        'Revisión',
+        null,
+        '2do. Final',
+        null,
+        null,
+        'Revisión',
+        null,
+        'Mesa Examinadora',
+      ],
+      [
+        'Item',
+        'DPTO.',
+        'Asignatura',
+        'Nivel',
+        'Sem/Grupo',
+        'Sigla carrera',
+        'Enfasis',
+        'Plan',
+        'Turno',
+        'Sección',
+        'Día',
+        'Día',
+        'Día',
+        'Hora',
+        'AULA',
+        'Día',
+        'Hora',
+        'Día',
+        'Hora',
+        'AULA',
+        'Día',
+        'Hora',
+        'Presidente',
+        'Miembro',
+        'Miembro',
+        'AULA',
+        'Lunes',
+        'AULA',
+        'Martes',
+      ],
+    ]
+
+    const headerMap = detectHeaderMap(matrix)
+    expect(headerMap).not.toBeNull()
+    expect(headerMap?.columns.teacherLastName).toBeUndefined()
+    expect(headerMap?.columns.teacherEmail).toBeUndefined()
+
+    const byType = Object.fromEntries(
+      (headerMap?.exams ?? []).map((exam) => [exam.examType, exam]),
+    )
+    expect(byType.partial1).toMatchObject({ dateCol: 10, timeCol: undefined })
+    expect(byType.partial2).toMatchObject({ dateCol: 11, timeCol: undefined })
+    expect(byType.final1).toMatchObject({ dateCol: 12, timeCol: 13, classroomCol: 14 })
+    expect(byType.final2).toMatchObject({ dateCol: 17, timeCol: 18, classroomCol: 19 })
+    expect(byType.board).toMatchObject({ boardMemberCols: [22, 23, 24], classroomCol: 25 })
+  })
 })
 
 describe('TimeNormalizer', () => {
@@ -72,6 +148,12 @@ describe('TimeNormalizer', () => {
 
   it('parsea fechas de examen', () => {
     expect(parseExamDate('Mar 07/04/26')).toBe('2026-04-07')
+  })
+
+  it('parsea serial Excel de fecha y rechaza años absurdos', () => {
+    expect(parseExamDate(46360)).toMatch(/^2026-/)
+    expect(parseExamDate('46360')).toMatch(/^2026-/)
+    expect(parseExamDate('46360')).not.toContain('+046360')
   })
 
   it('parsea serial Excel 0.75 como 18:00 (no 21:50 UTC)', () => {

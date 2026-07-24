@@ -50,8 +50,21 @@ export const IMPORTER_CONFIG = {
     saturday: ['sabado', 'sábado'],
   },
   examGroupAliases: {
-    partial1: ['1er. parcial', '1er parcial', 'primer parcial'],
-    partial2: ['2do. parcial', '2do parcial', 'segundo parcial'],
+    // Formato clásico + formato 2026-2 ("Evaluación primera/segunda etapa").
+    partial1: [
+      '1er. parcial',
+      '1er parcial',
+      'primer parcial',
+      'evaluacion primera etapa',
+      'evaluación primera etapa',
+    ],
+    partial2: [
+      '2do. parcial',
+      '2do parcial',
+      'segundo parcial',
+      'evaluacion segunda etapa',
+      'evaluación segunda etapa',
+    ],
     final1: ['1er. final', '1er final', 'primera final'],
     revision1: ['revision', 'revisión'],
     final2: ['2do. final', '2do final', 'segunda final'],

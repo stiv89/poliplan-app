@@ -37,11 +37,18 @@ export class SheetParser {
         continue
       }
 
-      const teacherName = joinTeacherName([
-        normalizeText(getCellValue(row, headerMap.columns.teacherTitle)),
-        normalizeText(getCellValue(row, headerMap.columns.teacherLastName)),
-        normalizeText(getCellValue(row, headerMap.columns.teacherFirstName)),
-      ])
+      const hasTeacherColumns =
+        headerMap.columns.teacherLastName != null ||
+        headerMap.columns.teacherFirstName != null ||
+        headerMap.columns.teacherTitle != null
+
+      const teacherName = hasTeacherColumns
+        ? joinTeacherName([
+            normalizeText(getCellValue(row, headerMap.columns.teacherTitle)),
+            normalizeText(getCellValue(row, headerMap.columns.teacherLastName)),
+            normalizeText(getCellValue(row, headerMap.columns.teacherFirstName)),
+          ])
+        : ''
 
       rows.push({
         sheetName,
@@ -53,6 +60,7 @@ export class SheetParser {
         level: normalizeText(getCellValue(row, headerMap.columns.level)),
         semesterGroup: normalizeText(getCellValue(row, headerMap.columns.semesterGroup)),
         careerSigla: normalizeText(getCellValue(row, headerMap.columns.careerCode)),
+        plan: normalizeText(getCellValue(row, headerMap.columns.plan)),
         shift: normalizeText(getCellValue(row, headerMap.columns.shift)),
         sectionCode,
         teacherName: normalizeText(teacherName),

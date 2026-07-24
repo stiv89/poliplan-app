@@ -16,6 +16,9 @@ export const EXAM_TYPE_LABELS: Record<string, string> = {
   parcial1: '1er parcial',
   partial2: '2do parcial',
   parcial2: '2do parcial',
+  // Alias usados en reportes del formato 2026-2 (Evaluación 1ª/2ª etapa).
+  evaluacionprimeraetapa: '1er parcial',
+  evaluacionsegundaetapa: '2do parcial',
   final1: '1er final',
   final2: '2do final',
   revision1: 'Revisión',

@@ -28,16 +28,28 @@ export function loadAdminEnv(): void {
   }
 }
 
-export const DEFAULT_ACADEMIC_PERIOD_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1'
+export const FIRST_PERIOD_2026_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa1'
+export const SECOND_PERIOD_2026_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaa4'
+/** Periodo activo por defecto (Segundo 2026). */
+export const DEFAULT_ACADEMIC_PERIOD_ID = SECOND_PERIOD_2026_ID
 
 export const ACADEMIC_PERIODS = [
   {
-    id: DEFAULT_ACADEMIC_PERIOD_ID,
+    id: FIRST_PERIOD_2026_ID,
     name: 'Primer Periodo 2026',
     year: 2026,
     term: 1,
     starts_at: '2026-03-01',
     ends_at: '2026-07-31',
+    is_active: false,
+  },
+  {
+    id: SECOND_PERIOD_2026_ID,
+    name: 'Segundo Periodo 2026',
+    year: 2026,
+    term: 2,
+    starts_at: '2026-08-01',
+    ends_at: '2026-12-31',
     is_active: true,
   },
   {
