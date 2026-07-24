@@ -403,7 +403,7 @@ export function SectionSearchPanel({
       {isMobileSheet && onClose && (
         <div className="shrink-0 border-t border-slate-100 bg-white px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
           <p className="mb-2 text-center text-[11px] leading-snug text-muted">
-            Se guarda solo · tocá Listo cuando termines
+            Se guarda al tocar + · Listo para cerrar
           </p>
           <button
             type="button"

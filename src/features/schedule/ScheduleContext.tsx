@@ -9,6 +9,10 @@ import {
 } from 'react'
 import { db } from '@/db/database'
 import { SYNC_INTERVAL_MS } from '@/config/constants'
+import {
+  ScheduleActionToast,
+  type ScheduleActionFeedback,
+} from '@/components/schedule/ScheduleActionToast'
 import { useOnlineStatus } from '@/hooks/useOnlineStatus'
 import { scheduleRepository } from '@/repositories/SupabaseScheduleRepository'
 import { localScheduleRepository } from '@/repositories/LocalScheduleRepository'
@@ -129,12 +133,36 @@ export function ScheduleProvider({ children }: ScheduleProviderProps) {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle')
   const [syncMessage, setSyncMessage] = useState<string | undefined>()
   const [localSaveState, setLocalSaveState] = useState<LocalSaveState>('idle')
+  const [actionFeedback, setActionFeedback] = useState<ScheduleActionFeedback | null>(null)
   const [lastUpdated, setLastUpdated] = useState<string | null>(null)
   const bootstrapCompleteRef = useRef(false)
   const hasLocalSnapshotRef = useRef(false)
   const initialSyncDoneRef = useRef(false)
   const pendingDeleteTimerRef = useRef<number | null>(null)
   const localSaveTimerRef = useRef<number | null>(null)
+
+  const dismissActionFeedback = useCallback(() => {
+    setActionFeedback(null)
+  }, [])
+
+  const showActionFeedback = useCallback(
+    (kind: ScheduleActionFeedback['kind'], section: CourseSection) => {
+      const course = coursesById.get(section.courseId)
+      const name = course?.name?.trim()
+      setActionFeedback({
+        kind,
+        label:
+          kind === 'added'
+            ? name
+              ? `Agregada · ${name}`
+              : 'Agregada al horario'
+            : name
+              ? `Quitada · ${name}`
+              : 'Quitada del horario',
+      })
+    },
+    [coursesById],
+  )
 
   const markScheduleSaving = useCallback(() => {
     setLocalSaveState('saving')
@@ -698,6 +726,7 @@ export function ScheduleProvider({ children }: ScheduleProviderProps) {
       if (isSelected) {
         await localScheduleRepository.removeSelectedSection(section.id, activeSchedule.id)
         setSelectedSections((prev) => prev.filter((item) => item.id !== section.id))
+        showActionFeedback('removed', section)
       } else {
         // El catálogo remoto no siempre está en Dexie; sin esto, al rehidratar la materia
         // “desaparece” justo después de agregarla.
@@ -716,6 +745,7 @@ export function ScheduleProvider({ children }: ScheduleProviderProps) {
         } else {
           setSelectedSections([...nextSelected, section])
         }
+        showActionFeedback('added', section)
       }
 
       markScheduleSaved()
@@ -793,5 +823,10 @@ export function ScheduleProvider({ children }: ScheduleProviderProps) {
     coursesById,
   }
 
-  return <ScheduleContext.Provider value={value}>{children}</ScheduleContext.Provider>
+  return (
+    <ScheduleContext.Provider value={value}>
+      {children}
+      <ScheduleActionToast feedback={actionFeedback} onDismiss={dismissActionFeedback} />
+    </ScheduleContext.Provider>
+  )
 }
