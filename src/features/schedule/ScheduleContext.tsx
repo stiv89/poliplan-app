@@ -408,6 +408,34 @@ export function ScheduleProvider({ children }: ScheduleProviderProps) {
     if (careerId !== settings?.selectedCareerId) {
       clearCatalogSnapshot()
     }
+
+    // Al elegir carrera, preferir el periodo institucional activo (p. ej. Segundo 2026)
+    // para que usuarios con un periodo viejo guardado no se queden en el anterior.
+    const periods = await scheduleRepository.getAcademicPeriods()
+    const institutionalActive = periods.find((period) => period.isActive) ?? null
+    const targetPeriodId =
+      institutionalActive?.id ??
+      activePeriod?.id ??
+      settings?.selectedAcademicPeriodId ??
+      null
+
+    if (targetPeriodId && activeSchedule?.academicPeriodId !== targetPeriodId) {
+      const schedule = await localScheduleRepository.resolveActiveSchedule(
+        targetPeriodId,
+        null,
+        careerId,
+      )
+      const next = await localScheduleRepository.updateSettings({
+        activeScheduleId: schedule.id,
+        selectedAcademicPeriodId: targetPeriodId,
+        selectedCareerId: careerId,
+      })
+      setSettings(next)
+      void scheduleSyncService.syncPeriod(targetPeriodId, false)
+      await loadData().catch(() => undefined)
+      return
+    }
+
     const next = await localScheduleRepository.updateSettings({ selectedCareerId: careerId })
     setSettings(next)
     if (activeSchedule) {
