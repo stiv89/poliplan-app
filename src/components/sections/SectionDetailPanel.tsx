@@ -178,21 +178,33 @@ export function SectionDetailPanel({
       </div>
 
       <div className="shrink-0 border-t border-slate-100 p-4">
-        <Button
-          className="w-full justify-center gap-1.5"
-          variant={selected ? 'secondary' : 'primary'}
-          onClick={onToggle}
-          disabled={toggleLoading}
-        >
-          {selected ? (
-            <>
+        {selected ? (
+          <div className="space-y-2">
+            <p className="text-center text-[11px] leading-snug text-muted">
+              Ya está en tu horario · se guardó solo
+            </p>
+            <Button className="w-full justify-center gap-1.5" onClick={onClose}>
               <Check className="h-4 w-4" aria-hidden="true" />
+              Listo
+            </Button>
+            <button
+              type="button"
+              onClick={onToggle}
+              disabled={toggleLoading}
+              className="w-full py-2 text-center text-sm text-muted transition hover:text-danger"
+            >
               Quitar del horario
-            </>
-          ) : (
-            'Agregar al horario'
-          )}
-        </Button>
+            </button>
+          </div>
+        ) : (
+          <Button
+            className="w-full justify-center gap-1.5"
+            onClick={onToggle}
+            disabled={toggleLoading}
+          >
+            Agregar al horario
+          </Button>
+        )}
       </div>
     </div>
   )

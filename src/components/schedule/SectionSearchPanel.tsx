@@ -399,6 +399,21 @@ export function SectionSearchPanel({
           )}
         </div>
       )}
+
+      {isMobileSheet && onClose && (
+        <div className="shrink-0 border-t border-slate-100 bg-white px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3">
+          <p className="mb-2 text-center text-[11px] leading-snug text-muted">
+            Se guarda solo · tocá Listo cuando termines
+          </p>
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex h-11 w-full items-center justify-center rounded-xl bg-primary text-sm font-semibold text-white transition hover:bg-primary/90 active:scale-[0.99]"
+          >
+            Listo
+          </button>
+        </div>
+      )}
     </div>
   )
 }
